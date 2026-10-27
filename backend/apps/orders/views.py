@@ -3,10 +3,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db import transaction
 from django.utils import timezone
+from django.conf import settings
 from decimal import Decimal
 import uuid
+import json
 
-from apps.orders.models import Cart, CartItem, Order, VendorOrder, OrderItem
+from apps.orders.models import Cart, CartItem, Order, VendorOrder, OrderItem, Payment
 from apps.products.models import Product
 from apps.accounts.models import VendorProfile
 from apps.orders.serializers import (
@@ -14,8 +16,12 @@ from apps.orders.serializers import (
     CartItemSerializer,
     OrderSerializer,
     VendorOrderSerializer,
-    CheckoutSerializer
+    CheckoutSerializer,
+    PaymentSerializer,
+    RazorpayCreateOrderSerializer,
+    RazorpayVerifyPaymentSerializer
 )
+from apps.orders.services import RazorpayService, EmailService
 from apps.accounts.permissions import IsVendorUser, IsAdminUserRole
 
 class CartView(APIView):
@@ -110,6 +116,11 @@ class CartClearView(APIView):
 class CheckoutView(APIView):
     """
     Transactional Checkout with Concurrency Locking & Multi-Vendor Order Splitting.
+    Adheres to v1.1 order state machine:
+    - Creates order in PENDING_PAYMENT or PAID
+    - Atomically locks inventory rows using select_for_update()
+    - Splits order into autonomous VendorOrder instances
+    - Generates Razorpay payment payload
     """
     permission_classes = [permissions.IsAuthenticated]
 
@@ -127,15 +138,17 @@ class CheckoutView(APIView):
         if not cart_items:
             return Response({'error': 'Cart is empty'}, status=status.HTTP_400_BAD_REQUEST)
 
+        payment_method = data.get('payment_method', 'RAZORPAY')
+        is_instant_simulated = payment_method in ['CREDIT_CARD', 'UPI', 'CASH_ON_DELIVERY']
+
         # Atomic transaction with product row locking to prevent race conditions
         with transaction.atomic():
             product_ids = [item.product_id for item in cart_items]
-            # Lock rows
             locked_products = {
                 p.id: p for p in Product.objects.select_for_update().filter(id__in=product_ids)
             }
 
-            # 1. Validate stock availability
+            # 1. Validate stock availability under row lock
             for item in cart_items:
                 product = locked_products.get(item.product_id)
                 if not product or not product.is_active or not product.is_approved:
@@ -154,6 +167,9 @@ class CheckoutView(APIView):
             tax_amount = round(total_items_amount * Decimal('0.05'), 2) # 5% tax
             grand_total = total_items_amount + shipping_amount + tax_amount
 
+            initial_status = 'PAID' if is_instant_simulated else 'PENDING_PAYMENT'
+            initial_payment_status = 'PAID' if is_instant_simulated else 'PENDING'
+
             # 3. Create Master Order
             order = Order.objects.create(
                 customer=request.user,
@@ -161,10 +177,10 @@ class CheckoutView(APIView):
                 shipping_amount=shipping_amount,
                 tax_amount=tax_amount,
                 grand_total=grand_total,
-                status='CONFIRMED',
-                payment_status='PAID',
-                payment_method=data.get('payment_method', 'CREDIT_CARD'),
-                payment_id=f"PAY-{uuid.uuid4().hex[:10].upper()}",
+                status=initial_status,
+                payment_status=initial_payment_status,
+                payment_method=payment_method,
+                payment_id=f"PAY-{uuid.uuid4().hex[:10].upper()}" if is_instant_simulated else '',
                 shipping_name=data['shipping_name'],
                 shipping_email=data['shipping_email'],
                 shipping_phone=data['shipping_phone'],
@@ -199,21 +215,21 @@ class CheckoutView(APIView):
                     commission_rate=commission_rate,
                     commission_amount=commission_amount,
                     net_vendor_amount=net_vendor_amount,
-                    status='PROCESSING'
+                    status='PROCESSING' if is_instant_simulated else 'PENDING'
                 )
 
-                # Update vendor platform metrics
-                vendor.total_sales += vendor_subtotal
-                vendor.save(update_fields=['total_sales'])
+                if is_instant_simulated:
+                    vendor.total_sales += vendor_subtotal
+                    vendor.save(update_fields=['total_sales'])
 
                 # Create line items & decrement stock
                 for item in items:
                     prod = locked_products[item.product_id]
-                    # Stock decrement
+                    # Stock decrement under lock (Section 6.2 & 6.4)
                     prod.inventory_count -= item.quantity
                     prod.save(update_fields=['inventory_count'])
 
-                    # OrderItem snapshot
+                    # OrderItem snapshot with price, tax, and commission rates
                     OrderItem.objects.create(
                         order=order,
                         vendor_order=vendor_order,
@@ -222,6 +238,8 @@ class CheckoutView(APIView):
                         product_title=prod.title,
                         product_sku=prod.sku,
                         price=prod.price,
+                        tax_rate=Decimal('5.00'),
+                        commission_rate=commission_rate,
                         quantity=item.quantity,
                         subtotal=prod.price * item.quantity,
                         image_url=prod.primary_image
@@ -230,8 +248,125 @@ class CheckoutView(APIView):
             # 6. Clear user cart
             cart.items.all().delete()
 
-        # Return the created order
-        return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
+        # 7. Initialize Razorpay Payment Order if selected
+        razorpay_payload = None
+        if payment_method == 'RAZORPAY':
+            razorpay_payload = RazorpayService.create_payment_order(order)
+        elif is_instant_simulated:
+            EmailService.send_order_confirmation(order)
+
+        response_data = OrderSerializer(order).data
+        if razorpay_payload:
+            response_data['razorpay_payload'] = razorpay_payload
+
+        return Response(response_data, status=status.HTTP_201_CREATED)
+
+
+class RazorpayCreateOrderView(APIView):
+    """
+    POST /payments/razorpay/create/
+    Creates a Razorpay payment order for an existing Order in PENDING_PAYMENT status.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = RazorpayCreateOrderSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        order_number = serializer.validated_data['order_number']
+
+        try:
+            order = Order.objects.get(order_number=order_number, customer=request.user)
+        except Order.DoesNotExist:
+            return Response({'error': 'Order not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if order.status not in ['PENDING_PAYMENT', 'CONFIRMED']:
+            return Response({
+                'error': f'Order is already in {order.status} state. No payment required.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        payload = RazorpayService.create_payment_order(order)
+        return Response(payload, status=status.HTTP_200_OK)
+
+
+class RazorpayVerifyPaymentView(APIView):
+    """
+    POST /payments/razorpay/verify/
+    Verifies Razorpay signature server-side.
+    Marks order as PAID only after cryptographic HMAC validation.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = RazorpayVerifyPaymentSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        try:
+            payment = RazorpayService.confirm_payment(
+                razorpay_order_id=data['razorpay_order_id'],
+                razorpay_payment_id=data['razorpay_payment_id'],
+                razorpay_signature=data['razorpay_signature']
+            )
+            return Response({
+                'message': 'Payment verified successfully.',
+                'order_number': payment.order.order_number,
+                'status': payment.order.status,
+                'payment': PaymentSerializer(payment).data,
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RazorpayWebhookView(APIView):
+    """
+    POST /payments/razorpay/webhook/
+    Verified webhook handler for asynchronous Razorpay event notifications.
+    Ensures payment status integrity even if customer closes browser prematurely.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        raw_body = request.body
+        signature = request.headers.get('X-Razorpay-Signature', '')
+        webhook_secret = settings.RAZORPAY_WEBHOOK_SECRET
+
+        # Verify signature
+        if webhook_secret:
+            import hmac
+            import hashlib
+            expected_sig = hmac.new(
+                webhook_secret.encode('utf-8'),
+                raw_body,
+                hashlib.sha256
+            ).hexdigest()
+            if not hmac.compare_digest(expected_sig, signature):
+                return Response({'error': 'Invalid webhook signature'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            event_data = json.loads(raw_body.decode('utf-8'))
+            event_name = event_data.get('event')
+            payload = event_data.get('payload', {}).get('payment', {}).get('entity', {})
+            rzp_order_id = payload.get('order_id')
+            rzp_payment_id = payload.get('id')
+
+            if event_name in ['payment.captured', 'order.paid'] and rzp_order_id:
+                try:
+                    payment = Payment.objects.get(razorpay_order_id=rzp_order_id)
+                    if not payment.is_verified:
+                        payment.razorpay_payment_id = rzp_payment_id
+                        payment.status = 'CAPTURED'
+                        payment.is_verified = True
+                        payment.save()
+                        order = payment.order
+                        if order.status == 'PENDING_PAYMENT':
+                            order.transition_to('PAID')
+                            EmailService.send_order_confirmation(order)
+                except Payment.DoesNotExist:
+                    pass
+
+            return Response({'status': 'ok'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CustomerOrderListView(generics.ListAPIView):
@@ -289,6 +424,11 @@ class VendorOrderStatusUpdateView(APIView):
         carrier = request.data.get('carrier')
 
         if new_status:
+            if not vendor_order.can_transition_to(new_status):
+                return Response({
+                    'error': f'Invalid state transition from {vendor_order.status} to {new_status}.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
             vendor_order.status = new_status
             if new_status == 'SHIPPED':
                 vendor_order.shipped_at = timezone.now()
@@ -302,15 +442,15 @@ class VendorOrderStatusUpdateView(APIView):
 
         vendor_order.save()
 
-        # Check if all vendor orders of the parent order are SHIPPED/DELIVERED
+        # Update parent order if all sub-orders reached milestone
         parent_order = vendor_order.order
         all_sub_orders = parent_order.vendor_orders.all()
         if all(sub.status == 'DELIVERED' for sub in all_sub_orders):
-            parent_order.status = 'DELIVERED'
-            parent_order.save(update_fields=['status'])
+            if parent_order.can_transition_to('DELIVERED'):
+                parent_order.transition_to('DELIVERED')
         elif any(sub.status in ['SHIPPED', 'DELIVERED'] for sub in all_sub_orders):
-            parent_order.status = 'SHIPPED'
-            parent_order.save(update_fields=['status'])
+            if parent_order.can_transition_to('SHIPPED'):
+                parent_order.transition_to('SHIPPED')
 
         return Response(VendorOrderSerializer(vendor_order).data)
 

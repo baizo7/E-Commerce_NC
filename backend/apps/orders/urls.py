@@ -4,6 +4,9 @@ from apps.orders.views import (
     CartItemDetailView,
     CartClearView,
     CheckoutView,
+    RazorpayCreateOrderView,
+    RazorpayVerifyPaymentView,
+    RazorpayWebhookView,
     CustomerOrderListView,
     CustomerOrderDetailView,
     VendorOrderListView,
@@ -21,6 +24,12 @@ urlpatterns = [
 
     # Checkout
     path('orders/checkout/', CheckoutView.as_view(), name='order_checkout'),
+    path('checkout/', CheckoutView.as_view(), name='checkout_alias'),
+
+    # Razorpay Payments (Section 8 in v1.1 Report)
+    path('payments/razorpay/create/', RazorpayCreateOrderView.as_view(), name='razorpay_create'),
+    path('payments/razorpay/verify/', RazorpayVerifyPaymentView.as_view(), name='razorpay_verify'),
+    path('payments/razorpay/webhook/', RazorpayWebhookView.as_view(), name='razorpay_webhook'),
 
     # Customer Orders
     path('orders/', CustomerOrderListView.as_view(), name='customer_order_list'),

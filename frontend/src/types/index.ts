@@ -126,6 +126,8 @@ export interface OrderItem {
   vendor: number;
   vendor_name: string;
   price: string | number;
+  tax_rate?: string | number;
+  commission_rate?: string | number;
   quantity: number;
   subtotal: string | number;
   image_url: string;
@@ -156,6 +158,20 @@ export interface VendorOrder {
   updated_at: string;
 }
 
+export interface Payment {
+  id: number;
+  order: number;
+  order_number: string;
+  razorpay_order_id: string;
+  razorpay_payment_id?: string;
+  amount: string | number;
+  amount_in_subunits: number;
+  currency: string;
+  status: 'CREATED' | 'CAPTURED' | 'FAILED' | 'REFUNDED';
+  is_verified: boolean;
+  created_at: string;
+}
+
 export interface Order {
   id: number;
   order_number: string;
@@ -165,7 +181,7 @@ export interface Order {
   shipping_amount: string | number;
   tax_amount: string | number;
   grand_total: string | number;
-  status: 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+  status: 'PENDING_PAYMENT' | 'PAID' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'PAYMENT_FAILED';
   payment_status: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
   payment_method: string;
   payment_id: string;
@@ -179,6 +195,16 @@ export interface Order {
   shipping_country: string;
   vendor_orders: VendorOrder[];
   items: OrderItem[];
+  payments?: Payment[];
+  razorpay_payload?: {
+    order_id: number;
+    order_number: string;
+    razorpay_order_id: string;
+    amount: number;
+    amount_in_subunits: number;
+    currency: string;
+    key_id: string;
+  };
   created_at: string;
   updated_at: string;
 }

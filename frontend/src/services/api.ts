@@ -163,15 +163,27 @@ export const orderService = {
     shipping_country?: string;
     payment_method: string;
   }): Promise<Order> => {
-    const res = await api.post('/orders/checkout/', payload);
+    const res = await api.post('/v1/orders/checkout/', payload);
+    return res.data;
+  },
+  createRazorpayOrder: async (orderNumber: string) => {
+    const res = await api.post('/v1/payments/razorpay/create/', { order_number: orderNumber });
+    return res.data;
+  },
+  verifyRazorpayPayment: async (payload: {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+  }) => {
+    const res = await api.post('/v1/payments/razorpay/verify/', payload);
     return res.data;
   },
   getCustomerOrders: async (): Promise<{ results: Order[] } | Order[]> => {
-    const res = await api.get('/orders/');
+    const res = await api.get('/v1/orders/');
     return res.data;
   },
   getOrderDetail: async (orderNumber: string): Promise<Order> => {
-    const res = await api.get(`/orders/${orderNumber}/`);
+    const res = await api.get(`/v1/orders/${orderNumber}/`);
     return res.data;
   },
 };

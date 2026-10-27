@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from apps.orders.models import Cart, CartItem, Order, VendorOrder, OrderItem
+from apps.orders.models import Cart, CartItem, Order, VendorOrder, OrderItem, Payment
 from apps.products.serializers import ProductListSerializer
 
 class CartItemSerializer(serializers.ModelSerializer):
@@ -46,7 +46,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
         model = OrderItem
         fields = [
             'id', 'product', 'product_title', 'product_sku', 'vendor',
-            'vendor_name', 'price', 'quantity', 'subtotal', 'image_url'
+            'vendor_name', 'price', 'tax_rate', 'commission_rate', 'quantity', 'subtotal', 'image_url'
         ]
 
 
@@ -71,9 +71,22 @@ class VendorOrderSerializer(serializers.ModelSerializer):
         ]
 
 
+class PaymentSerializer(serializers.ModelSerializer):
+    order_number = serializers.CharField(source='order.order_number', read_only=True)
+
+    class Meta:
+        model = Payment
+        fields = [
+            'id', 'order', 'order_number', 'razorpay_order_id',
+            'razorpay_payment_id', 'amount', 'amount_in_subunits',
+            'currency', 'status', 'is_verified', 'created_at'
+        ]
+
+
 class OrderSerializer(serializers.ModelSerializer):
     vendor_orders = VendorOrderSerializer(many=True, read_only=True)
     items = OrderItemSerializer(many=True, read_only=True)
+    payments = PaymentSerializer(many=True, read_only=True)
     customer_email = serializers.EmailField(source='customer.email', read_only=True)
 
     class Meta:
@@ -85,7 +98,7 @@ class OrderSerializer(serializers.ModelSerializer):
             'shipping_name', 'shipping_email', 'shipping_phone',
             'shipping_address', 'shipping_city', 'shipping_state',
             'shipping_postal_code', 'shipping_country',
-            'vendor_orders', 'items', 'created_at', 'updated_at'
+            'vendor_orders', 'items', 'payments', 'created_at', 'updated_at'
         ]
         read_only_fields = [
             'id', 'order_number', 'customer', 'total_items_amount',
@@ -103,6 +116,16 @@ class CheckoutSerializer(serializers.Serializer):
     shipping_postal_code = serializers.CharField(max_length=20)
     shipping_country = serializers.CharField(max_length=100, default='United States')
     payment_method = serializers.ChoiceField(
-        choices=['CREDIT_CARD', 'UPI', 'CASH_ON_DELIVERY', 'SIMULATED_GATEWAY'],
-        default='CREDIT_CARD'
+        choices=['RAZORPAY', 'CREDIT_CARD', 'UPI', 'CASH_ON_DELIVERY'],
+        default='RAZORPAY'
     )
+
+
+class RazorpayCreateOrderSerializer(serializers.Serializer):
+    order_number = serializers.CharField(max_length=50)
+
+
+class RazorpayVerifyPaymentSerializer(serializers.Serializer):
+    razorpay_order_id = serializers.CharField(max_length=100)
+    razorpay_payment_id = serializers.CharField(max_length=100)
+    razorpay_signature = serializers.CharField(max_length=255)

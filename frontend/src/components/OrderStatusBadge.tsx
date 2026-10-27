@@ -14,15 +14,14 @@ export const OrderStatusBadge: React.FC<OrderStatusBadgeProps> = ({ status }) =>
       case 'PROCESSING':
         return 'bg-amber-50 text-amber-700 border-amber-200';
       case 'CONFIRMED':
-        return 'bg-indigo-50 text-indigo-700 border-indigo-200';
-      case 'CANCELLED':
-        return 'bg-rose-50 text-rose-700 border-rose-200';
       case 'PAID':
-        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-      case 'APPROVED':
-        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+        return 'bg-indigo-50 text-indigo-700 border-indigo-200';
+      case 'PENDING_PAYMENT':
       case 'PENDING':
         return 'bg-amber-50 text-amber-700 border-amber-200';
+      case 'CANCELLED':
+      case 'PAYMENT_FAILED':
+        return 'bg-rose-50 text-rose-700 border-rose-200';
       default:
         return 'bg-slate-50 text-slate-700 border-slate-200';
     }

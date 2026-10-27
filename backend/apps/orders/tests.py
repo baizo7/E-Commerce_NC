@@ -1,10 +1,15 @@
 from django.test import TestCase
+from django.core.management import call_command
+from django.utils import timezone
 from rest_framework.test import APIClient
 from rest_framework import status
 from decimal import Decimal
+from datetime import timedelta
+
 from apps.accounts.models import User, VendorProfile
 from apps.products.models import Category, Product
-from apps.orders.models import Order, VendorOrder
+from apps.orders.models import Order, VendorOrder, OrderItem, Payment
+from apps.orders.services import RazorpayService
 
 class OrderCheckoutTests(TestCase):
     def setUp(self):
@@ -105,7 +110,117 @@ class OrderCheckoutTests(TestCase):
 
     def test_insufficient_stock_prevents_order(self):
         self.client.force_authenticate(user=self.customer)
-        # Attempt to add more than stock
         res = self.client.post('/api/cart/', {'product_id': self.p1.id, 'quantity': 10})
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('stock', res.data['error'].lower())
+
+    def test_razorpay_order_create_and_verification(self):
+        self.client.force_authenticate(user=self.customer)
+
+        # Add item & checkout with RAZORPAY
+        self.client.post('/api/cart/', {'product_id': self.p1.id, 'quantity': 1})
+        res = self.client.post('/api/v1/orders/checkout/', {
+            'shipping_name': 'Shopper Jane',
+            'shipping_email': 'shopper@test.com',
+            'shipping_phone': '+1 (555) 000-1111',
+            'shipping_address': '123 Market St',
+            'shipping_city': 'Seattle',
+            'shipping_state': 'WA',
+            'shipping_postal_code': '98101',
+            'shipping_country': 'United States',
+            'payment_method': 'RAZORPAY'
+        })
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(res.data['status'], 'PENDING_PAYMENT')
+        self.assertIn('razorpay_payload', res.data)
+
+        order_number = res.data['order_number']
+        rzp_order_id = res.data['razorpay_payload']['razorpay_order_id']
+
+        # Verify payment signature
+        verify_res = self.client.post('/api/v1/payments/razorpay/verify/', {
+            'razorpay_order_id': rzp_order_id,
+            'razorpay_payment_id': 'pay_test_123456',
+            'razorpay_signature': 'simulated_valid_signature'
+        })
+        self.assertEqual(verify_res.status_code, status.HTTP_200_OK)
+
+        # Order must now be transitioned to PAID
+        order = Order.objects.get(order_number=order_number)
+        self.assertEqual(order.status, 'PAID')
+        self.assertEqual(order.payment_status, 'PAID')
+
+    def test_invalid_razorpay_signature_rejection(self):
+        self.client.force_authenticate(user=self.customer)
+
+        self.client.post('/api/cart/', {'product_id': self.p2.id, 'quantity': 1})
+        res = self.client.post('/api/v1/orders/checkout/', {
+            'shipping_name': 'Shopper Jane',
+            'shipping_email': 'shopper@test.com',
+            'shipping_phone': '+1 (555) 000-1111',
+            'shipping_address': '123 Market St',
+            'shipping_city': 'Seattle',
+            'shipping_postal_code': '98101',
+            'payment_method': 'RAZORPAY'
+        })
+        rzp_order_id = res.data['razorpay_payload']['razorpay_order_id']
+
+        # Send invalid signature
+        verify_res = self.client.post('/api/v1/payments/razorpay/verify/', {
+            'razorpay_order_id': rzp_order_id,
+            'razorpay_payment_id': 'pay_invalid',
+            'razorpay_signature': 'fail_signature'
+        })
+        self.assertEqual(verify_res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_expired_stock_release_command(self):
+        # Create an order in PENDING_PAYMENT created 45 minutes ago
+        self.p1.inventory_count = 5
+        self.p1.save()
+
+        order = Order.objects.create(
+            customer=self.customer,
+            total_items_amount=Decimal('100.00'),
+            grand_total=Decimal('100.00'),
+            status='PENDING_PAYMENT',
+            shipping_name='Old Order',
+            shipping_email='old@test.com',
+            shipping_phone='1234567890',
+            shipping_address='123 St',
+            shipping_city='City',
+            shipping_postal_code='12345'
+        )
+        vo = VendorOrder.objects.create(
+            order=order,
+            vendor=self.v1,
+            subtotal=Decimal('100.00'),
+            commission_rate=Decimal('10.00'),
+            commission_amount=Decimal('10.00'),
+            net_vendor_amount=Decimal('90.00'),
+            status='PENDING'
+        )
+        OrderItem.objects.create(
+            order=order,
+            vendor_order=vo,
+            product=self.p1,
+            vendor=self.v1,
+            product_title=self.p1.title,
+            price=self.p1.price,
+            quantity=2,
+            subtotal=Decimal('200.00')
+        )
+
+        # Manually backdate the created_at timestamp
+        Order.objects.filter(id=order.id).update(
+            created_at=timezone.now() - timedelta(minutes=45)
+        )
+
+        # Call release_expired_stock command
+        call_command('release_expired_stock', timeout_minutes=30)
+
+        # Verify stock was restored
+        self.p1.refresh_from_db()
+        self.assertEqual(self.p1.inventory_count, 7) # 5 + 2 = 7
+
+        order.refresh_from_db()
+        self.assertEqual(order.status, 'PAYMENT_FAILED')
