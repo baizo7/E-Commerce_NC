@@ -114,6 +114,7 @@ export const VendorProductModal: React.FC<VendorProductModalProps> = ({
     }
 
     setUploadingImages(false);
+    // Reset input so the same file can be re-selected if needed
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -216,9 +217,10 @@ export const VendorProductModal: React.FC<VendorProductModalProps> = ({
               <span className="text-[11px] text-slate-400">Up to 5MB each (JPEG, PNG, WEBP)</span>
             </div>
 
-            {/* Hidden File Input */}
+            {/* Hidden File Input — triggered via label for cross-browser reliability */}
             <input
               type="file"
+              id="product-image-upload"
               ref={fileInputRef}
               multiple
               accept="image/jpeg,image/png,image/webp,image/gif"
@@ -226,9 +228,9 @@ export const VendorProductModal: React.FC<VendorProductModalProps> = ({
               className="hidden"
             />
 
-            {/* Dropzone / Upload Trigger Button */}
-            <div
-              onClick={() => fileInputRef.current?.click()}
+            {/* Dropzone / Upload Trigger — uses <label> so click always opens picker */}
+            <label
+              htmlFor="product-image-upload"
               className="border-2 border-dashed border-neutral-300 hover:border-[#0a0500] bg-neutral-50/80 hover:bg-neutral-100 rounded-2xl p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2 group"
             >
               <div className="w-12 h-12 rounded-full bg-white shadow-sm border border-neutral-200 flex items-center justify-center group-hover:scale-105 transition-transform text-[#0a0500]">
@@ -246,7 +248,7 @@ export const VendorProductModal: React.FC<VendorProductModalProps> = ({
                   Uploading & optimizing images...
                 </div>
               )}
-            </div>
+            </label>
 
             {/* Gallery Thumbnails List */}
             {imageUrls.length > 0 && (

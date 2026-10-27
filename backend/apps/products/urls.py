@@ -21,13 +21,15 @@ urlpatterns = [
 
     # Products (Public)
     path('products/', ProductListView.as_view(), name='product_list'),
+    # NOTE: upload-image MUST come before <slug:slug> so Django doesn't capture it as a product slug
+    path('products/upload-image/', ProductImageUploadView.as_view(), name='product_image_upload'),
     path('products/<slug:slug>/', ProductDetailView.as_view(), name='product_detail'),
     path('products/<slug:slug>/reviews/', ProductReviewCreateView.as_view(), name='product_review_create'),
 
     # Vendor Products
     path('vendor/products/', VendorProductListCreateView.as_view(), name='vendor_product_list_create'),
+    path('vendor/products/upload-image/', ProductImageUploadView.as_view(), name='vendor_product_image_upload'),
     path('vendor/products/<int:id>/', VendorProductDetailView.as_view(), name='vendor_product_detail'),
-    path('products/upload-image/', ProductImageUploadView.as_view(), name='product_image_upload'),
 
     # Admin Products & Categories
     path('admin/categories/', AdminCategoryListCreateView.as_view(), name='admin_category_list_create'),
