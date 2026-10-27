@@ -64,8 +64,17 @@ export const VendorDirectoryPage: React.FC = () => {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center text-slate-500 text-sm">
-          No vendors found matching "{searchTerm}".
+        <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center text-slate-500 text-sm space-y-3">
+          <p>{searchTerm ? `No vendors found matching "${searchTerm}".` : 'No active stores registered yet.'}</p>
+          <div>
+            <Link
+              to="/register?role=vendor"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-xs transition"
+            >
+              <Store className="w-3.5 h-3.5" />
+              Register Your Store
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

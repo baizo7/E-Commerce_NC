@@ -11,14 +11,13 @@ import {
   Package,
   Layers,
   Menu,
-  Mail,
   X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 
 export const Navbar: React.FC = () => {
-  const { user, logout, isVendor, isAdmin, demoLogin } = useAuth();
+  const { user, logout, isVendor, isAdmin } = useAuth();
   const { cartCount } = useCart();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
@@ -35,43 +34,6 @@ export const Navbar: React.FC = () => {
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200">
-      {/* Top Banner with Quick Switcher for easy evaluation */}
-      <div className="bg-slate-900 text-slate-300 text-xs py-1.5 px-4">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span>Multi-Vendor Platform Active</span>
-            <span className="hidden sm:inline text-slate-500">|</span>
-            <span className="hidden sm:inline text-slate-400">PostgreSQL + Django REST + React Architecture</span>
-          </div>
-
-          <div className="flex items-center gap-2 text-xs">
-            <span className="text-slate-400 font-medium">Quick Demo Personas:</span>
-            <button
-              onClick={() => demoLogin('customer')}
-              className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-emerald-400 font-semibold transition"
-              title="Sign in as Demo Customer"
-            >
-              Customer
-            </button>
-            <button
-              onClick={() => demoLogin('vendor')}
-              className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-amber-400 font-semibold transition"
-              title="Sign in as TechNova Vendor"
-            >
-              Vendor
-            </button>
-            <button
-              onClick={() => demoLogin('admin')}
-              className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-indigo-400 font-semibold transition"
-              title="Sign in as Platform Admin"
-            >
-              Admin
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* Main Navbar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
@@ -199,22 +161,13 @@ export const Navbar: React.FC = () => {
                     )}
 
                     {isAdmin && (
-                      <>
-                        <Link
-                          to="/admin/dashboard"
-                          className="flex items-center gap-2.5 px-4 py-2 hover:bg-indigo-50 text-indigo-900"
-                        >
-                          <ShieldCheck className="w-4 h-4 text-indigo-600" />
-                          Platform Administration
-                        </Link>
-                        <Link
-                          to="/admin/emails"
-                          className="flex items-center gap-2.5 px-4 py-2 hover:bg-indigo-50 text-indigo-900"
-                        >
-                          <Mail className="w-4 h-4 text-indigo-600" />
-                          Email Outbox & Logs
-                        </Link>
-                      </>
+                      <Link
+                        to="/admin/dashboard"
+                        className="flex items-center gap-2.5 px-4 py-2 hover:bg-indigo-50 text-indigo-900"
+                      >
+                        <ShieldCheck className="w-4 h-4 text-indigo-600" />
+                        Platform Administration
+                      </Link>
                     )}
 
                     {!isVendor && !isAdmin && (
