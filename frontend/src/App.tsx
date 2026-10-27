@@ -49,9 +49,9 @@ const AuthRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 const VendorRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, isVendor, isAdmin, loading } = useAuth();
+  const { user, loading } = useAuth();
   if (loading) return null;
-  if (!user || (!isVendor && !isAdmin)) {
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
   return <>{children}</>;

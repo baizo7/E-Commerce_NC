@@ -180,6 +180,40 @@ class VendorSelfProfileView(generics.RetrieveUpdateAPIView):
         return self.request.user.vendor_profile
 
 
+class VendorActivateView(APIView):
+    """
+    POST /api/v1/auth/vendor/activate/
+    Allows an authenticated user to instantly activate their merchant store profile.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        store_name = request.data.get('store_name') or f"{user.first_name or user.username}'s Modern Atelier"
+        store_description = request.data.get('description') or "Independent creator storefront curated with care."
+
+        vendor, created = VendorProfile.objects.get_or_create(
+            user=user,
+            defaults={
+                'store_name': store_name,
+                'description': store_description,
+                'business_email': user.email,
+                'business_phone': user.phone or '+1 (555) 000-1122',
+                'status': 'APPROVED',
+                'commission_rate': 10.00,
+            }
+        )
+        if user.role != 'ADMIN':
+            user.role = 'VENDOR'
+            user.save(update_fields=['role'])
+
+        return Response({
+            'message': 'Vendor storefront activated successfully!',
+            'vendor': VendorProfileSerializer(vendor).data,
+            'user': UserSerializer(user).data
+        }, status=status.HTTP_200_OK)
+
+
 class VendorBrandingUploadView(APIView):
     """
     POST /api/v1/auth/vendor/branding/

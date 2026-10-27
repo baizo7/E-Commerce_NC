@@ -10,18 +10,25 @@ import {
   ArrowRight,
   TrendingUp,
   Settings,
-  ShieldCheck
+  ShieldCheck,
+  BarChart3,
+  Trophy,
+  ShoppingBag,
+  Store
 } from 'lucide-react';
 import { vendorService } from '../../services/api';
 import { VendorAnalytics } from '../../types';
 import { VendorProductModal } from './VendorProductModal';
 import { OrderStatusBadge } from '../../components/OrderStatusBadge';
 import { VendorSubNav } from '../../components/VendorSubNav';
+import { useAuth } from '../../context/AuthContext';
 
 export const VendorDashboardPage: React.FC = () => {
+  const { user, isVendor, refreshUser } = useAuth();
   const [analytics, setAnalytics] = useState<VendorAnalytics | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [activating, setActivating] = useState<boolean>(false);
 
   const fetchAnalytics = async () => {
     try {
@@ -35,8 +42,63 @@ export const VendorDashboardPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchAnalytics();
-  }, []);
+    if (isVendor) {
+      fetchAnalytics();
+    } else {
+      setLoading(false);
+    }
+  }, [isVendor]);
+
+  const handleActivateStore = async () => {
+    setActivating(true);
+    try {
+      await vendorService.activateStore();
+      await refreshUser();
+      await fetchAnalytics();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setActivating(false);
+    }
+  };
+
+  if (!isVendor) {
+    return (
+      <div className="max-w-4xl mx-auto py-12 px-4 space-y-8">
+        <div className="bg-[#0a0500] text-white rounded-3xl p-8 sm:p-12 shadow-2xl relative overflow-hidden text-center space-y-6">
+          <div className="w-16 h-16 rounded-2xl bg-[#ffcd05] text-[#0a0500] flex items-center justify-center mx-auto shadow-lg">
+            <Store className="w-8 h-8" />
+          </div>
+          <div className="space-y-2 max-w-xl mx-auto">
+            <span className="text-xs font-black uppercase tracking-widest text-[#fcb424] block">Merchant Network</span>
+            <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-white">
+              Launch Your Merchant Storefront
+            </h1>
+            <p className="text-xs text-neutral-300 leading-relaxed">
+              Join our certified collective of independent makers, ateliers, and technical brands. Fulfill customer orders with verified escrow protection, upload local product photos, and receive bank disbursements.
+            </p>
+          </div>
+
+          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button
+              onClick={handleActivateStore}
+              disabled={activating}
+              className="px-8 py-4 bg-[#ffcd05] hover:bg-[#fcb424] text-[#0a0500] font-black uppercase tracking-wider text-xs rounded-full shadow-lg transition flex items-center gap-2 disabled:opacity-50"
+            >
+              <Store className="w-4 h-4 text-[#0a0500]" />
+              <span>{activating ? 'Provisioning Storefront...' : 'Activate Storefront in 1-Click'}</span>
+            </button>
+            <Link
+              to="/vendors"
+              className="px-8 py-4 bg-neutral-800 hover:bg-neutral-700 text-white font-bold uppercase tracking-wider text-xs rounded-full border border-neutral-700 transition"
+            >
+              Browse Active Merchants
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -178,6 +240,154 @@ export const VendorDashboardPage: React.FC = () => {
             <span className="text-[10px] text-slate-400 font-medium">
               {analytics?.total_products || 0} active catalog items
             </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Analytics Insights & Leaderboard Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* 7-Day Performance Curve */}
+        <div className="lg:col-span-2 bg-white border border-neutral-200/90 rounded-2xl p-6 sm:p-7 shadow-sm space-y-5">
+          <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-amber-50 text-[#fcb424] flex items-center justify-center">
+                <BarChart3 className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-[#fcb424]">Visual Velocity</span>
+                <h2 className="text-sm font-black text-[#0a0500] uppercase tracking-tight">
+                  7-Day Sales & Order Trajectory
+                </h2>
+              </div>
+            </div>
+            <span className="px-2.5 py-1 rounded-full bg-neutral-100 text-[10px] font-black uppercase tracking-wider text-[#504e4a]">
+              Real-Time
+            </span>
+          </div>
+
+          {/* Bar Chart Visualization */}
+          {analytics?.daily_trends && analytics.daily_trends.length > 0 ? (
+            <div className="space-y-4">
+              <div className="h-44 flex items-end justify-between gap-2 sm:gap-4 pt-6 px-2 border-b border-neutral-100">
+                {(() => {
+                  const maxRev = Math.max(...analytics.daily_trends.map(d => d.revenue), 10);
+                  return analytics.daily_trends.map((day, idx) => {
+                    const heightPercent = Math.max(Math.round((day.revenue / maxRev) * 100), 12);
+                    const isToday = idx === analytics.daily_trends!.length - 1;
+                    return (
+                      <div key={idx} className="flex-1 flex flex-col items-center gap-2 group h-full justify-end">
+                        {/* Hover Tooltip */}
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-[#0a0500] text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap pointer-events-none mb-1">
+                          ${day.revenue.toFixed(2)} ({day.order_count} ord)
+                        </div>
+
+                        {/* Bar */}
+                        <div className="w-full max-w-[42px] bg-neutral-100 rounded-t-xl overflow-hidden flex flex-col justify-end h-full">
+                          <div
+                            style={{ height: `${heightPercent}%` }}
+                            className={`w-full rounded-t-xl transition-all duration-500 ${
+                              isToday
+                                ? 'bg-gradient-to-t from-[#0a0500] to-[#fcb424]'
+                                : 'bg-gradient-to-t from-neutral-300 to-[#ffcd05] group-hover:from-neutral-800 group-hover:to-[#ffcd05]'
+                            }`}
+                          ></div>
+                        </div>
+
+                        {/* Date Label */}
+                        <span className={`text-[10px] font-black tracking-wider uppercase truncate ${
+                          isToday ? 'text-[#0a0500]' : 'text-slate-400'
+                        }`}>
+                          {day.short_date}
+                        </span>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+
+              <div className="flex items-center justify-between text-[11px] text-[#504e4a] pt-1">
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-[#ffcd05]"></span>
+                  <span className="font-bold text-[#0a0500]">Net Settled Payouts</span>
+                </div>
+                <span>Hover over bars for package quantities and revenue breakdown</span>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-12 text-[#504e4a] text-xs">
+              Performance curve will calibrate automatically as transactions process.
+            </div>
+          )}
+        </div>
+
+        {/* Top Performing Catalog Items Leaderboard */}
+        <div className="bg-white border border-neutral-200/90 rounded-2xl p-6 sm:p-7 shadow-sm space-y-5 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-amber-50 text-[#fcb424] flex items-center justify-center">
+                  <Trophy className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[#fcb424]">Top Sellers</span>
+                  <h2 className="text-sm font-black text-[#0a0500] uppercase tracking-tight">
+                    Product Leaderboard
+                  </h2>
+                </div>
+              </div>
+              <Link
+                to="/vendor/products"
+                className="text-[10px] font-black uppercase tracking-wider text-[#0a0500] hover:text-[#fcb424]"
+              >
+                Catalog &rarr;
+              </Link>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              {analytics?.top_products && analytics.top_products.length > 0 ? (
+                analytics.top_products.map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-neutral-50 hover:bg-neutral-100/80 transition">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black flex-shrink-0 ${
+                        idx === 0 ? 'bg-[#ffcd05] text-[#0a0500]' : 'bg-neutral-200 text-slate-600'
+                      }`}>
+                        #{idx + 1}
+                      </span>
+                      {item.image_url ? (
+                        <img src={item.image_url} alt="" className="w-9 h-9 rounded-lg object-cover flex-shrink-0 border border-neutral-200" />
+                      ) : (
+                        <div className="w-9 h-9 rounded-lg bg-neutral-200 flex items-center justify-center text-slate-400 flex-shrink-0">
+                          <ShoppingBag className="w-4 h-4" />
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-[#0a0500] truncate">{item.title}</p>
+                        <p className="text-[10px] text-slate-400 font-medium">{item.units_sold} unit{item.units_sold > 1 ? 's' : ''} sold</p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-black text-emerald-700 whitespace-nowrap">
+                      ${item.revenue.toFixed(2)}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-[#504e4a] text-xs space-y-2">
+                  <p>No products sold yet.</p>
+                  <Link
+                    to="/vendor/products"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#ffcd05] text-[#0a0500] font-black text-[11px] uppercase rounded-full shadow-xs hover:bg-[#fcb424]"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    List First Item
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-neutral-100 flex items-center justify-between text-[11px] text-slate-400">
+            <span>Ranked by gross sales</span>
+            <span className="font-bold text-[#0a0500]">{analytics?.total_products || 0} Total in Catalog</span>
           </div>
         </div>
       </div>

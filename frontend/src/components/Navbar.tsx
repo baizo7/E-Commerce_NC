@@ -83,6 +83,15 @@ export const Navbar: React.FC = () => {
               VENDORS
             </Link>
             <Link
+              to="/vendor/dashboard"
+              className={`transition hover:text-amber-500 flex items-center gap-1.5 ${
+                location.pathname.startsWith('/vendor') ? 'text-amber-500 border-b-2 border-amber-400 pb-1' : ''
+              }`}
+            >
+              <Store className="w-3.5 h-3.5 text-[#fcb424]" />
+              VENDOR PORTAL
+            </Link>
+            <Link
               to="/contact"
               className={`transition hover:text-amber-500 ${
                 isActive('/contact') ? 'text-amber-500 border-b-2 border-amber-400 pb-1' : ''
@@ -90,16 +99,6 @@ export const Navbar: React.FC = () => {
             >
               CONTACT
             </Link>
-
-            {isVendor && (
-              <Link
-                to="/vendor/dashboard"
-                className="text-amber-700 bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition normal-case font-bold"
-              >
-                <Store className="w-3.5 h-3.5" />
-                Vendor Portal
-              </Link>
-            )}
 
             {isAdmin && (
               <Link
@@ -288,6 +287,10 @@ export const Navbar: React.FC = () => {
             </Link>
             <Link to="/vendors" onClick={() => setMobileMenuOpen(false)} className="py-2 hover:text-amber-500">
               VENDORS
+            </Link>
+            <Link to="/vendor/dashboard" onClick={() => setMobileMenuOpen(false)} className="py-2 text-[#0a0500] hover:text-amber-500 flex items-center gap-1.5">
+              <Store className="w-3.5 h-3.5 text-[#fcb424]" />
+              VENDOR PORTAL
             </Link>
             <Link to="/contact" onClick={() => setMobileMenuOpen(false)} className="py-2 hover:text-amber-500">
               CONTACT

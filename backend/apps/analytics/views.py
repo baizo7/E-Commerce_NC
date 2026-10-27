@@ -30,6 +30,40 @@ class VendorDashboardStatsView(APIView):
         low_stock_products = products.filter(inventory_count__lte=F('low_stock_threshold'), inventory_count__gt=0).count()
         out_of_stock_products = products.filter(inventory_count=0).count()
 
+        # 7-day performance curve
+        now = timezone.now()
+        daily_trends = []
+        for i in range(6, -1, -1):
+            day_start = (now - timedelta(days=i)).replace(hour=0, minute=0, second=0, microsecond=0)
+            day_end = day_start + timedelta(days=1)
+            day_orders = vendor_orders.filter(created_at__gte=day_start, created_at__lt=day_end)
+            rev = day_orders.aggregate(total=Sum('net_vendor_amount'))['total'] or 0.0
+            cnt = day_orders.count()
+            daily_trends.append({
+                'date': day_start.strftime('%a, %b %d'),
+                'short_date': day_start.strftime('%b %d'),
+                'revenue': float(rev),
+                'order_count': cnt,
+            })
+
+        # Top 5 performing catalog items
+        top_items = (
+            OrderItem.objects.filter(vendor=vendor)
+            .values('product__id', 'product_title', 'image_url')
+            .annotate(units_sold=Sum('quantity'), total_revenue=Sum('subtotal'))
+            .order_by('-total_revenue')[:5]
+        )
+        top_products = [
+            {
+                'id': item['product__id'],
+                'title': item['product_title'],
+                'image_url': item['image_url'],
+                'units_sold': item['units_sold'],
+                'revenue': float(item['total_revenue']),
+            }
+            for item in top_items
+        ]
+
         # Recent 5 sub-orders
         recent_orders_qs = vendor_orders.select_related('order').order_by('-created_at')[:5]
         recent_orders = [
@@ -57,6 +91,8 @@ class VendorDashboardStatsView(APIView):
             'out_of_stock_count': out_of_stock_products,
             'store_name': vendor.store_name,
             'rating': float(vendor.rating),
+            'daily_trends': daily_trends,
+            'top_products': top_products,
             'recent_orders': recent_orders,
         })
 

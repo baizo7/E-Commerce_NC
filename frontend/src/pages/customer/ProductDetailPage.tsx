@@ -224,15 +224,26 @@ export const ProductDetailPage: React.FC = () => {
         {/* Product Details & Actions */}
         <div className="space-y-6">
           {/* Vendor Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-100 text-xs font-medium text-slate-700">
-            <Store className="w-3.5 h-3.5 text-[#fcb424]" />
-            <span className="text-slate-500">Sold by:</span>
-            {vendorSlug ? (
-              <Link to={`/vendors/${vendorSlug}`} className="font-bold text-[#0a0500] hover:underline">
-                {vendorName}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-neutral-100 text-xs font-medium text-slate-700">
+              <Store className="w-3.5 h-3.5 text-[#fcb424]" />
+              <span className="text-slate-500">Sold by:</span>
+              {vendorSlug ? (
+                <Link to={`/vendors/${vendorSlug}`} className="font-bold text-[#0a0500] hover:underline">
+                  {vendorName}
+                </Link>
+              ) : (
+                <span className="font-bold text-[#0a0500]">{vendorName}</span>
+              )}
+            </div>
+
+            {vendorSlug && (
+              <Link
+                to={`/vendors/${vendorSlug}`}
+                className="text-xs font-bold text-[#504e4a] hover:text-[#0a0500] underline underline-offset-4 transition"
+              >
+                Visit Store & Inquire &rarr;
               </Link>
-            ) : (
-              <span className="font-bold text-[#0a0500]">{vendorName}</span>
             )}
           </div>
 

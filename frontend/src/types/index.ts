@@ -228,6 +228,19 @@ export interface VendorAnalytics {
   out_of_stock_count: number;
   store_name: string;
   rating: number;
+  daily_trends?: {
+    date: string;
+    short_date: string;
+    revenue: number;
+    order_count: number;
+  }[];
+  top_products?: {
+    id: number;
+    title: string;
+    image_url: string;
+    units_sold: number;
+    revenue: number;
+  }[];
   recent_orders: {
     id: number;
     order_number: string;

@@ -298,6 +298,10 @@ export const vendorService = {
     const res = await api.patch(`/vendor/products/${id}/`, data);
     return res.data;
   },
+  activateStore: async (data?: { store_name?: string; description?: string }): Promise<{ message: string; vendor: VendorProfile; user: User }> => {
+    const res = await api.post('/vendor/activate/', data || {});
+    return res.data;
+  },
   exportCsvUrl: () => {
     return '/api/v1/vendor/export-csv/';
   },

@@ -77,7 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const role: Role | undefined = user?.role;
   const isCustomer = role === 'CUSTOMER';
-  const isVendor = role === 'VENDOR';
+  const isVendor = role === 'VENDOR' || Boolean(user?.vendor_profile);
   const isAdmin = role === 'ADMIN';
 
   return (

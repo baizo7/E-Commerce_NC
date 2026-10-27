@@ -10,6 +10,7 @@ from apps.accounts.views import (
     VendorPublicDetailView,
     VendorSelfProfileView,
     VendorBrandingUploadView,
+    VendorActivateView,
     AdminVendorListView,
     AdminVendorUpdateStatusView
 )
@@ -29,6 +30,7 @@ urlpatterns = [
 
     # Vendor Portal
     path('vendor/profile/', VendorSelfProfileView.as_view(), name='vendor_self_profile'),
+    path('vendor/activate/', VendorActivateView.as_view(), name='vendor_activate'),
     path('auth/vendor/branding/', VendorBrandingUploadView.as_view(), name='vendor_branding_upload'),
     path('vendor/branding/', VendorBrandingUploadView.as_view(), name='vendor_branding_upload_alt'),
 

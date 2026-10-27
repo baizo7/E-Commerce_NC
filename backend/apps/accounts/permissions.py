@@ -14,13 +14,13 @@ class IsAdminUserRole(permissions.BasePermission):
 
 class IsVendorUser(permissions.BasePermission):
     """
-    Allows access only to users with role VENDOR and an associated vendor profile.
+    Allows access to users with role VENDOR (or ADMIN) who have an associated vendor profile.
     """
     def has_permission(self, request, view):
         return bool(
             request.user and
             request.user.is_authenticated and
-            request.user.role == 'VENDOR' and
+            (request.user.role in ['VENDOR', 'ADMIN']) and
             hasattr(request.user, 'vendor_profile')
         )
 
