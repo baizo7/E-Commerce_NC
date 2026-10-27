@@ -8,14 +8,15 @@ import {
   Truck,
   Check,
   AlertTriangle,
-  ArrowLeft,
-  Share2,
-  Heart
+  RotateCcw,
+  Zap,
+  ChevronRight
 } from 'lucide-react';
 import { productService } from '../../services/api';
 import { Product } from '../../types';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
+import { ProductCard } from '../../components/ProductCard';
 
 export const ProductDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -24,10 +25,11 @@ export const ProductDetailPage: React.FC = () => {
   const { user } = useAuth();
 
   const [product, setProduct] = useState<Product | null>(null);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [selectedImage, setSelectedImage] = useState<string>('');
   const [quantity, setQuantity] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(true);
-  const [activeTab, setActiveTab] = useState<'desc' | 'reviews'>('desc');
+  const [activeTab, setActiveTab] = useState<'desc' | 'specs' | 'reviews'>('desc');
 
   // Review Form state
   const [reviewRating, setReviewRating] = useState<number>(5);
@@ -45,6 +47,16 @@ export const ProductDetailPage: React.FC = () => {
         const data = await productService.getProductDetail(slug);
         setProduct(data);
         setSelectedImage(data.primary_image || (data.images?.[0]?.image_url ?? ''));
+
+        // Fetch related products from the same category or marketplace
+        try {
+          const catId = typeof data.category === 'object' && data.category ? data.category.id : data.category;
+          const relatedRes = await productService.getProducts(catId ? { category: String(catId) } : {});
+          const relatedList: Product[] = (relatedRes as any).results || relatedRes;
+          setRelatedProducts(relatedList.filter((p) => p.id !== data.id).slice(0, 4));
+        } catch {
+          // ignore related product error
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -56,14 +68,16 @@ export const ProductDetailPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="animate-pulse space-y-8 max-w-6xl mx-auto py-10">
-        <div className="h-6 w-32 bg-slate-200 rounded"></div>
+      <div className="animate-pulse space-y-8 max-w-7xl mx-auto py-12 px-4 sm:px-6">
+        <div className="h-4 w-48 bg-slate-200 rounded"></div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-          <div className="aspect-square bg-slate-200 rounded-3xl"></div>
-          <div className="space-y-4">
-            <div className="h-8 bg-slate-200 rounded w-3/4"></div>
-            <div className="h-4 bg-slate-200 rounded w-1/2"></div>
-            <div className="h-12 bg-slate-200 rounded w-1/3"></div>
+          <div className="aspect-[4/5] bg-slate-200 rounded-2xl"></div>
+          <div className="space-y-6">
+            <div className="h-6 bg-slate-200 rounded w-1/4"></div>
+            <div className="h-10 bg-slate-200 rounded w-3/4"></div>
+            <div className="h-6 bg-slate-200 rounded w-1/3"></div>
+            <div className="h-24 bg-slate-200 rounded w-full"></div>
+            <div className="h-12 bg-slate-200 rounded w-1/2"></div>
           </div>
         </div>
       </div>
@@ -72,11 +86,17 @@ export const ProductDetailPage: React.FC = () => {
 
   if (!product) {
     return (
-      <div className="text-center py-20">
-        <h2 className="text-2xl font-bold text-slate-800">Product Not Found</h2>
-        <p className="text-sm text-slate-500 mt-2">The product you are looking for may have been delisted or does not exist.</p>
-        <Link to="/products" className="mt-4 inline-block px-5 py-2.5 bg-indigo-600 text-white font-semibold rounded-xl text-sm">
-          Return to Catalog
+      <div className="text-center py-24 max-w-md mx-auto px-4">
+        <div className="w-16 h-16 rounded-full bg-amber-50 text-amber-500 mx-auto flex items-center justify-center mb-4">
+          <AlertTriangle className="w-8 h-8" />
+        </div>
+        <h2 className="text-2xl font-black text-[#0a0500] uppercase tracking-wide">Product Not Found</h2>
+        <p className="text-sm text-[#504e4a] mt-2">The product you are looking for may have been archived or moved.</p>
+        <Link
+          to="/products"
+          className="mt-6 inline-block px-7 py-3 bg-[#0a0500] hover:bg-neutral-800 text-white text-xs font-black uppercase tracking-wider rounded-full transition"
+        >
+          Return to Shop
         </Link>
       </div>
     );
@@ -129,28 +149,58 @@ export const ProductDetailPage: React.FC = () => {
   const vendorObj = typeof product.vendor === 'object' ? product.vendor : null;
   const vendorName = vendorObj?.store_name || product.vendor_name || 'Verified Merchant';
   const vendorSlug = vendorObj?.slug || product.vendor_slug;
+  const categoryName = typeof product.category === 'object' && product.category ? product.category.name : product.category_name;
+
+  const priceNum = Number(product.price);
+  const compareNum = product.compare_at_price ? Number(product.compare_at_price) : null;
+  const isOnSale = compareNum !== null && compareNum > priceNum;
+  const discountPercent = isOnSale && compareNum ? Math.round(((compareNum - priceNum) / compareNum) * 100) : null;
 
   return (
-    <div className="space-y-12 max-w-6xl mx-auto">
-      {/* Breadcrumb navigation */}
-      <div className="flex items-center gap-2 text-xs text-slate-500">
-        <Link to="/products" className="hover:text-indigo-600 flex items-center gap-1 font-medium">
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to Products
+    <div className="space-y-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* Modern Shop Breadcrumb */}
+      <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+        <Link to="/" className="hover:text-[#0a0500] transition">
+          Home
         </Link>
-        <span>/</span>
-        <span className="text-slate-800 font-semibold truncate max-w-md">{product.title}</span>
-      </div>
+        <ChevronRight className="w-3 h-3 text-slate-300" />
+        <Link to="/products" className="hover:text-[#0a0500] transition">
+          Shop
+        </Link>
+        {categoryName && (
+          <>
+            <ChevronRight className="w-3 h-3 text-slate-300" />
+            <span className="text-slate-500">{categoryName}</span>
+          </>
+        )}
+        <ChevronRight className="w-3 h-3 text-slate-300" />
+        <span className="text-[#0a0500] truncate max-w-xs">{product.title}</span>
+      </nav>
 
       {/* Main Product Showcase Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 xl:gap-14 items-start">
         {/* Images Gallery */}
         <div className="space-y-4">
-          <div className="aspect-square bg-slate-100 rounded-3xl overflow-hidden border border-slate-200 shadow-sm relative">
+          <div className="relative aspect-[4/5] bg-neutral-100 rounded-2xl overflow-hidden border border-neutral-200/80 shadow-sm group">
             <img
               src={selectedImage || 'https://images.unsplash.com/photo-1560343090-f0409e92791a?auto=format&fit=crop&w=800&q=80'}
               alt={product.title}
-              className="w-full h-full object-cover object-center"
+              className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out"
             />
+
+            {/* Badges */}
+            <div className="absolute top-4 left-4 flex flex-col gap-2 z-10 pointer-events-none">
+              {isOnSale && (
+                <span className="bg-[#ffcd05] text-[#0a0500] text-[11px] font-black uppercase tracking-wider px-3 py-1 rounded shadow-sm">
+                  SALE {discountPercent}%
+                </span>
+              )}
+              {product.is_featured && (
+                <span className="bg-[#0a0500] text-white text-[11px] font-black uppercase tracking-wider px-3 py-1 rounded shadow-sm">
+                  HOT
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Thumbnails */}
@@ -160,8 +210,8 @@ export const ProductDetailPage: React.FC = () => {
                 <button
                   key={idx}
                   onClick={() => setSelectedImage(img.image_url)}
-                  className={`w-20 h-20 rounded-xl overflow-hidden border-2 transition flex-shrink-0 ${
-                    selectedImage === img.image_url ? 'border-indigo-600 shadow-md' : 'border-slate-200 opacity-70 hover:opacity-100'
+                  className={`w-20 h-24 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 ${
+                    selectedImage === img.image_url ? 'border-[#0a0500] shadow-md scale-102' : 'border-neutral-200 opacity-70 hover:opacity-100'
                   }`}
                 >
                   <img src={img.image_url} alt="" className="w-full h-full object-cover" />
@@ -174,227 +224,327 @@ export const ProductDetailPage: React.FC = () => {
         {/* Product Details & Actions */}
         <div className="space-y-6">
           {/* Vendor Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs">
-            <Store className="w-4 h-4 text-indigo-600" />
-            <span className="text-slate-500">Sold & Dispatched by:</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-100 text-xs font-medium text-slate-700">
+            <Store className="w-3.5 h-3.5 text-[#fcb424]" />
+            <span className="text-slate-500">Sold by:</span>
             {vendorSlug ? (
-              <Link to={`/vendors/${vendorSlug}`} className="font-bold text-indigo-600 hover:underline">
+              <Link to={`/vendors/${vendorSlug}`} className="font-bold text-[#0a0500] hover:underline">
                 {vendorName}
               </Link>
             ) : (
-              <span className="font-bold text-slate-800">{vendorName}</span>
+              <span className="font-bold text-[#0a0500]">{vendorName}</span>
             )}
           </div>
 
           {/* Title */}
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-[#0a0500] tracking-tight leading-tight">
             {product.title}
           </h1>
 
-          {/* Rating & SKU */}
-          <div className="flex items-center gap-4 text-xs">
-            <div className="flex items-center gap-1 bg-amber-50 text-amber-900 px-2.5 py-1 rounded-lg border border-amber-200/60 font-bold">
-              <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-              <span>{Number(product.rating || 5).toFixed(1)}</span>
-              <span className="text-slate-400 font-normal">({product.review_count || 0} reviews)</span>
+          {/* Rating & Reviews Bar */}
+          <div className="flex items-center gap-3 text-xs">
+            <div className="flex items-center text-[#ffcd05]">
+              {[...Array(5)].map((_, i) => (
+                <Star
+                  key={i}
+                  className={`w-4 h-4 ${
+                    i < Math.floor(Number(product.rating || 5)) ? 'fill-[#ffcd05]' : 'text-neutral-300 fill-transparent'
+                  }`}
+                />
+              ))}
             </div>
-            {product.sku && <span className="text-slate-400">SKU: {product.sku}</span>}
+            <span className="font-bold text-[#0a0500]">{Number(product.rating || 5).toFixed(1)}</span>
+            <span className="text-slate-400">·</span>
+            <button
+              onClick={() => setActiveTab('reviews')}
+              className="text-[#504e4a] hover:text-[#0a0500] font-semibold underline underline-offset-4"
+            >
+              {product.review_count || product.reviews?.length || 0} Customer Reviews
+            </button>
           </div>
 
-          {/* Price */}
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-baseline gap-3">
-            <span className="text-3xl font-extrabold text-slate-900">
-              ${Number(product.price).toFixed(2)}
+          {/* Modern Shop Price Block */}
+          <div className="flex items-baseline gap-3 py-2">
+            <span className="text-3xl sm:text-4xl font-black text-[#0a0500] tracking-tight">
+              ${priceNum.toFixed(2)}
             </span>
-            {product.compare_at_price && (
+            {isOnSale && compareNum && (
               <>
-                <span className="text-base text-slate-400 line-through">
-                  ${Number(product.compare_at_price).toFixed(2)}
+                <span className="text-xl text-neutral-400 line-through font-semibold">
+                  ${compareNum.toFixed(2)}
                 </span>
-                <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 font-bold text-xs">
-                  Save ${(Number(product.compare_at_price) - Number(product.price)).toFixed(2)}
+                <span className="px-2.5 py-1 rounded bg-amber-100 text-[#0a0500] font-black text-xs uppercase tracking-wide">
+                  Save ${(compareNum - priceNum).toFixed(2)}
                 </span>
               </>
             )}
           </div>
 
           {/* Short description */}
-          <p className="text-sm text-slate-600 leading-relaxed">
+          <p className="text-sm text-[#504e4a] leading-relaxed">
             {product.short_description || product.description}
           </p>
 
-          {/* Stock Availability */}
-          <div className="pt-2">
+          {/* Stock Indicator */}
+          <div className="pt-1">
             {product.inventory_count > 0 ? (
-              <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700">
-                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                <span>In Stock ({product.inventory_count} units available in vendor warehouse)</span>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-bold">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>In Stock ({product.inventory_count} units available)</span>
               </div>
             ) : (
-              <div className="flex items-center gap-2 text-xs font-semibold text-rose-600">
-                <AlertTriangle className="w-4 h-4" />
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-50 text-rose-700 text-xs font-bold">
+                <AlertTriangle className="w-3.5 h-3.5" />
                 <span>Currently Out of Stock</span>
               </div>
             )}
           </div>
 
-          {/* Quantity Selector & Purchase buttons */}
+          {/* Quantity Selector & Action Buttons */}
           {product.inventory_count > 0 && (
-            <div className="space-y-4 pt-4 border-t border-slate-200">
-              <div className="flex items-center gap-4">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Quantity</span>
-                <div className="inline-flex items-center border border-slate-300 rounded-xl bg-white shadow-sm overflow-hidden">
+            <div className="space-y-4 pt-4 border-t border-neutral-200">
+              <div className="flex flex-wrap items-center gap-4">
+                {/* Stepper */}
+                <div className="inline-flex items-center border-2 border-neutral-200 rounded-full bg-white overflow-hidden shadow-sm">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="px-3 py-1.5 text-slate-600 hover:bg-slate-100 font-bold"
+                    className="w-10 h-10 flex items-center justify-center text-slate-700 hover:bg-neutral-100 font-bold transition"
                   >
                     -
                   </button>
-                  <span className="px-4 py-1.5 text-sm font-bold text-slate-900">{quantity}</span>
+                  <span className="w-10 text-center text-sm font-black text-[#0a0500]">{quantity}</span>
                   <button
                     onClick={() => setQuantity(Math.min(product.inventory_count, quantity + 1))}
-                    className="px-3 py-1.5 text-slate-600 hover:bg-slate-100 font-bold"
+                    className="w-10 h-10 flex items-center justify-center text-slate-700 hover:bg-neutral-100 font-bold transition"
                   >
                     +
                   </button>
                 </div>
-              </div>
 
-              <div className="flex flex-col sm:flex-row gap-3">
+                {/* Add to Cart button (Blocksy Modern Shop yellow style) */}
                 <button
                   onClick={handleAddToCart}
                   disabled={cartLoading}
-                  className="flex-1 px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 transition"
+                  className="flex-1 min-w-[200px] px-8 py-3.5 bg-[#ffcd05] hover:bg-[#fcb424] text-[#0a0500] font-black uppercase tracking-wider text-xs rounded-full shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 disabled:opacity-60"
                 >
-                  <ShoppingCart className="w-5 h-5" />
+                  <ShoppingCart className="w-4 h-4 text-[#0a0500]" />
                   Add to Cart
                 </button>
+
+                {/* Buy Now button */}
                 <button
                   onClick={handleBuyNow}
                   disabled={cartLoading}
-                  className="px-6 py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl shadow transition"
+                  className="px-8 py-3.5 bg-[#0a0500] hover:bg-neutral-800 text-white font-bold uppercase tracking-wider text-xs rounded-full shadow-md hover:shadow-lg transition flex items-center justify-center gap-1.5 disabled:opacity-60"
                 >
-                  Instant Buy Now
+                  <Zap className="w-3.5 h-3.5 text-[#ffcd05]" />
+                  Buy Now
                 </button>
               </div>
             </div>
           )}
 
-          {/* Marketplace Guarantees */}
-          <div className="grid grid-cols-2 gap-3 pt-4 text-xs text-slate-500">
-            <div className="flex items-center gap-2">
-              <Truck className="w-4 h-4 text-indigo-500 flex-shrink-0" />
-              <span>Independent Vendor Shipping</span>
+          {/* Blocksy Modern Shop Guarantee Perks Box */}
+          <div className="p-5 rounded-2xl bg-neutral-50 border border-neutral-200/80 space-y-3.5 text-xs">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-[#ffcd05]/20 flex items-center justify-center flex-shrink-0 text-[#0a0500]">
+                <Truck className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="font-bold text-[#0a0500] block">Free Shipping Available</span>
+                <span className="text-slate-500">Free standard delivery on orders over $100</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-              <span>Escrow Buyer Protection</span>
+
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-[#ffcd05]/20 flex items-center justify-center flex-shrink-0 text-[#0a0500]">
+                <RotateCcw className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="font-bold text-[#0a0500] block">30-Day Money Back Guarantee</span>
+                <span className="text-slate-500">Return or exchange any unworn product within 30 days</span>
+              </div>
             </div>
+
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-[#ffcd05]/20 flex items-center justify-center flex-shrink-0 text-[#0a0500]">
+                <ShieldCheck className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="font-bold text-[#0a0500] block">Certified Independent Merchant</span>
+                <span className="text-slate-500">Authentic products protected by buyer escrow guarantees</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Product Meta */}
+          <div className="pt-2 border-t border-neutral-200 text-xs text-slate-500 space-y-1">
+            {product.sku && (
+              <div>
+                <span className="font-bold text-slate-700">SKU:</span> {product.sku}
+              </div>
+            )}
+            {categoryName && (
+              <div>
+                <span className="font-bold text-slate-700">Category:</span> {categoryName}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Tabs: Description vs Reviews */}
-      <div className="pt-8 border-t border-slate-200">
-        <div className="flex items-center gap-6 border-b border-slate-200 mb-6">
+      {/* Tabs: Description vs Specifications vs Reviews */}
+      <div className="pt-10 border-t border-neutral-200">
+        <div className="flex items-center gap-8 border-b border-neutral-200 mb-8 overflow-x-auto">
           <button
             onClick={() => setActiveTab('desc')}
-            className={`pb-3 text-sm font-bold tracking-tight transition border-b-2 ${
+            className={`pb-4 text-xs font-black uppercase tracking-wider transition border-b-2 whitespace-nowrap ${
               activeTab === 'desc'
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
+                ? 'border-[#0a0500] text-[#0a0500]'
+                : 'border-transparent text-slate-400 hover:text-slate-800'
             }`}
           >
-            Product Specification & Details
+            Description
+          </button>
+          <button
+            onClick={() => setActiveTab('specs')}
+            className={`pb-4 text-xs font-black uppercase tracking-wider transition border-b-2 whitespace-nowrap ${
+              activeTab === 'specs'
+                ? 'border-[#0a0500] text-[#0a0500]'
+                : 'border-transparent text-slate-400 hover:text-slate-800'
+            }`}
+          >
+            Specifications
           </button>
           <button
             onClick={() => setActiveTab('reviews')}
-            className={`pb-3 text-sm font-bold tracking-tight transition border-b-2 ${
+            className={`pb-4 text-xs font-black uppercase tracking-wider transition border-b-2 whitespace-nowrap ${
               activeTab === 'reviews'
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
+                ? 'border-[#0a0500] text-[#0a0500]'
+                : 'border-transparent text-slate-400 hover:text-slate-800'
             }`}
           >
-            Customer Reviews ({product.reviews?.length || product.review_count || 0})
+            Reviews ({product.reviews?.length || product.review_count || 0})
           </button>
         </div>
 
-        {activeTab === 'desc' ? (
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 space-y-4">
-            <h3 className="font-bold text-slate-900 text-base">Full Product Information</h3>
-            <div className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
+        {/* Tab 1: Description */}
+        {activeTab === 'desc' && (
+          <div className="bg-white border border-neutral-200/90 rounded-2xl p-6 sm:p-10 space-y-4 max-w-4xl">
+            <h3 className="font-black text-[#0a0500] uppercase text-sm tracking-wider">Product Story & Craftsmanship</h3>
+            <div className="text-sm text-[#504e4a] leading-relaxed whitespace-pre-line">
               {product.description || product.short_description}
             </div>
           </div>
-        ) : (
-          <div className="space-y-8">
+        )}
+
+        {/* Tab 2: Specifications */}
+        {activeTab === 'specs' && (
+          <div className="bg-white border border-neutral-200/90 rounded-2xl p-6 sm:p-10 max-w-4xl">
+            <h3 className="font-black text-[#0a0500] uppercase text-sm tracking-wider mb-6">Technical Details</h3>
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 text-sm divide-y sm:divide-y-0 divide-neutral-100">
+              <div className="flex justify-between py-2 border-b border-neutral-100">
+                <dt className="text-slate-500">Merchant Store</dt>
+                <dd className="font-bold text-[#0a0500]">{vendorName}</dd>
+              </div>
+              <div className="flex justify-between py-2 border-b border-neutral-100">
+                <dt className="text-slate-500">Category</dt>
+                <dd className="font-bold text-[#0a0500]">{categoryName || 'General Goods'}</dd>
+              </div>
+              <div className="flex justify-between py-2 border-b border-neutral-100">
+                <dt className="text-slate-500">SKU Identifier</dt>
+                <dd className="font-bold text-[#0a0500]">{product.sku || 'N/A'}</dd>
+              </div>
+              <div className="flex justify-between py-2 border-b border-neutral-100">
+                <dt className="text-slate-500">Inventory Status</dt>
+                <dd className="font-bold text-emerald-600">
+                  {product.inventory_count > 0 ? `${product.inventory_count} Available` : 'Backordered'}
+                </dd>
+              </div>
+              <div className="flex justify-between py-2 border-b border-neutral-100">
+                <dt className="text-slate-500">Dispatch Location</dt>
+                <dd className="font-bold text-[#0a0500]">Verified Merchant Hub</dd>
+              </div>
+              <div className="flex justify-between py-2 border-b border-neutral-100">
+                <dt className="text-slate-500">Warranty / Protection</dt>
+                <dd className="font-bold text-[#0a0500]">30 Days Comprehensive</dd>
+              </div>
+            </dl>
+          </div>
+        )}
+
+        {/* Tab 3: Reviews */}
+        {activeTab === 'reviews' && (
+          <div className="space-y-10 max-w-4xl">
             {/* Write a review box */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-sm">
-              <h3 className="font-bold text-slate-900 text-base mb-1">Write a Customer Review</h3>
-              <p className="text-xs text-slate-500 mb-6">Share your direct experience with this product and vendor.</p>
+            <div className="bg-white border border-neutral-200/90 rounded-2xl p-6 sm:p-8 shadow-sm">
+              <h3 className="font-black text-[#0a0500] uppercase text-sm tracking-wider mb-1">Leave A Customer Review</h3>
+              <p className="text-xs text-slate-500 mb-6">Your honest feedback directly informs creators and prospective buyers.</p>
 
               {reviewSuccess ? (
                 <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center gap-2">
-                  <Check className="w-5 h-5" />
-                  <span>Thank you! Your verified review has been posted and product ratings updated.</span>
+                  <Check className="w-5 h-5 text-emerald-600" />
+                  <span>Thank you! Your verified review has been submitted and published.</span>
                 </div>
               ) : (
-                <form onSubmit={handleReviewSubmit} className="space-y-4 max-w-xl">
+                <form onSubmit={handleReviewSubmit} className="space-y-5 max-w-xl">
                   {reviewError && (
-                    <div className="p-3 rounded-lg bg-rose-50 text-rose-700 text-xs font-medium">
+                    <div className="p-3 rounded-xl bg-rose-50 text-rose-700 text-xs font-medium">
                       {reviewError}
                     </div>
                   )}
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Rating</label>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Overall Rating</label>
                     <div className="flex items-center gap-2">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <button
                           type="button"
                           key={star}
                           onClick={() => setReviewRating(star)}
-                          className={`p-1 transition ${
-                            star <= reviewRating ? 'text-amber-400' : 'text-slate-200'
-                          }`}
+                          className="p-1 transition hover:scale-110"
                         >
-                          <Star className="w-6 h-6 fill-current" />
+                          <Star
+                            className={`w-6 h-6 ${
+                              star <= reviewRating ? 'fill-[#ffcd05] text-[#ffcd05]' : 'text-neutral-200 fill-transparent'
+                            }`}
+                          />
                         </button>
                       ))}
-                      <span className="text-xs font-bold text-slate-700 ml-2">{reviewRating} of 5 Stars</span>
+                      <span className="text-xs font-black text-[#0a0500] ml-2">{reviewRating} of 5 Stars</span>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Review Headline</label>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Review Headline</label>
                     <input
                       type="text"
                       required
-                      placeholder="e.g. Exceptional sound stage and battery life"
+                      placeholder="e.g. Exceptional durability and stunning craftsmanship"
                       value={reviewTitle}
                       onChange={(e) => setReviewTitle(e.target.value)}
-                      className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 focus:bg-white"
+                      className="w-full px-4 py-2.5 text-sm bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:border-[#0a0500] focus:bg-white transition"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Detailed Feedback</label>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Detailed Feedback</label>
                     <textarea
                       required
                       rows={3}
-                      placeholder="Share your thoughts on build quality, packaging, and fulfillment..."
+                      placeholder="Write your honest review on quality, fit, finish, and vendor communication..."
                       value={reviewComment}
                       onChange={(e) => setReviewComment(e.target.value)}
-                      className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 focus:bg-white"
+                      className="w-full px-4 py-2.5 text-sm bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:border-[#0a0500] focus:bg-white transition"
                     ></textarea>
                   </div>
 
                   <button
                     type="submit"
                     disabled={reviewSubmitting}
-                    className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-xs shadow-sm transition"
+                    className="px-8 py-3 bg-[#0a0500] hover:bg-neutral-800 text-white font-black uppercase tracking-wider text-xs rounded-full transition disabled:opacity-50"
                   >
-                    {reviewSubmitting ? 'Submitting Review...' : 'Submit Review'}
+                    {reviewSubmitting ? 'Posting Review...' : 'Submit Review'}
                   </button>
                 </form>
               )}
@@ -404,48 +554,68 @@ export const ProductDetailPage: React.FC = () => {
             <div className="space-y-4">
               {product.reviews && product.reviews.length > 0 ? (
                 product.reviews.map((rev) => (
-                  <div key={rev.id} className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-xs">
+                  <div key={rev.id} className="bg-white border border-neutral-200/90 rounded-2xl p-6 shadow-sm">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-[#ffcd05] text-[#0a0500] font-black flex items-center justify-center text-xs">
                           {rev.customer_name[0]?.toUpperCase() || 'U'}
                         </div>
                         <div>
-                          <span className="font-semibold text-sm text-slate-900 block leading-tight">
+                          <span className="font-bold text-sm text-[#0a0500] block leading-tight">
                             {rev.customer_name}
                           </span>
-                          <span className="text-[11px] text-emerald-600 font-medium">Verified Buyer</span>
+                          <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+                            <Check className="w-3 h-3" /> Verified Buyer
+                          </span>
                         </div>
                       </div>
 
-                      <div className="flex items-center text-amber-400">
+                      <div className="flex items-center text-[#ffcd05]">
                         {[...Array(5)].map((_, i) => (
                           <Star
                             key={i}
                             className={`w-3.5 h-3.5 ${
-                              i < rev.rating ? 'fill-current' : 'text-slate-200 fill-transparent'
+                              i < rev.rating ? 'fill-[#ffcd05]' : 'text-neutral-200 fill-transparent'
                             }`}
                           />
                         ))}
                       </div>
                     </div>
 
-                    {rev.title && <h4 className="font-bold text-sm text-slate-900 mt-2">{rev.title}</h4>}
-                    <p className="text-xs text-slate-600 mt-1 leading-relaxed">{rev.comment}</p>
-                    <span className="text-[10px] text-slate-400 block mt-2">
-                      {new Date(rev.created_at).toLocaleDateString()}
+                    {rev.title && <h4 className="font-bold text-sm text-[#0a0500] mt-1">{rev.title}</h4>}
+                    <p className="text-xs text-[#504e4a] mt-1.5 leading-relaxed">{rev.comment}</p>
+                    <span className="text-[11px] text-slate-400 block mt-3">
+                      {new Date(rev.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
                     </span>
                   </div>
                 ))
               ) : (
-                <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center text-slate-500 text-sm">
-                  No customer reviews yet. Be the first to review this product!
+                <div className="bg-white border border-neutral-200 rounded-2xl p-10 text-center text-slate-500 text-sm">
+                  No customer reviews yet. Be the first to share your thoughts on this product!
                 </div>
               )}
             </div>
           </div>
         )}
       </div>
+
+      {/* Related Products Section (Modern Shop 4-Col Grid) */}
+      {relatedProducts.length > 0 && (
+        <section className="pt-16 border-t border-neutral-200 space-y-8">
+          <div className="text-center space-y-2">
+            <span className="text-xs font-black uppercase tracking-widest text-[#fcb424]">Related Collection</span>
+            <h2 className="text-2xl sm:text-3xl font-black text-[#0a0500] uppercase tracking-tight">
+              You Might Also Like
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {relatedProducts.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 };

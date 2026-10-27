@@ -1,25 +1,26 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   ShoppingBag,
-  ShoppingCart,
   User as UserIcon,
   Store,
   ShieldCheck,
   Search,
   LogOut,
   Package,
-  Layers,
   Menu,
-  X
+  X,
+  Compass
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 
 export const Navbar: React.FC = () => {
   const { user, logout, isVendor, isAdmin } = useAuth();
-  const { cartCount } = useCart();
+  const { cartCount, cartSubtotal } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -29,122 +30,154 @@ export const Navbar: React.FC = () => {
     if (searchTerm.trim()) {
       navigate(`/products?search=${encodeURIComponent(searchTerm.trim())}`);
       setSearchTerm('');
+      setMobileMenuOpen(false);
     }
   };
 
+  const isActive = (path: string) => location.pathname === path;
+
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200">
-      {/* Main Navbar */}
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-4">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5 flex-shrink-0">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-md shadow-indigo-100">
+        <div className="flex items-center justify-between h-20 gap-4">
+          {/* Blocksy Modern Shop Brand Logo */}
+          <Link to="/" className="flex items-center gap-2 flex-shrink-0 group">
+            <div className="w-10 h-10 rounded-xl bg-slate-950 flex items-center justify-center text-amber-400 font-black shadow-sm group-hover:bg-amber-400 group-hover:text-slate-950 transition-colors">
               <ShoppingBag className="w-5 h-5" />
             </div>
-            <div>
-              <span className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 bg-clip-text text-transparent">
-                NexaMarket
+            <div className="leading-none">
+              <span className="text-xl sm:text-2xl font-black tracking-tight text-slate-950 uppercase font-sans">
+                MODERN<span className="text-amber-400">.</span>SHOP
               </span>
-              <span className="block text-[10px] font-semibold uppercase tracking-wider text-indigo-600 -mt-1">
-                Multi-Vendor
+              <span className="block text-[9px] font-bold uppercase tracking-widest text-slate-400 mt-0.5">
+                Multi-Vendor Commerce
               </span>
             </div>
           </Link>
 
-          {/* Search Bar */}
-          <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md mx-4">
-            <div className="relative w-full">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search products, brands, or vendors..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 text-sm bg-slate-100 hover:bg-slate-50 focus:bg-white border border-transparent focus:border-indigo-500 rounded-full outline-none transition"
-              />
-            </div>
-          </form>
-
-          {/* Navigation Links & Action Buttons */}
-          <div className="flex items-center gap-3">
-            <nav className="hidden lg:flex items-center gap-1 text-sm font-medium text-slate-700">
-              <Link to="/products" className="px-3 py-2 rounded-lg hover:text-indigo-600 hover:bg-slate-100 transition">
-                Shop Catalog
-              </Link>
-              <Link to="/vendors" className="px-3 py-2 rounded-lg hover:text-indigo-600 hover:bg-slate-100 transition">
-                Vendors
-              </Link>
-              <Link to="/contact" className="px-3 py-2 rounded-lg hover:text-indigo-600 hover:bg-slate-100 transition">
-                Contact Admin
-              </Link>
-              {isVendor && (
-                <Link
-                  to="/vendor/dashboard"
-                  className="px-3 py-2 rounded-lg text-amber-700 bg-amber-50 hover:bg-amber-100 font-semibold flex items-center gap-1.5 transition"
-                >
-                  <Store className="w-4 h-4" />
-                  Vendor Portal
-                </Link>
-              )}
-              {isAdmin && (
-                <Link
-                  to="/admin/dashboard"
-                  className="px-3 py-2 rounded-lg text-indigo-700 bg-indigo-50 hover:bg-indigo-100 font-semibold flex items-center gap-1.5 transition"
-                >
-                  <ShieldCheck className="w-4 h-4" />
-                  Admin Portal
-                </Link>
-              )}
-            </nav>
-
-            {/* Cart Icon */}
+          {/* Navigation Links (Blocksy Modern Shop Style: HOME, SHOP, PRODUCTS, VENDORS, CONTACT) */}
+          <nav className="hidden md:flex items-center gap-7 text-xs font-extrabold uppercase tracking-widest text-slate-700">
             <Link
-              to="/cart"
-              className="relative p-2.5 text-slate-700 hover:text-indigo-600 hover:bg-slate-100 rounded-full transition"
-              title="Shopping Cart"
+              to="/"
+              className={`transition hover:text-amber-500 ${
+                isActive('/') ? 'text-amber-500 border-b-2 border-amber-400 pb-1' : ''
+              }`}
             >
-              <ShoppingCart className="w-5 h-5" />
-              {cartCount > 0 && (
-                <span className="absolute top-1 right-1 w-5 h-5 bg-indigo-600 text-white text-[11px] font-bold rounded-full flex items-center justify-center shadow">
-                  {cartCount}
-                </span>
-              )}
+              HOME
+            </Link>
+            <Link
+              to="/products"
+              className={`transition hover:text-amber-500 ${
+                isActive('/products') ? 'text-amber-500 border-b-2 border-amber-400 pb-1' : ''
+              }`}
+            >
+              SHOP
+            </Link>
+            <Link
+              to="/vendors"
+              className={`transition hover:text-amber-500 ${
+                isActive('/vendors') ? 'text-amber-500 border-b-2 border-amber-400 pb-1' : ''
+              }`}
+            >
+              VENDORS
+            </Link>
+            <Link
+              to="/contact"
+              className={`transition hover:text-amber-500 ${
+                isActive('/contact') ? 'text-amber-500 border-b-2 border-amber-400 pb-1' : ''
+              }`}
+            >
+              CONTACT
             </Link>
 
-            {/* User Dropdown */}
+            {isVendor && (
+              <Link
+                to="/vendor/dashboard"
+                className="text-amber-700 bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition normal-case font-bold"
+              >
+                <Store className="w-3.5 h-3.5" />
+                Vendor Portal
+              </Link>
+            )}
+
+            {isAdmin && (
+              <Link
+                to="/admin/dashboard"
+                className="text-slate-950 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition normal-case font-bold"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                Admin
+              </Link>
+            )}
+          </nav>
+
+          {/* Right Action Area (Search, User, Cart) */}
+          <div className="flex items-center gap-3">
+            {/* Search Input */}
+            <form onSubmit={handleSearch} className="hidden xl:block relative w-56">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 text-xs bg-slate-100 focus:bg-white border border-transparent focus:border-amber-400 rounded-full outline-none transition"
+              />
+            </form>
+
+            {/* Shopping Cart Pill (Blocksy Modern Shop: Icon + Price) */}
+            <Link
+              to="/cart"
+              className="flex items-center gap-2.5 px-3 py-2 rounded-full bg-slate-50 hover:bg-amber-50/70 border border-slate-200 transition"
+              title="Shopping Cart"
+            >
+              <div className="relative">
+                <ShoppingBag className="w-4 h-4 text-slate-800" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1.5 -right-2 w-4 h-4 rounded-full bg-amber-400 text-slate-950 font-black text-[10px] flex items-center justify-center shadow-xs">
+                    {cartCount}
+                  </span>
+                )}
+              </div>
+              <span className="text-xs font-black text-slate-900 hidden sm:inline">
+                ${cartSubtotal.toFixed(2)}
+              </span>
+            </Link>
+
+            {/* User Account / Profile */}
             {user ? (
               <div className="relative">
                 <button
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex items-center gap-2 p-1.5 pl-2 pr-3 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-full transition"
+                  className="flex items-center gap-2 p-1.5 pl-2 pr-3 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-full transition"
                 >
-                  <div className="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">
-                    {user.first_name ? user.first_name[0] : user.email[0].toUpperCase()}
+                  <div className="w-6 h-6 rounded-full bg-slate-950 text-amber-400 flex items-center justify-center text-xs font-black overflow-hidden">
+                    {user.avatar_url ? (
+                      <img src={user.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      (user.first_name?.[0] || user.email[0]).toUpperCase()
+                    )}
                   </div>
-                  <span className="hidden sm:inline max-w-[100px] truncate">
+                  <span className="hidden sm:inline max-w-[90px] truncate">
                     {user.first_name || user.email.split('@')[0]}
-                  </span>
-                  <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-800">
-                    {user.role}
                   </span>
                 </button>
 
                 {userDropdownOpen && (
                   <div
-                    className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 text-sm text-slate-700"
+                    className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 text-xs text-slate-700"
                     onClick={() => setUserDropdownOpen(false)}
                   >
                     <div className="px-4 py-2 border-b border-slate-100">
-                      <p className="font-semibold text-slate-900 truncate">
-                        {user.first_name} {user.last_name}
+                      <p className="font-bold text-slate-900 truncate">
+                        {user.first_name ? `${user.first_name} ${user.last_name}` : user.username}
                       </p>
-                      <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                      <p className="text-[11px] text-slate-400 truncate">{user.email}</p>
                     </div>
 
                     <Link
                       to="/profile"
-                      className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 text-slate-700"
+                      className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 text-slate-800 font-semibold"
                     >
                       <UserIcon className="w-4 h-4 text-slate-400" />
                       Account & Profile
@@ -152,7 +185,7 @@ export const Navbar: React.FC = () => {
 
                     <Link
                       to="/orders"
-                      className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 text-slate-700"
+                      className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 text-slate-800 font-semibold"
                     >
                       <Package className="w-4 h-4 text-slate-400" />
                       My Orders
@@ -161,7 +194,7 @@ export const Navbar: React.FC = () => {
                     {isVendor && (
                       <Link
                         to="/vendor/dashboard"
-                        className="flex items-center gap-2.5 px-4 py-2 hover:bg-amber-50 text-amber-900"
+                        className="flex items-center gap-2.5 px-4 py-2 hover:bg-amber-50 text-amber-900 font-semibold"
                       >
                         <Store className="w-4 h-4 text-amber-600" />
                         Vendor Dashboard
@@ -171,17 +204,17 @@ export const Navbar: React.FC = () => {
                     {isAdmin && (
                       <Link
                         to="/admin/dashboard"
-                        className="flex items-center gap-2.5 px-4 py-2 hover:bg-indigo-50 text-indigo-900"
+                        className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-100 text-slate-900 font-semibold"
                       >
-                        <ShieldCheck className="w-4 h-4 text-indigo-600" />
-                        Platform Administration
+                        <ShieldCheck className="w-4 h-4 text-slate-950" />
+                        Admin Command Center
                       </Link>
                     )}
 
                     {!isVendor && !isAdmin && (
                       <Link
                         to="/register?role=vendor"
-                        className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 text-indigo-600 font-medium"
+                        className="flex items-center gap-2.5 px-4 py-2 hover:bg-amber-50 text-amber-800 font-semibold"
                       >
                         <Store className="w-4 h-4" />
                         Become a Vendor
@@ -192,7 +225,7 @@ export const Navbar: React.FC = () => {
 
                     <button
                       onClick={logout}
-                      className="w-full flex items-center gap-2.5 px-4 py-2 hover:bg-rose-50 text-rose-600 text-left"
+                      className="w-full flex items-center gap-2.5 px-4 py-2 text-rose-600 hover:bg-rose-50 font-semibold text-left"
                     >
                       <LogOut className="w-4 h-4" />
                       Sign Out
@@ -201,26 +234,18 @@ export const Navbar: React.FC = () => {
                 )}
               </div>
             ) : (
-              <div className="flex items-center gap-2">
-                <Link
-                  to="/login"
-                  className="px-3.5 py-1.5 text-sm font-semibold text-slate-700 hover:text-indigo-600 transition"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  to="/register"
-                  className="px-4 py-1.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition"
-                >
-                  Join
-                </Link>
-              </div>
+              <Link
+                to="/login"
+                className="px-4 py-2 bg-slate-950 hover:bg-slate-800 text-white font-bold rounded-full text-xs shadow-sm transition"
+              >
+                Sign In
+              </Link>
             )}
 
-            {/* Mobile Menu Button */}
+            {/* Mobile Hamburger Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+              className="md:hidden p-2 text-slate-700 hover:text-slate-950 focus:outline-none"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -228,70 +253,56 @@ export const Navbar: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile Drawer */}
+      {/* Mobile Menu Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-slate-200 bg-white px-4 py-3 space-y-2">
-          <form onSubmit={handleSearch} className="mb-3">
+        <div className="md:hidden border-t border-slate-200 bg-white px-5 py-4 space-y-3">
+          <form onSubmit={handleSearch}>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
                 placeholder="Search products..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-sm bg-slate-100 rounded-lg outline-none"
+                className="w-full pl-10 pr-4 py-2 text-xs bg-slate-100 rounded-full outline-none"
               />
             </div>
           </form>
 
-          <Link
-            to="/products"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block py-2 text-sm font-medium text-slate-800"
-          >
-            All Products
-          </Link>
-          <Link
-            to="/vendors"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block py-2 text-sm font-medium text-slate-800"
-          >
-            Explore Vendors
-          </Link>
-          <Link
-            to="/orders"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block py-2 text-sm font-medium text-slate-800"
-          >
-            My Orders
-          </Link>
-          {user && (
-            <Link
-              to="/profile"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-sm font-medium text-slate-800"
-            >
-              Account & Profile
+          <div className="flex flex-col space-y-2 pt-2 text-xs font-bold uppercase tracking-wider text-slate-800">
+            <Link to="/" onClick={() => setMobileMenuOpen(false)} className="py-2 hover:text-amber-500">
+              HOME
             </Link>
-          )}
-          {isVendor && (
-            <Link
-              to="/vendor/dashboard"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-sm font-semibold text-amber-700"
-            >
-              Vendor Dashboard
+            <Link to="/products" onClick={() => setMobileMenuOpen(false)} className="py-2 hover:text-amber-500">
+              SHOP
             </Link>
-          )}
-          {isAdmin && (
-            <Link
-              to="/admin/dashboard"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-sm font-semibold text-indigo-700"
-            >
-              Admin Dashboard
+            <Link to="/vendors" onClick={() => setMobileMenuOpen(false)} className="py-2 hover:text-amber-500">
+              VENDORS
             </Link>
-          )}
+            <Link to="/contact" onClick={() => setMobileMenuOpen(false)} className="py-2 hover:text-amber-500">
+              CONTACT
+            </Link>
+            {user && (
+              <>
+                <Link to="/orders" onClick={() => setMobileMenuOpen(false)} className="py-2 hover:text-amber-500">
+                  MY ORDERS
+                </Link>
+                <Link to="/profile" onClick={() => setMobileMenuOpen(false)} className="py-2 hover:text-amber-500">
+                  ACCOUNT & PROFILE
+                </Link>
+              </>
+            )}
+            {isVendor && (
+              <Link to="/vendor/dashboard" onClick={() => setMobileMenuOpen(false)} className="py-2 text-amber-600">
+                VENDOR DASHBOARD
+              </Link>
+            )}
+            {isAdmin && (
+              <Link to="/admin/dashboard" onClick={() => setMobileMenuOpen(false)} className="py-2 text-slate-900 font-extrabold">
+                ADMIN COMMAND CENTER
+              </Link>
+            )}
+          </div>
         </div>
       )}
     </header>

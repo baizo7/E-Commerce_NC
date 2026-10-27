@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Mail, Send, CheckCircle2, AlertCircle, HelpCircle, Store, MessageSquare, Phone, User } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Mail, Send, CheckCircle2, AlertCircle, HelpCircle, Store, MessageSquare, Phone, User, ChevronRight, ShieldCheck, Clock } from 'lucide-react';
 import { emailService } from '../../services/api';
 
 export const ContactPage: React.FC = () => {
@@ -41,90 +42,112 @@ export const ContactPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-12">
+      {/* Modern Shop Breadcrumb */}
+      <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+        <Link to="/" className="hover:text-[#0a0500] transition">
+          Home
+        </Link>
+        <ChevronRight className="w-3 h-3 text-slate-300" />
+        <span className="text-[#0a0500]">Contact Administration</span>
+      </nav>
+
       {/* Header */}
-      <div className="text-center space-y-2">
-        <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-semibold">
-          <Mail className="w-3.5 h-3.5" />
-          Direct Platform Communications
-        </div>
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-          Contact Platform Administration
+      <div className="text-center space-y-3 max-w-2xl mx-auto">
+        <span className="text-xs font-black uppercase tracking-widest text-[#fcb424]">Direct Support</span>
+        <h1 className="text-3xl sm:text-4xl font-black text-[#0a0500] uppercase tracking-tight">
+          Get in Touch With Us
         </h1>
-        <p className="text-sm text-slate-500 max-w-lg mx-auto">
-          Have questions about vendor onboarding, store approvals, orders, or partnership? Send a message directly to the platform team at <strong className="text-slate-800">sanjaisam63@gmail.com</strong>.
+        <p className="text-sm text-[#504e4a] leading-relaxed">
+          Questions regarding store onboarding, order fulfillment, dispute resolution, or partnership inquiries are routed straight to our platform administrator at <strong className="text-[#0a0500]">sanjaisam63@gmail.com</strong>.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-10 items-start">
         {/* Info Column */}
         <div className="space-y-6">
-          <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-sm space-y-4">
-            <h3 className="font-bold text-slate-900 text-sm">Platform Admin Contact</h3>
-            <div className="space-y-3 text-xs text-slate-600">
+          <div className="bg-white border border-neutral-200/90 rounded-2xl p-6 sm:p-8 shadow-sm space-y-5">
+            <h3 className="font-black text-[#0a0500] uppercase text-xs tracking-wider pb-3 border-b border-neutral-100">
+              Platform Contact Info
+            </h3>
+
+            <div className="space-y-4 text-xs text-[#504e4a]">
               <div>
-                <span className="text-slate-400 block mb-0.5">Primary Administrator Email</span>
-                <span className="font-semibold text-indigo-600 select-all">sanjaisam63@gmail.com</span>
+                <span className="text-slate-400 block mb-1 font-bold uppercase tracking-wider text-[10px]">Administrator Email</span>
+                <span className="font-bold text-[#0a0500] select-all">sanjaisam63@gmail.com</span>
               </div>
+
               <div>
-                <span className="text-slate-400 block mb-0.5">Inquiry Types Handled</span>
-                <ul className="list-disc list-inside space-y-1 text-slate-500">
-                  <li>Vendor Application & Approval</li>
-                  <li>Commission & Payout Inquiries</li>
-                  <li>Order & Dispute Resolution</li>
-                  <li>Technical Support & Feedback</li>
+                <span className="text-slate-400 block mb-1 font-bold uppercase tracking-wider text-[10px]">Response SLA</span>
+                <div className="flex items-center gap-1.5 font-bold text-slate-700">
+                  <Clock className="w-3.5 h-3.5 text-[#fcb424]" />
+                  <span>Within 24 business hours</span>
+                </div>
+              </div>
+
+              <div>
+                <span className="text-slate-400 block mb-1 font-bold uppercase tracking-wider text-[10px]">Direct Assistance For</span>
+                <ul className="space-y-1.5 text-slate-600">
+                  <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#ffcd05]"></span>
+                    <span>Merchant Onboarding & Audits</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#ffcd05]"></span>
+                    <span>Vendor Commission & Payouts</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#ffcd05]"></span>
+                    <span>Dispute & Escrow Resolution</span>
+                  </li>
                 </ul>
-              </div>
-              <div>
-                <span className="text-slate-400 block mb-0.5">Response Time</span>
-                <span className="text-slate-700 font-medium">Within 24 business hours</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-indigo-50/60 border border-indigo-100 rounded-2xl p-5 text-xs text-indigo-950 space-y-2">
-            <div className="flex items-center gap-2 font-bold text-indigo-900">
-              <Store className="w-4 h-4 text-indigo-600" />
-              Vendor Registration Questions?
+          <div className="bg-[#0a0500] text-white rounded-2xl p-6 shadow-md space-y-3">
+            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#ffcd05]">
+              <Store className="w-4 h-4" />
+              Vendor Registration
             </div>
-            <p className="text-indigo-800/80 leading-relaxed">
-              If you have already registered a store, all alerts are automatically routed to <strong>sanjaisam63@gmail.com</strong> for administrator review and activation.
+            <p className="text-xs text-neutral-300 leading-relaxed">
+              Applying to become a merchant? All submissions trigger instant notification emails to <strong>sanjaisam63@gmail.com</strong> for swift credential and business verification.
             </p>
           </div>
         </div>
 
         {/* Contact Form */}
-        <div className="md:col-span-2 bg-white border border-slate-200/90 rounded-2xl p-8 shadow-sm">
+        <div className="md:col-span-2 bg-white border border-neutral-200/90 rounded-2xl p-6 sm:p-10 shadow-sm">
           {success ? (
-            <div className="py-12 text-center space-y-4">
-              <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-sm">
+            <div className="py-16 text-center space-y-4">
+              <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-sm">
                 <CheckCircle2 className="w-8 h-8" />
               </div>
-              <h2 className="text-xl font-bold text-slate-900">Inquiry Routed Successfully!</h2>
-              <p className="text-sm text-slate-500 max-w-md mx-auto">
-                Your message has been dispatched to the platform admin (<strong className="text-slate-700">sanjaisam63@gmail.com</strong>). An automated confirmation email has also been logged.
+              <h2 className="text-2xl font-black text-[#0a0500] uppercase tracking-wide">Inquiry Sent Successfully!</h2>
+              <p className="text-sm text-[#504e4a] max-w-md mx-auto leading-relaxed">
+                Your message has been dispatched via live SMTP to the platform administration (<strong className="text-[#0a0500]">sanjaisam63@gmail.com</strong>). An automatic confirmation receipt has been issued.
               </p>
               <button
                 onClick={() => setSuccess(false)}
-                className="mt-4 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-xs transition"
+                className="mt-6 px-8 py-3 bg-[#0a0500] hover:bg-neutral-800 text-white font-black uppercase tracking-wider text-xs rounded-full shadow-md transition"
               >
-                Send Another Inquiry
+                Send Another Message
               </button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-5">
               {error && (
-                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-600" />
                   <span>{error}</span>
                 </div>
               )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5 flex items-center gap-1.5">
                     <User className="w-3.5 h-3.5 text-slate-400" />
-                    Your Full Name *
+                    Full Name *
                   </label>
                   <input
                     type="text"
@@ -132,14 +155,14 @@ export const ContactPage: React.FC = () => {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="e.g. Alex Morgan"
-                    className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 focus:bg-white transition"
+                    className="w-full px-4 py-2.5 text-xs bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:border-[#0a0500] focus:bg-white transition"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5 flex items-center gap-1.5">
                     <Mail className="w-3.5 h-3.5 text-slate-400" />
-                    Your Email Address *
+                    Email Address *
                   </label>
                   <input
                     type="email"
@@ -147,14 +170,14 @@ export const ContactPage: React.FC = () => {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="e.g. alex@example.com"
-                    className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 focus:bg-white transition"
+                    className="w-full px-4 py-2.5 text-xs bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:border-[#0a0500] focus:bg-white transition"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5 flex items-center gap-1.5">
                     <Phone className="w-3.5 h-3.5 text-slate-400" />
                     Phone Number (Optional)
                   </label>
@@ -163,19 +186,19 @@ export const ContactPage: React.FC = () => {
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     placeholder="e.g. +1 555-0199"
-                    className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 focus:bg-white transition"
+                    className="w-full px-4 py-2.5 text-xs bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:border-[#0a0500] focus:bg-white transition"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5 flex items-center gap-1.5">
                     <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
-                    Inquiry Type *
+                    Inquiry Topic *
                   </label>
                   <select
                     value={formData.query_type}
                     onChange={(e) => setFormData({ ...formData, query_type: e.target.value })}
-                    className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 focus:bg-white transition"
+                    className="w-full px-4 py-2.5 text-xs bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:border-[#0a0500] focus:bg-white transition font-medium"
                   >
                     <option value="VENDOR_QUERY">Vendor Registration & Partnership</option>
                     <option value="CUSTOMER_SUPPORT">Customer Support</option>
@@ -186,7 +209,7 @@ export const ContactPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5 flex items-center gap-1.5">
                   <MessageSquare className="w-3.5 h-3.5 text-slate-400" />
                   Subject *
                 </label>
@@ -195,13 +218,13 @@ export const ContactPage: React.FC = () => {
                   required
                   value={formData.subject}
                   onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                  placeholder="e.g. Question regarding vendor approval and inventory sync"
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 focus:bg-white transition"
+                  placeholder="e.g. Inquiry regarding store approval and product sync"
+                  className="w-full px-4 py-2.5 text-xs bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:border-[#0a0500] focus:bg-white transition"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
                   Your Message *
                 </label>
                 <textarea
@@ -210,24 +233,24 @@ export const ContactPage: React.FC = () => {
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                   placeholder="Provide detailed description of your inquiry, store name, or order number..."
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 focus:bg-white transition resize-none"
+                  className="w-full px-4 py-2.5 text-xs bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:border-[#0a0500] focus:bg-white transition resize-none"
                 ></textarea>
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow flex items-center justify-center gap-2 transition disabled:opacity-50"
+                className="w-full py-4 bg-[#ffcd05] hover:bg-[#fcb424] text-[#0a0500] font-black uppercase tracking-wider text-xs rounded-full shadow-md hover:shadow-lg flex items-center justify-center gap-2 transition disabled:opacity-50"
               >
                 {loading ? (
                   <>
-                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                    Routing to Admin...
+                    <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"></span>
+                    <span>Delivering via Live SMTP...</span>
                   </>
                 ) : (
                   <>
-                    <Send className="w-4 h-4" />
-                    Submit Inquiry to sanjaisam63@gmail.com
+                    <Send className="w-4 h-4 text-[#0a0500]" />
+                    <span>Send Message to sanjaisam63@gmail.com</span>
                   </>
                 )}
               </button>

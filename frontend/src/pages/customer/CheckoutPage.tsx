@@ -4,17 +4,13 @@ import {
   ShieldCheck,
   CreditCard,
   Truck,
-  ArrowRight,
   Store,
   Lock,
-  CheckCircle2,
   AlertCircle,
-  QrCode,
   Zap,
   RefreshCw,
   ExternalLink,
-  ChevronRight,
-  HelpCircle
+  ChevronRight
 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
@@ -47,11 +43,14 @@ export const CheckoutPage: React.FC = () => {
 
   if (!cart?.items?.length && !activeOrder) {
     return (
-      <div className="max-w-md mx-auto py-20 text-center">
-        <h2 className="text-xl font-bold text-slate-800">Your cart is empty</h2>
-        <p className="text-xs text-slate-500 mt-1">Discover vendor products and add items to begin checkout.</p>
-        <Link to="/products" className="mt-4 inline-block text-indigo-600 font-semibold text-sm">
-          Browse items &rarr;
+      <div className="max-w-md mx-auto py-24 text-center px-4">
+        <h2 className="text-2xl font-black text-[#0a0500] uppercase tracking-wide">Your Bag is Empty</h2>
+        <p className="text-sm text-[#504e4a] mt-2">Select items from our verified merchants before checking out.</p>
+        <Link
+          to="/products"
+          className="mt-6 inline-block px-8 py-3.5 bg-[#0a0500] hover:bg-neutral-800 text-white font-black uppercase tracking-wider text-xs rounded-full shadow-md transition"
+        >
+          Return to Shop
         </Link>
       </div>
     );
@@ -128,7 +127,6 @@ export const CheckoutPage: React.FC = () => {
       return;
     }
 
-    // In sandbox mode or when using test/placeholder keys, launch interactive sandbox modal
     const isSandboxEnv =
       rzpData.is_sandbox ||
       rzpData.razorpay_order_id.startsWith('order_test_') ||
@@ -140,7 +138,6 @@ export const CheckoutPage: React.FC = () => {
       return;
     }
 
-    // Attempt official SDK modal if live/registered keys are in use
     const loaded = await loadRazorpaySDK();
     if (!loaded || !(window as any).Razorpay) {
       setIsSandboxModalOpen(true);
@@ -164,7 +161,7 @@ export const CheckoutPage: React.FC = () => {
         order_number: order.order_number,
       },
       theme: {
-        color: '#4f46e5',
+        color: '#0a0500',
       },
       handler: async (response: any) => {
         setVerifying(true);
@@ -238,7 +235,6 @@ export const CheckoutPage: React.FC = () => {
         setActiveOrder(order);
         await launchPayment(order);
       } else {
-        // Cash on delivery
         const order = await orderService.checkout(formData);
         await refreshCart();
         navigate(`/order-success/${order.order_number}`, { state: { order } });
@@ -255,7 +251,7 @@ export const CheckoutPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-10">
       {/* Sandbox Payment Modal */}
       {activeOrder && (
         <RazorpaySandboxModal
@@ -267,10 +263,27 @@ export const CheckoutPage: React.FC = () => {
         />
       )}
 
+      {/* Modern Shop Breadcrumb */}
+      <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+        <Link to="/" className="hover:text-[#0a0500] transition">
+          Home
+        </Link>
+        <ChevronRight className="w-3 h-3 text-slate-300" />
+        <Link to="/cart" className="hover:text-[#0a0500] transition">
+          Shopping Bag
+        </Link>
+        <ChevronRight className="w-3 h-3 text-slate-300" />
+        <span className="text-[#0a0500]">Checkout</span>
+      </nav>
+
+      {/* Header */}
       <div>
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Checkout</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Production Payment Gateway with Atomic Stock Reservation and Bank-Grade Cryptographic Verification.
+        <span className="text-xs font-black uppercase tracking-widest text-[#fcb424]">Fast & Secure</span>
+        <h1 className="text-3xl sm:text-4xl font-black text-[#0a0500] uppercase tracking-tight mt-1">
+          Finalize Your Order
+        </h1>
+        <p className="text-xs text-[#504e4a] mt-1 font-medium">
+          Bank-grade encryption, verified multi-vendor fulfillment, and buyer protection.
         </p>
       </div>
 
@@ -278,7 +291,7 @@ export const CheckoutPage: React.FC = () => {
         <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-sm flex items-start gap-3">
           <AlertCircle className="w-5 h-5 flex-shrink-0 text-rose-600 mt-0.5" />
           <div className="flex-1">
-            <h4 className="font-bold">Payment Status Notice</h4>
+            <h4 className="font-bold">Payment Notice</h4>
             <p className="text-xs text-rose-700 mt-0.5 leading-relaxed">{errorMessage}</p>
           </div>
         </div>
@@ -286,14 +299,14 @@ export const CheckoutPage: React.FC = () => {
 
       {/* Re-open Gateway Action for Pending Orders */}
       {activeOrder && activeOrder.razorpay_payload && (
-        <div className="p-5 rounded-2xl bg-indigo-50/90 border-2 border-indigo-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+        <div className="p-6 rounded-2xl bg-amber-50 border-2 border-amber-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-              <Zap className="w-4 h-4 text-indigo-600" />
-              Order #{activeOrder.order_number} is Awaiting Payment
+            <h3 className="font-black text-[#0a0500] uppercase text-sm flex items-center gap-2">
+              <Zap className="w-4 h-4 text-[#fcb424]" />
+              Order #{activeOrder.order_number} Awaiting Payment
             </h3>
-            <p className="text-xs text-slate-600 mt-0.5">
-              Stock reserved for this order. Complete payment through the Razorpay gateway to generate merchant package dispatches.
+            <p className="text-xs text-[#504e4a] mt-1">
+              Your items have been safely reserved. Complete payment to initiate merchant dispatch.
             </p>
           </div>
 
@@ -301,16 +314,16 @@ export const CheckoutPage: React.FC = () => {
             type="button"
             disabled={verifying}
             onClick={() => launchPayment(activeOrder)}
-            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-200 flex items-center gap-2 transition disabled:opacity-50"
+            className="px-6 py-3 bg-[#0a0500] hover:bg-neutral-800 text-white font-black uppercase tracking-wider text-xs rounded-full shadow-md flex items-center gap-2 transition disabled:opacity-50"
           >
             {verifying ? (
               <>
-                <RefreshCw className="w-4 h-4 animate-spin" />
+                <RefreshCw className="w-4 h-4 animate-spin text-[#ffcd05]" />
                 Verifying Signature...
               </>
             ) : (
               <>
-                <ExternalLink className="w-4 h-4" />
+                <ExternalLink className="w-4 h-4 text-[#ffcd05]" />
                 Re-open Payment Gateway
               </>
             )}
@@ -318,115 +331,115 @@ export const CheckoutPage: React.FC = () => {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
         {/* Left Column: Shipping & Payment details */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-8">
           {/* Shipping Address */}
-          <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-sm space-y-4">
-            <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-              <Truck className="w-5 h-5 text-indigo-600" />
-              <h2 className="font-bold text-slate-900 text-base">Shipping Destination</h2>
+          <div className="bg-white border border-neutral-200/90 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
+            <div className="flex items-center gap-2.5 pb-4 border-b border-neutral-100">
+              <Truck className="w-5 h-5 text-[#fcb424]" />
+              <h2 className="font-black text-[#0a0500] uppercase text-sm tracking-wider">Shipping Address</h2>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Full Name</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Recipient Full Name</label>
                 <input
                   type="text"
                   required
                   value={formData.shipping_name}
                   onChange={(e) => setFormData({ ...formData, shipping_name: e.target.value })}
-                  className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 focus:bg-white"
+                  className="w-full px-4 py-2.5 text-sm bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:border-[#0a0500] focus:bg-white transition"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Email Address</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Email Address</label>
                 <input
                   type="email"
                   required
                   value={formData.shipping_email}
                   onChange={(e) => setFormData({ ...formData, shipping_email: e.target.value })}
-                  className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 focus:bg-white"
+                  className="w-full px-4 py-2.5 text-sm bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:border-[#0a0500] focus:bg-white transition"
                 />
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Street Address</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Street Address</label>
                 <input
                   type="text"
                   required
                   value={formData.shipping_address}
                   onChange={(e) => setFormData({ ...formData, shipping_address: e.target.value })}
-                  className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 focus:bg-white"
+                  className="w-full px-4 py-2.5 text-sm bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:border-[#0a0500] focus:bg-white transition"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">City</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">City</label>
                 <input
                   type="text"
                   required
                   value={formData.shipping_city}
                   onChange={(e) => setFormData({ ...formData, shipping_city: e.target.value })}
-                  className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 focus:bg-white"
+                  className="w-full px-4 py-2.5 text-sm bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:border-[#0a0500] focus:bg-white transition"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">State / Province</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">State / Region</label>
                 <input
                   type="text"
                   value={formData.shipping_state}
                   onChange={(e) => setFormData({ ...formData, shipping_state: e.target.value })}
-                  className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 focus:bg-white"
+                  className="w-full px-4 py-2.5 text-sm bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:border-[#0a0500] focus:bg-white transition"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Postal / ZIP Code</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Postal / ZIP Code</label>
                 <input
                   type="text"
                   required
                   value={formData.shipping_postal_code}
                   onChange={(e) => setFormData({ ...formData, shipping_postal_code: e.target.value })}
-                  className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 focus:bg-white"
+                  className="w-full px-4 py-2.5 text-sm bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:border-[#0a0500] focus:bg-white transition"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Phone Number</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Phone Number</label>
                 <input
                   type="tel"
                   required
                   value={formData.shipping_phone}
                   onChange={(e) => setFormData({ ...formData, shipping_phone: e.target.value })}
-                  className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 focus:bg-white"
+                  className="w-full px-4 py-2.5 text-sm bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:border-[#0a0500] focus:bg-white transition"
                 />
               </div>
             </div>
           </div>
 
           {/* Payment Method Selector */}
-          <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-sm space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-indigo-600" />
-                <h2 className="font-bold text-slate-900 text-base">Payment Method</h2>
+          <div className="bg-white border border-neutral-200/90 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
+            <div className="flex items-center justify-between pb-4 border-b border-neutral-100">
+              <div className="flex items-center gap-2.5">
+                <CreditCard className="w-5 h-5 text-[#fcb424]" />
+                <h2 className="font-black text-[#0a0500] uppercase text-sm tracking-wider">Select Payment Method</h2>
               </div>
-              <span className="text-xs bg-emerald-50 text-emerald-700 font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+              <span className="text-[10px] bg-emerald-50 text-emerald-800 font-black uppercase tracking-wider px-3 py-1 rounded-full flex items-center gap-1">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                PCI-DSS Level 1 Encrypted
+                PCI-DSS Encrypted
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Option 1: Razorpay Gateway */}
               <label
-                className={`p-4 border-2 rounded-xl cursor-pointer flex flex-col justify-between transition relative ${
+                className={`p-5 border-2 rounded-2xl cursor-pointer flex flex-col justify-between transition relative ${
                   formData.payment_method === 'RAZORPAY'
-                    ? 'border-indigo-600 bg-indigo-50/60 text-indigo-950 shadow-sm'
-                    : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'
+                    ? 'border-[#0a0500] bg-neutral-50 shadow-sm'
+                    : 'border-neutral-200 hover:border-neutral-300 bg-white'
                 }`}
               >
                 <input
@@ -439,26 +452,26 @@ export const CheckoutPage: React.FC = () => {
                 />
                 <div className="flex items-start justify-between">
                   <div>
-                    <span className="text-sm font-bold block flex items-center gap-1.5">
-                      Razorpay Gateway
-                      <span className="text-[10px] bg-indigo-600 text-white font-bold px-1.5 py-0.5 rounded">
-                        Live & Sandbox
+                    <span className="text-xs font-black uppercase tracking-wider text-[#0a0500] flex items-center gap-2">
+                      Online Gateway
+                      <span className="text-[9px] bg-[#ffcd05] text-[#0a0500] font-black px-2 py-0.5 rounded">
+                        RECOMMENDED
                       </span>
                     </span>
-                    <span className="text-xs text-slate-500 mt-1.5 block leading-relaxed">
-                      Credit/Debit Cards, UPI (GPay/PhonePe), Netbanking (50+ Banks), and Wallets.
+                    <span className="text-xs text-[#504e4a] mt-2 block leading-relaxed">
+                      Instant checkout with Credit/Debit Cards, UPI (GPay/PhonePe), Netbanking, and Wallets.
                     </span>
                   </div>
-                  <Zap className={`w-5 h-5 ${formData.payment_method === 'RAZORPAY' ? 'text-indigo-600' : 'text-slate-400'}`} />
+                  <Zap className={`w-5 h-5 flex-shrink-0 ${formData.payment_method === 'RAZORPAY' ? 'text-[#fcb424]' : 'text-neutral-300'}`} />
                 </div>
               </label>
 
               {/* Option 2: Cash on Delivery */}
               <label
-                className={`p-4 border-2 rounded-xl cursor-pointer flex flex-col justify-between transition ${
+                className={`p-5 border-2 rounded-2xl cursor-pointer flex flex-col justify-between transition ${
                   formData.payment_method === 'CASH_ON_DELIVERY'
-                    ? 'border-indigo-600 bg-indigo-50/60 text-indigo-950 shadow-sm'
-                    : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'
+                    ? 'border-[#0a0500] bg-neutral-50 shadow-sm'
+                    : 'border-neutral-200 hover:border-neutral-300 bg-white'
                 }`}
               >
                 <input
@@ -471,89 +484,82 @@ export const CheckoutPage: React.FC = () => {
                 />
                 <div className="flex items-start justify-between">
                   <div>
-                    <span className="text-sm font-bold block">Cash on Delivery</span>
-                    <span className="text-xs text-slate-500 mt-1.5 block leading-relaxed">
-                      Pay upon delivery arrival to merchant couriers.
+                    <span className="text-xs font-black uppercase tracking-wider text-[#0a0500]">
+                      Cash On Delivery
+                    </span>
+                    <span className="text-xs text-[#504e4a] mt-2 block leading-relaxed">
+                      Pay cash directly to the courier agent upon arrival of your package.
                     </span>
                   </div>
-                  <Truck className={`w-5 h-5 ${formData.payment_method === 'CASH_ON_DELIVERY' ? 'text-indigo-600' : 'text-slate-400'}`} />
+                  <Truck className={`w-5 h-5 flex-shrink-0 ${formData.payment_method === 'CASH_ON_DELIVERY' ? 'text-[#fcb424]' : 'text-neutral-300'}`} />
                 </div>
               </label>
             </div>
-
-            {formData.payment_method === 'RAZORPAY' && (
-              <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl flex items-start gap-2.5 text-xs text-slate-600">
-                <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-                <p>
-                  Clicking <strong>"Proceed to Payment"</strong> opens the secure Razorpay Gateway modal. Card numbers, UPI PINs, and bank logins are handled directly through bank servers and never touch marketplace disks.
-                </p>
-              </div>
-            )}
           </div>
         </div>
 
-        {/* Right Column: Multi-Vendor Order Breakdown & Place Order */}
+        {/* Right Column: Order Summary & Checkout Trigger */}
         <div className="space-y-6">
-          <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-sm space-y-4">
-            <h3 className="font-bold text-slate-900 text-base">Multi-Vendor Fulfillment</h3>
-            <p className="text-xs text-slate-500">
-              Your order contains items from the following independent stores and will be automatically split into individual merchant sub-orders:
-            </p>
+          <div className="bg-white border border-neutral-200/90 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6 sticky top-24">
+            <h3 className="font-black text-[#0a0500] uppercase text-sm tracking-wider pb-3 border-b border-neutral-100">
+              Order Breakdown
+            </h3>
 
             {cart?.vendors_involved && cart.vendors_involved.length > 0 && (
-              <div className="space-y-2 pt-2">
+              <div className="space-y-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Merchant Packages:</span>
                 {cart.vendors_involved.map((v) => (
                   <div
                     key={v.id}
-                    className="p-3 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-between text-xs"
+                    className="p-3 bg-neutral-50 border border-neutral-100 rounded-xl flex items-center justify-between text-xs"
                   >
                     <div className="flex items-center gap-2">
-                      <Store className="w-3.5 h-3.5 text-indigo-600" />
-                      <span className="font-semibold text-slate-800">{v.store_name}</span>
+                      <Store className="w-3.5 h-3.5 text-[#fcb424]" />
+                      <span className="font-bold text-[#0a0500]">{v.store_name}</span>
                     </div>
-                    <span className="font-bold text-slate-900">${v.subtotal.toFixed(2)}</span>
+                    <span className="font-black text-[#0a0500]">${v.subtotal.toFixed(2)}</span>
                   </div>
                 ))}
               </div>
             )}
 
-            <div className="pt-4 border-t border-slate-100 space-y-2 text-xs text-slate-600">
+            <div className="pt-4 border-t border-neutral-100 space-y-3 text-xs text-[#504e4a]">
               <div className="flex justify-between">
                 <span>Items Subtotal</span>
-                <span className="font-semibold text-slate-900">${cartSubtotal.toFixed(2)}</span>
+                <span className="font-bold text-[#0a0500]">${cartSubtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
-                <span>Combined Shipping</span>
-                <span>{shippingEstimate === 0 ? <strong className="text-emerald-600">FREE</strong> : `$${shippingEstimate.toFixed(2)}`}</span>
+                <span>Shipping</span>
+                <span>{shippingEstimate === 0 ? <strong className="text-emerald-700 font-bold uppercase">FREE</strong> : `$${shippingEstimate.toFixed(2)}`}</span>
               </div>
               <div className="flex justify-between">
                 <span>Tax (5%)</span>
-                <span className="font-semibold text-slate-900">${taxEstimate.toFixed(2)}</span>
+                <span className="font-bold text-[#0a0500]">${taxEstimate.toFixed(2)}</span>
               </div>
-              <div className="pt-2 border-t border-slate-100 flex justify-between items-baseline text-sm">
-                <span className="font-bold text-slate-900">Total to Pay</span>
-                <span className="text-2xl font-extrabold text-indigo-600">${grandTotal.toFixed(2)}</span>
+              <div className="pt-4 border-t border-neutral-200 flex justify-between items-baseline">
+                <span className="font-black uppercase tracking-wider text-sm text-[#0a0500]">Total Due</span>
+                <span className="text-2xl font-black text-[#0a0500]">${grandTotal.toFixed(2)}</span>
               </div>
             </div>
 
             <button
               type="submit"
               disabled={submitting || verifying}
-              className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 transition disabled:opacity-50 text-sm"
+              className="w-full py-4 bg-[#ffcd05] hover:bg-[#fcb424] text-[#0a0500] font-black uppercase tracking-wider text-xs rounded-full shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              <Lock className="w-4 h-4" />
+              <Lock className="w-4 h-4 text-[#0a0500]" />
               {submitting
-                ? 'Reserving Stock & Initializing Gateway...'
+                ? 'Reserving Stock & Initializing...'
                 : verifying
-                ? 'Verifying Cryptographic Signature...'
+                ? 'Verifying Security Signature...'
                 : formData.payment_method === 'RAZORPAY'
                 ? `Proceed to Payment ($${grandTotal.toFixed(2)})`
                 : `Place Order ($${grandTotal.toFixed(2)})`}
             </button>
 
-            <div className="flex items-center justify-center gap-2 text-xs text-slate-400 pt-1">
-              <ShieldCheck className="w-4 h-4 text-emerald-500" />
-              <span>Transactional Atomic Inventory Guarantee</span>
+            <div className="flex items-center justify-center gap-2 text-[11px] text-slate-400 pt-1">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <span>Direct Bank Escrow & Atomic Stock Allocation</span>
             </div>
           </div>
         </div>
