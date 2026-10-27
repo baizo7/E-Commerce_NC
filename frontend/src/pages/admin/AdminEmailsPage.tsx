@@ -31,6 +31,7 @@ export const AdminEmailsPage: React.FC = () => {
   const [selectedEmail, setSelectedEmail] = useState<EmailLog | null>(null);
   const [resendingId, setResendingId] = useState<number | null>(null);
   const [resendNotice, setResendNotice] = useState<string | null>(null);
+  const [showSmtpGuide, setShowSmtpGuide] = useState<boolean>(false);
 
   const fetchLogs = async () => {
     try {
@@ -112,6 +113,48 @@ export const AdminEmailsPage: React.FC = () => {
       </div>
 
       {/* Diagnostic & Configuration Card */}
+      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-xs text-amber-900 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-amber-700 flex-shrink-0" />
+            <span className="font-bold text-amber-950">Active Admin Recipient: <span className="font-mono text-indigo-700 bg-white px-2 py-0.5 rounded border border-amber-200">producte23@gmail.com</span></span>
+          </div>
+          <button
+            onClick={() => setShowSmtpGuide(!showSmtpGuide)}
+            className="text-indigo-600 hover:text-indigo-800 font-semibold underline text-left"
+          >
+            {showSmtpGuide ? 'Hide Live SMTP Setup Instructions' : 'How to receive real emails in Gmail inbox?'}
+          </button>
+        </div>
+        <p className="text-amber-800 leading-relaxed">
+          <strong>Why emails are not reaching your physical inbox:</strong> By default, Django uses <code>console.EmailBackend</code> (safe local sandbox mode) so you don't need external email credentials during development. All vendor registrations, inquiries, and orders are 100% captured and viewable below in this dashboard. To deliver real messages to <strong>producte23@gmail.com</strong>, a Google App Password is required.
+        </p>
+        {showSmtpGuide && (
+          <div className="mt-3 pt-3 border-t border-amber-200 bg-white/80 p-4 rounded-xl space-y-2 text-slate-700">
+            <h4 className="font-bold text-slate-900">3-Step Gmail SMTP Activation Guide:</h4>
+            <ol className="list-decimal list-inside space-y-1.5 text-xs leading-relaxed">
+              <li>Open your Google Account Security: <a href="https://myaccount.google.com/security" target="_blank" rel="noreferrer" className="text-indigo-600 underline font-semibold">myaccount.google.com/security</a> and make sure <strong>2-Step Verification</strong> is ON.</li>
+              <li>Go to <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noreferrer" className="text-indigo-600 underline font-semibold">myaccount.google.com/apppasswords</a>, generate a 16-character App Password (app name: <em>NexaMarket</em>).</li>
+              <li>Open <code>backend/.env</code> and set:
+                <pre className="mt-1.5 p-2.5 bg-slate-900 text-slate-100 rounded-lg font-mono text-[11px] overflow-x-auto">
+{`EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=producte23@gmail.com
+EMAIL_HOST_PASSWORD=your_16_digit_app_password
+ADMIN_EMAIL=producte23@gmail.com
+DEFAULT_FROM_EMAIL=NexaMarket <producte23@gmail.com>`}
+                </pre>
+              </li>
+            </ol>
+            <p className="text-[11px] text-slate-500 italic mt-1">
+              Note: Standard Gmail login passwords will fail with <code>smtplib.SMTPServerDisconnected</code> because Google blocks third-party app logins without App Passwords.
+            </p>
+          </div>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-sm space-y-4">
           <div className="flex items-center gap-2 pb-3 border-b border-slate-100">

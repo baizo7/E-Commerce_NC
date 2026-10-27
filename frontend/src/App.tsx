@@ -17,6 +17,7 @@ import { CheckoutPage } from './pages/customer/CheckoutPage';
 import { OrderSuccessPage } from './pages/customer/OrderSuccessPage';
 import { CustomerOrdersPage } from './pages/customer/CustomerOrdersPage';
 import { OrderDetailPage } from './pages/customer/OrderDetailPage';
+import { ContactPage } from './pages/customer/ContactPage';
 
 // Vendor Pages
 import { VendorDashboardPage } from './pages/vendor/VendorDashboardPage';
@@ -72,6 +73,7 @@ export const AppContent: React.FC = () => {
           <Route path="/order-success/:orderNumber" element={<OrderSuccessPage />} />
           <Route path="/orders" element={<CustomerOrdersPage />} />
           <Route path="/orders/:orderNumber" element={<OrderDetailPage />} />
+          <Route path="/contact" element={<ContactPage />} />
 
           {/* Vendor Portal */}
           <Route path="/vendor/dashboard" element={<VendorRoute><VendorDashboardPage /></VendorRoute>} />

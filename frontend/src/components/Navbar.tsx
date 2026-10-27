@@ -113,6 +113,9 @@ export const Navbar: React.FC = () => {
               <Link to="/vendors" className="px-3 py-2 rounded-lg hover:text-indigo-600 hover:bg-slate-100 transition">
                 Vendors
               </Link>
+              <Link to="/contact" className="px-3 py-2 rounded-lg hover:text-indigo-600 hover:bg-slate-100 transition">
+                Contact Admin
+              </Link>
               {isVendor && (
                 <Link
                   to="/vendor/dashboard"

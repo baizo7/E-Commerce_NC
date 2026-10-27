@@ -74,6 +74,7 @@ export const Footer: React.FC = () => {
             <li><Link to="/vendors" className="hover:text-white transition">Explore Stores</Link></li>
             <li><Link to="/products?featured=true" className="hover:text-white transition">Featured Deals</Link></li>
             <li><Link to="/orders" className="hover:text-white transition">Order Tracking</Link></li>
+            <li><Link to="/contact" className="hover:text-white transition">Contact Support / Admin</Link></li>
           </ul>
         </div>
 
