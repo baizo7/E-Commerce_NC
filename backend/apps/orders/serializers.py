@@ -159,3 +159,16 @@ class SendTestEmailSerializer(serializers.Serializer):
     to_email = serializers.EmailField()
 
 
+class ContactInquirySerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=150)
+    email = serializers.EmailField()
+    phone = serializers.CharField(max_length=30, required=False, allow_blank=True)
+    subject = serializers.CharField(max_length=255)
+    message = serializers.CharField()
+    query_type = serializers.ChoiceField(
+        choices=['VENDOR_QUERY', 'CUSTOMER_SUPPORT', 'ORDER_ISSUE', 'GENERAL'],
+        default='GENERAL'
+    )
+
+
+

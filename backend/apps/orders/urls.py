@@ -13,6 +13,7 @@ from apps.orders.views import (
     EmailLogListView,
     SendTestEmailView,
     EmailResendView,
+    ContactInquiryView,
     CustomerOrderListView,
     CustomerOrderDetailView,
     VendorOrderListView,
@@ -46,6 +47,7 @@ urlpatterns = [
     path('emails/', EmailLogListView.as_view(), name='email_list'),
     path('emails/send-test/', SendTestEmailView.as_view(), name='email_send_test'),
     path('emails/<int:id>/resend/', EmailResendView.as_view(), name='email_resend'),
+    path('contact/', ContactInquiryView.as_view(), name='contact_inquiry'),
 
     # Customer Orders
     path('orders/', CustomerOrderListView.as_view(), name='customer_order_list'),

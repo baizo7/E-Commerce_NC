@@ -323,6 +323,17 @@ export const emailService = {
     const res = await api.post(`/v1/emails/${id}/resend/`);
     return res.data;
   },
+  sendContactQuery: async (payload: {
+    name: string;
+    email: string;
+    phone?: string;
+    subject: string;
+    message: string;
+    query_type?: string;
+  }) => {
+    const res = await api.post('/v1/contact/', payload);
+    return res.data;
+  },
 };
 
 export default api;

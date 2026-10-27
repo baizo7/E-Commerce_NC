@@ -23,7 +23,8 @@ from apps.orders.serializers import (
     RazorpayPaymentFailSerializer,
     RazorpayRefundSerializer,
     EmailLogSerializer,
-    SendTestEmailSerializer
+    SendTestEmailSerializer,
+    ContactInquirySerializer
 )
 from apps.orders.services import RazorpayService, StripeService, EmailService
 from apps.accounts.permissions import IsVendorUser, IsAdminUserRole
@@ -641,4 +642,23 @@ class EmailResendView(APIView):
             order=log.order
         )
         return Response({'success': success, 'message': 'Email re-dispatched.'})
+
+
+class ContactInquiryView(APIView):
+    """
+    POST /contact/
+    Processes customer and vendor inquiries, routes to admin (producte23@gmail.com),
+    and sends an auto-acknowledgement email to the user.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = ContactInquirySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        result = EmailService.send_support_query(serializer.validated_data)
+        return Response({
+            'message': 'Your inquiry has been successfully routed to the platform administrator.',
+            'details': result
+        }, status=status.HTTP_200_OK)
+
 

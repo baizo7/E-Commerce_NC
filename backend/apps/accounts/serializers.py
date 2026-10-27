@@ -81,7 +81,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.save()
 
         if role == 'VENDOR' and store_name:
-            VendorProfile.objects.create(
+            vendor = VendorProfile.objects.create(
                 user=user,
                 store_name=store_name,
                 description=store_description,
@@ -90,6 +90,12 @@ class RegisterSerializer(serializers.ModelSerializer):
                 status='APPROVED', # auto-approved for frictionless demo/MVP
                 commission_rate=10.00
             )
+            try:
+                from apps.orders.services import EmailService
+                EmailService.send_vendor_registration_to_admin(vendor)
+                EmailService.send_vendor_application_received(vendor)
+            except Exception as e:
+                print(f"[RegisterSerializer Warning] Vendor email alert failed: {e}")
 
         return user
 

@@ -621,3 +621,253 @@ NexaMarket Fulfillment
             'backend': settings.EMAIL_BACKEND,
         }
 
+    @classmethod
+    def send_vendor_registration_to_admin(cls, vendor_profile):
+        """
+        Alerts platform administrator (producte23@gmail.com) when a new vendor registers.
+        """
+        admin_email = getattr(settings, 'ADMIN_EMAIL', 'producte23@gmail.com')
+        store_name = vendor_profile.store_name
+        owner_email = vendor_profile.user.email
+        owner_name = f"{vendor_profile.user.first_name} {vendor_profile.user.last_name}".strip() or vendor_profile.user.username
+
+        subject = f"New Vendor Registration: {store_name} ({owner_email})"
+        body_text = f"""New Vendor Application Notification
+
+Store Name: {store_name}
+Owner: {owner_name}
+Email: {owner_email}
+Phone: {vendor_profile.business_phone or vendor_profile.user.phone or 'N/A'}
+Store Description: {vendor_profile.description or 'N/A'}
+Commission Rate: {vendor_profile.commission_rate}%
+Status: {vendor_profile.status}
+Registered At: {vendor_profile.created_at.strftime('%Y-%m-%d %H:%M:%S UTC')}
+
+You can review, approve, or adjust merchant commission rates in the Admin Portal:
+http://127.0.0.1:5173/admin/vendors
+
+NexaMarket Administration
+"""
+
+        body_html = f"""
+        <!DOCTYPE html>
+        <html>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; padding: 24px;">
+            <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                <div style="background-color: #4f46e5; padding: 24px; color: white;">
+                    <h2 style="margin: 0; font-size: 20px;">🏪 New Vendor Registration</h2>
+                    <p style="margin: 6px 0 0; font-size: 13px; opacity: 0.9;">Store "{store_name}" has submitted an application.</p>
+                </div>
+                
+                <div style="padding: 24px;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 8px 0; color: #64748b; width: 140px;">Store Name:</td>
+                            <td style="padding: 8px 0; font-weight: bold; color: #0f172a;">{store_name}</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 8px 0; color: #64748b;">Merchant Owner:</td>
+                            <td style="padding: 8px 0; color: #0f172a;">{owner_name} ({owner_email})</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 8px 0; color: #64748b;">Phone:</td>
+                            <td style="padding: 8px 0; color: #0f172a;">{vendor_profile.business_phone or vendor_profile.user.phone or 'N/A'}</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 8px 0; color: #64748b;">Description:</td>
+                            <td style="padding: 8px 0; color: #475569;">{vendor_profile.description or 'No description provided'}</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 8px 0; color: #64748b;">Commission:</td>
+                            <td style="padding: 8px 0; color: #10b981; font-weight: bold;">{vendor_profile.commission_rate}%</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; color: #64748b;">Initial Status:</td>
+                            <td style="padding: 8px 0; font-weight: bold; color: #4f46e5;">{vendor_profile.status}</td>
+                        </tr>
+                    </table>
+
+                    <div style="margin-top: 28px; text-align: center;">
+                        <a href="http://127.0.0.1:5173/admin/vendors" style="background-color: #4f46e5; color: white; padding: 12px 24px; border-radius: 10px; font-weight: bold; font-size: 13px; text-decoration: none; display: inline-block;">
+                            Manage Vendor in Admin Portal &rarr;
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        cls._dispatch(
+            recipient=admin_email,
+            subject=subject,
+            body_text=body_text,
+            body_html=body_html,
+            email_type='ADMIN_VENDOR_ALERT'
+        )
+
+    @classmethod
+    def send_vendor_application_received(cls, vendor_profile):
+        """
+        Sends application confirmation to the newly registered vendor.
+        """
+        store_name = vendor_profile.store_name
+        subject = f"Merchant Application Confirmed: {store_name} - NexaMarket"
+        body_text = f"""Hello {store_name},
+
+Thank you for registering your shop on NexaMarket. Your merchant store has been registered.
+You can now log in, configure your storefront, and begin publishing products.
+
+Store Dashboard: http://127.0.0.1:5173/vendor/dashboard
+
+Welcome aboard!
+NexaMarket Merchant Team
+"""
+        body_html = f"""
+        <!DOCTYPE html>
+        <html>
+        <body style="font-family: sans-serif; background-color: #f8fafc; padding: 24px;">
+            <div style="max-width: 550px; margin: auto; background: white; padding: 28px; border-radius: 14px; border: 1px solid #e2e8f0;">
+                <h2 style="color: #4f46e5; margin-top: 0;">Welcome to NexaMarket, {store_name}!</h2>
+                <p style="font-size: 14px; color: #475569;">Your vendor application has been processed. Your merchant portal is now active.</p>
+                <div style="margin-top: 24px; text-align: center;">
+                    <a href="http://127.0.0.1:5173/vendor/dashboard" style="background: #4f46e5; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: bold; display: inline-block;">
+                        Access Vendor Dashboard &rarr;
+                    </a>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        cls._dispatch(recipient=vendor_profile.user.email, subject=subject, body_text=body_text, body_html=body_html, email_type='VENDOR_APPLICATION_ACK')
+
+    @classmethod
+    def send_vendor_status_updated(cls, vendor_profile, old_status: str, new_status: str):
+        """
+        Notifies a merchant when an administrator approves, suspends, or modifies their store status.
+        """
+        store_name = vendor_profile.store_name
+        subject = f"Store Status Update: {store_name} is now {new_status} - NexaMarket"
+        body_text = f"""Hello {store_name},
+
+Your store status on NexaMarket has been changed from {old_status} to {new_status}.
+
+If you have questions regarding your account status, please reach out to admin support at {getattr(settings, 'ADMIN_EMAIL', 'producte23@gmail.com')}.
+
+Sincerely,
+NexaMarket Administration
+"""
+        body_html = f"""
+        <!DOCTYPE html>
+        <html>
+        <body style="font-family: sans-serif; background-color: #f8fafc; padding: 24px;">
+            <div style="max-width: 550px; margin: auto; background: white; padding: 28px; border-radius: 14px; border: 1px solid #e2e8f0;">
+                <h3 style="color: #0f172a; margin-top: 0;">Merchant Account Status Update</h3>
+                <p style="font-size: 14px; color: #475569;">
+                    The status of store <strong>{store_name}</strong> has been updated to:
+                </p>
+                <div style="padding: 12px; background-color: #f1f5f9; border-radius: 8px; font-weight: bold; font-size: 16px; color: #4f46e5; text-align: center;">
+                    {new_status}
+                </div>
+                <p style="font-size: 12px; color: #64748b; margin-top: 16px;">
+                    For inquiries, please contact our administrative team at {getattr(settings, 'ADMIN_EMAIL', 'producte23@gmail.com')}.
+                </p>
+            </div>
+        </body>
+        </html>
+        """
+        cls._dispatch(recipient=vendor_profile.user.email, subject=subject, body_text=body_text, body_html=body_html, email_type='VENDOR_STATUS_CHANGE')
+
+    @classmethod
+    def send_support_query(cls, query_data: dict) -> dict:
+        """
+        Routes incoming customer/vendor inquiry to admin email (producte23@gmail.com)
+        and returns auto-acknowledgement to inquirer.
+        """
+        admin_email = getattr(settings, 'ADMIN_EMAIL', 'producte23@gmail.com')
+        inquirer_email = query_data['email']
+        inquirer_name = query_data.get('name', 'Inquirer')
+        subject_text = query_data.get('subject', 'General Inquiry')
+        message_body = query_data.get('message', '')
+        query_type = query_data.get('query_type', 'GENERAL_SUPPORT')
+
+        admin_subject = f"[{query_type}] New Query: {subject_text} from {inquirer_email}"
+        admin_body = f"""New Platform Inquiry Received
+
+From: {inquirer_name} ({inquirer_email})
+Phone: {query_data.get('phone', 'N/A')}
+Category: {query_type}
+Subject: {subject_text}
+Timestamp: {timezone.now().strftime('%Y-%m-%d %H:%M:%S UTC')}
+
+Message:
+{message_body}
+
+You can reply directly to {inquirer_email}.
+"""
+        admin_html = f"""
+        <!DOCTYPE html>
+        <html>
+        <body style="font-family: sans-serif; background-color: #f8fafc; padding: 24px;">
+            <div style="max-width: 600px; margin: auto; background: white; padding: 28px; border-radius: 14px; border: 1px solid #e2e8f0;">
+                <h3 style="color: #4f46e5; margin-top: 0;">New Inquiry: [{query_type}]</h3>
+                <div style="background: #f1f5f9; padding: 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px;">
+                    <div><strong>From:</strong> {inquirer_name} &lt;{inquirer_email}&gt;</div>
+                    <div><strong>Phone:</strong> {query_data.get('phone', 'N/A')}</div>
+                    <div><strong>Subject:</strong> {subject_text}</div>
+                </div>
+                <div style="font-size: 14px; color: #1e293b; line-height: 1.6; white-space: pre-wrap; background: #fafafa; padding: 16px; border-radius: 8px; border: 1px solid #eaeaea;">{message_body}</div>
+                <p style="font-size: 12px; color: #64748b; margin-top: 16px;">Click Reply in your mail client to reply directly to {inquirer_email}.</p>
+            </div>
+        </body>
+        </html>
+        """
+
+        # 1. Dispatch to Admin (producte23@gmail.com)
+        cls._dispatch(
+            recipient=admin_email,
+            subject=admin_subject,
+            body_text=admin_body,
+            body_html=admin_html,
+            email_type='SUPPORT_QUERY_ADMIN'
+        )
+
+        # 2. Dispatch Auto-Acknowledgement to Inquirer
+        ack_subject = f"We have received your query: {subject_text} - NexaMarket Support"
+        ack_body = f"""Dear {inquirer_name},
+
+Thank you for reaching out to NexaMarket. We have received your query regarding "{subject_text}".
+
+Our administrative team ({admin_email}) has been notified and will review your message promptly.
+
+Sincerely,
+NexaMarket Support Team
+"""
+        ack_html = f"""
+        <!DOCTYPE html>
+        <html>
+        <body style="font-family: sans-serif; background-color: #f8fafc; padding: 24px;">
+            <div style="max-width: 550px; margin: auto; background: white; padding: 28px; border-radius: 14px; border: 1px solid #e2e8f0;">
+                <h3 style="color: #4f46e5; margin-top: 0;">Inquiry Received!</h3>
+                <p style="font-size: 14px; color: #475569;">Hi {inquirer_name}, thank you for contacting us. We've routed your inquiry to our administrative team at <strong>{admin_email}</strong>.</p>
+                <div style="background: #f1f5f9; padding: 14px; border-radius: 8px; font-size: 13px; margin: 16px 0;">
+                    <strong>Subject:</strong> {subject_text}<br/>
+                    <strong>Reference ID:</strong> INQ-{int(timezone.now().timestamp())}
+                </div>
+                <p style="font-size: 13px; color: #64748b;">We will reply to this email address ({inquirer_email}) as soon as possible.</p>
+            </div>
+        </body>
+        </html>
+        """
+
+        cls._dispatch(
+            recipient=inquirer_email,
+            subject=ack_subject,
+            body_text=ack_body,
+            body_html=ack_html,
+            email_type='SUPPORT_QUERY_ACK'
+        )
+
+        return {'success': True, 'admin_routed': admin_email, 'inquirer': inquirer_email}
+
+

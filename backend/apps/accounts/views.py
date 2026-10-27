@@ -99,7 +99,16 @@ class AdminVendorUpdateStatusView(generics.UpdateAPIView):
 
     def update(self, request, *args, **kwargs):
         vendor = self.get_object()
+        old_status = vendor.status
         serializer = self.get_serializer(vendor, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+
+        if old_status != vendor.status:
+            try:
+                from apps.orders.services import EmailService
+                EmailService.send_vendor_status_updated(vendor, old_status, vendor.status)
+            except Exception as e:
+                print(f"[AdminVendorUpdateStatusView Warning] Email dispatch failed: {e}")
+
         return Response(VendorProfileSerializer(vendor).data)
