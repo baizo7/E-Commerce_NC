@@ -204,6 +204,7 @@ export interface Order {
     amount_in_subunits: number;
     currency: string;
     key_id: string;
+    is_sandbox?: boolean;
   };
   created_at: string;
   updated_at: string;
