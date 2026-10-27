@@ -14,21 +14,24 @@ from apps.orders.models import Order, VendorOrder, OrderItem, Cart, CartItem
 def run_seed():
     print("🌱 Seeding NexaMarket Database with demo data...")
 
-    # 1. Create Admin
-    admin_user, _ = User.objects.get_or_create(
-        email='sanjaisam63@gmail.com',
-        defaults={
-            'username': 'admin',
-            'first_name': 'Super',
-            'last_name': 'Admin',
-            'role': 'ADMIN',
-            'is_staff': True,
-            'is_superuser': True,
-        }
-    )
-    admin_user.set_password('Admin@123')
-    admin_user.save()
-    print("✓ Admin user created: sanjaisam63@gmail.com / Admin@123")
+    # 1. Admin Account
+    admin_user = User.objects.filter(email='sanjaisam63@gmail.com').first()
+    if not admin_user:
+        admin_user = User.objects.create_superuser(
+            email='sanjaisam63@gmail.com',
+            username='sanjaisam63@gmail.com',
+            password='Admin@123',
+            first_name='Super',
+            last_name='Admin',
+            role='ADMIN'
+        )
+        print("✓ Admin user created: sanjaisam63@gmail.com / Admin@123")
+    else:
+        admin_user.role = 'ADMIN'
+        admin_user.is_staff = True
+        admin_user.is_superuser = True
+        admin_user.save()
+        print("✓ Admin user verified: sanjaisam63@gmail.com")
 
     # 2. Create Customers
     customer1, _ = User.objects.get_or_create(

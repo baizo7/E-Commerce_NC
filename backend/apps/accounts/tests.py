@@ -112,3 +112,32 @@ class AccountTests(TestCase):
         self.customer.refresh_from_db()
         self.assertTrue(self.customer.check_password('NewStrongPassword@2026'))
 
+    def test_customer_avatar_upload_and_delete(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from PIL import Image
+        import io
+
+        self.client.force_authenticate(user=self.customer)
+        img = Image.new('RGB', (80, 80), color='indigo')
+        byte_arr = io.BytesIO()
+        img.save(byte_arr, format='JPEG')
+        byte_arr.seek(0)
+
+        uploaded_file = SimpleUploadedFile(
+            "avatar.jpg",
+            byte_arr.read(),
+            content_type="image/jpeg"
+        )
+
+        response = self.client.post('/api/auth/avatar/', {'avatar': uploaded_file}, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('avatar_url', response.data)
+        self.customer.refresh_from_db()
+        self.assertTrue(self.customer.avatar_url.startswith('/media/avatars/'))
+
+        del_response = self.client.delete('/api/auth/avatar/')
+        self.assertEqual(del_response.status_code, status.HTTP_200_OK)
+        self.customer.refresh_from_db()
+        self.assertEqual(self.customer.avatar_url, '')
+
+

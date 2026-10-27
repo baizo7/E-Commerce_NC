@@ -94,6 +94,20 @@ export const authService = {
     const res = await api.post('/auth/change-password/', payload);
     return res.data;
   },
+  uploadAvatar: async (file: File): Promise<{ message: string; avatar_url: string; user: User }> => {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    const res = await api.post('/auth/avatar/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return res.data;
+  },
+  removeAvatar: async (): Promise<{ message: string; avatar_url: string; user: User }> => {
+    const res = await api.delete('/auth/avatar/');
+    return res.data;
+  },
   logout: () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');

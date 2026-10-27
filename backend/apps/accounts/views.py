@@ -1,7 +1,13 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework_simplejwt.views import TokenObtainPairView
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+from django.conf import settings
+import os
+import uuid
 from apps.accounts.models import User, VendorProfile
 from apps.accounts.serializers import (
     UserSerializer,
@@ -76,6 +82,75 @@ class ChangePasswordView(APIView):
             {'message': 'Password has been updated successfully.'},
             status=status.HTTP_200_OK
         )
+
+
+class AvatarUploadView(APIView):
+    """
+    POST /api/v1/auth/avatar/
+    Uploads a user avatar image directly from the user's local system,
+    validates file type and size, stores it in MEDIA_ROOT/avatars/,
+    and updates the user's avatar_url.
+
+    DELETE /api/v1/auth/avatar/
+    Removes user's avatar image.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        file_obj = request.FILES.get('avatar')
+        if not file_obj:
+            return Response({'error': 'No image file provided.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate content type
+        content_type = getattr(file_obj, 'content_type', '').lower()
+        allowed_types = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/jpg']
+        if content_type not in allowed_types:
+            return Response(
+                {'error': 'Invalid image format. Please upload JPEG, PNG, WEBP, or GIF.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validate max size (5 MB)
+        max_size = 5 * 1024 * 1024
+        if file_obj.size > max_size:
+            return Response(
+                {'error': 'Image file is too large. Maximum allowed size is 5MB.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Determine extension and unique filename
+        ext = os.path.splitext(file_obj.name)[1].lower()
+        if not ext:
+            ext = '.jpg'
+        filename = f"avatars/user_{request.user.id}_{uuid.uuid4().hex[:8]}{ext}"
+
+        # Save to media storage
+        saved_path = default_storage.save(filename, ContentFile(file_obj.read()))
+        media_url = getattr(settings, 'MEDIA_URL', '/media/')
+        avatar_relative_url = f"{media_url.rstrip('/')}/{saved_path.lstrip('/')}"
+
+        # Update user record
+        user = request.user
+        user.avatar_url = avatar_relative_url
+        user.save(update_fields=['avatar_url'])
+
+        return Response({
+            'message': 'Avatar uploaded successfully.',
+            'avatar_url': user.avatar_url,
+            'user': UserSerializer(user).data
+        }, status=status.HTTP_200_OK)
+
+    def delete(self, request):
+        user = request.user
+        user.avatar_url = ''
+        user.save(update_fields=['avatar_url'])
+        return Response({
+            'message': 'Avatar removed successfully.',
+            'avatar_url': '',
+            'user': UserSerializer(user).data
+        }, status=status.HTTP_200_OK)
+
 
 
 class VendorPublicListView(generics.ListAPIView):

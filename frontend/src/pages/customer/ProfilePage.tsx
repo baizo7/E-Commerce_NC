@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   User as UserIcon,
   Mail,
@@ -11,8 +11,12 @@ import {
   Save,
   Package,
   Calendar,
-  Building,
-  KeyRound
+  KeyRound,
+  Camera,
+  Upload,
+  Trash2,
+  RefreshCw,
+  Image as ImageIcon
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { authService, orderService } from '../../services/api';
@@ -20,6 +24,7 @@ import { Link } from 'react-router-dom';
 
 export const ProfilePage: React.FC = () => {
   const { user, refreshUser } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [activeTab, setActiveTab] = useState<'profile' | 'address' | 'security'>('profile');
 
@@ -28,6 +33,11 @@ export const ProfilePage: React.FC = () => {
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
+
+  // Avatar Upload State
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarSuccess, setAvatarSuccess] = useState<string | null>(null);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
 
   // Shipping Address State
   const [address, setAddress] = useState('');
@@ -76,6 +86,62 @@ export const ProfilePage: React.FC = () => {
     fetchOrderStats();
   }, [user]);
 
+  // Handle Local Device File Selection & Direct Upload
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setAvatarError('Please select a valid image file (PNG, JPG, WEBP, or GIF).');
+      return;
+    }
+
+    // 5MB limit
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarError('Image size exceeds 5MB. Please choose a smaller photo.');
+      return;
+    }
+
+    setAvatarUploading(true);
+    setAvatarError(null);
+    setAvatarSuccess(null);
+
+    try {
+      const res = await authService.uploadAvatar(file);
+      setAvatarUrl(res.avatar_url);
+      await refreshUser();
+      setAvatarSuccess('Profile photo uploaded and updated successfully!');
+      setTimeout(() => setAvatarSuccess(null), 4000);
+    } catch (err: any) {
+      console.error(err);
+      setAvatarError(err.response?.data?.error || err.message || 'Failed to upload photo from device.');
+    } finally {
+      setAvatarUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    if (!window.confirm('Are you sure you want to remove your profile photo?')) return;
+    setAvatarUploading(true);
+    setAvatarError(null);
+    setAvatarSuccess(null);
+    try {
+      await authService.removeAvatar();
+      setAvatarUrl('');
+      await refreshUser();
+      setAvatarSuccess('Profile photo removed.');
+      setTimeout(() => setAvatarSuccess(null), 4000);
+    } catch (err: any) {
+      console.error(err);
+      setAvatarError(err.response?.data?.error || err.message || 'Failed to remove photo.');
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -87,7 +153,6 @@ export const ProfilePage: React.FC = () => {
         first_name: firstName,
         last_name: lastName,
         phone,
-        avatar_url: avatarUrl,
         address,
         city,
         country,
@@ -156,18 +221,51 @@ export const ProfilePage: React.FC = () => {
     );
   }
 
+  const userInitials = (user.first_name?.[0] || user.email[0]).toUpperCase();
+
   return (
     <div className="max-w-5xl mx-auto space-y-8">
+      {/* Hidden Native File Input for Local System Image Upload */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileSelect}
+        accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
+        className="hidden"
+      />
+
       {/* Header Banner */}
       <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 text-white font-extrabold text-2xl flex items-center justify-center shadow-lg shadow-indigo-100 flex-shrink-0">
-            {avatarUrl ? (
-              <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover rounded-2xl" />
-            ) : (
-              (user.first_name?.[0] || user.email[0]).toUpperCase()
-            )}
+        <div className="flex items-center gap-5">
+          {/* Avatar with Quick Upload Trigger */}
+          <div className="relative group flex-shrink-0">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 text-white font-extrabold text-2xl flex items-center justify-center shadow-lg shadow-indigo-100 overflow-hidden border-2 border-white">
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt="Avatar"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                userInitials
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={avatarUploading}
+              title="Upload photo from device"
+              className="absolute -bottom-1.5 -right-1.5 p-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md transition disabled:opacity-50"
+            >
+              {avatarUploading ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Camera className="w-3.5 h-3.5" />
+              )}
+            </button>
           </div>
+
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
@@ -255,7 +353,7 @@ export const ProfilePage: React.FC = () => {
         <form onSubmit={handleUpdateProfile} className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
           <div>
             <h2 className="text-base font-bold text-slate-900">Personal Information</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Manage your name, contact phone, and avatar details.</p>
+            <p className="text-xs text-slate-500 mt-0.5">Manage your profile photo, name, and contact details.</p>
           </div>
 
           {profileSuccess && (
@@ -271,6 +369,73 @@ export const ProfilePage: React.FC = () => {
               <span>{profileError}</span>
             </div>
           )}
+
+          {/* Local Device Photo Upload Box */}
+          <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
+            <label className="block text-xs font-bold text-slate-800">Profile Photo</label>
+
+            {avatarSuccess && (
+              <div className="p-2.5 bg-emerald-100/70 border border-emerald-200 text-emerald-900 rounded-xl text-xs flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span>{avatarSuccess}</span>
+              </div>
+            )}
+
+            {avatarError && (
+              <div className="p-2.5 bg-rose-100/70 border border-rose-200 text-rose-900 rounded-xl text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                <span>{avatarError}</span>
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <div className="w-16 h-16 rounded-2xl bg-indigo-600 text-white font-bold text-xl flex items-center justify-center overflow-hidden flex-shrink-0 border-2 border-white shadow">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="Preview" className="w-full h-full object-cover" />
+                ) : (
+                  userInitials
+                )}
+              </div>
+
+              <div className="space-y-1.5 text-center sm:text-left flex-1">
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={avatarUploading}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-xs shadow-sm transition disabled:opacity-50"
+                  >
+                    {avatarUploading ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        Uploading Image...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-3.5 h-3.5" />
+                        Upload Photo from Device
+                      </>
+                    )}
+                  </button>
+
+                  {avatarUrl && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveAvatar}
+                      disabled={avatarUploading}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 hover:bg-rose-50 hover:text-rose-600 text-slate-700 font-semibold rounded-xl text-xs shadow-sm transition disabled:opacity-50"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  Select an image from your computer (PNG, JPG, WEBP, or GIF up to 5MB).
+                </p>
+              </div>
+            </div>
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -318,17 +483,6 @@ export const ProfilePage: React.FC = () => {
                 className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 focus:bg-white transition"
               />
             </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Avatar Image URL (Optional)</label>
-            <input
-              type="url"
-              value={avatarUrl}
-              onChange={(e) => setAvatarUrl(e.target.value)}
-              placeholder="https://images.unsplash.com/photo-..."
-              className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 focus:bg-white transition"
-            />
           </div>
 
           <div className="flex justify-end pt-4 border-t border-slate-100">
