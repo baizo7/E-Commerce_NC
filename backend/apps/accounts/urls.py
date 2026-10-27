@@ -30,6 +30,7 @@ urlpatterns = [
     # Vendor Portal
     path('vendor/profile/', VendorSelfProfileView.as_view(), name='vendor_self_profile'),
     path('auth/vendor/branding/', VendorBrandingUploadView.as_view(), name='vendor_branding_upload'),
+    path('vendor/branding/', VendorBrandingUploadView.as_view(), name='vendor_branding_upload_alt'),
 
     # Admin Portal
     path('admin/vendors/', AdminVendorListView.as_view(), name='admin_vendor_list'),

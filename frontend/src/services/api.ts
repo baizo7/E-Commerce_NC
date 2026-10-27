@@ -14,9 +14,6 @@ import {
 
 const api = axios.create({
   baseURL: '/api',
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 // Request interceptor: attach JWT access token
@@ -25,6 +22,9 @@ api.interceptors.request.use(
     const token = localStorage.getItem('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
     }
     return config;
   },
@@ -97,11 +97,7 @@ export const authService = {
   uploadAvatar: async (file: File): Promise<{ message: string; avatar_url: string; user: User }> => {
     const formData = new FormData();
     formData.append('avatar', file);
-    const res = await api.post('/auth/avatar/', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const res = await api.post('/auth/avatar/', formData);
     return res.data;
   },
   removeAvatar: async (): Promise<{ message: string; avatar_url: string; user: User }> => {
@@ -282,9 +278,7 @@ export const vendorService = {
   uploadProductImage: async (file: File): Promise<{ message: string; image_url: string }> => {
     const formData = new FormData();
     formData.append('image', file);
-    const res = await api.post('/products/upload-image/', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    const res = await api.post('/products/upload-image/', formData);
     return res.data;
   },
   uploadStoreBranding: async (
@@ -294,9 +288,7 @@ export const vendorService = {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('type', type);
-    const res = await api.post('/auth/vendor/branding/', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    const res = await api.post('/auth/vendor/branding/', formData);
     return res.data;
   },
   quickUpdateProduct: async (

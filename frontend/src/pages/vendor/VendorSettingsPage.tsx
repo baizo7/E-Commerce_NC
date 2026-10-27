@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Store, Upload, CheckCircle2, AlertCircle, Save, Building2, CreditCard, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Store, Upload, CheckCircle2, AlertCircle, Save, Building2, CreditCard, ShieldCheck, Image as ImageIcon } from 'lucide-react';
 import { vendorService } from '../../services/api';
 import { VendorProfile } from '../../types';
 import { VendorSubNav } from '../../components/VendorSubNav';
@@ -12,6 +12,8 @@ export const VendorSettingsPage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -28,9 +30,6 @@ export const VendorSettingsPage: React.FC = () => {
     bank_routing_code: '',
     payout_method: 'DIRECT_DEPOSIT',
   });
-
-  const logoInputRef = useRef<HTMLInputElement>(null);
-  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   const fetchProfile = async () => {
     setLoading(true);
@@ -64,6 +63,8 @@ export const VendorSettingsPage: React.FC = () => {
 
   const handleUploadBranding = async (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'banner') => {
     const file = e.target.files?.[0];
+    // Reset file input value immediately so re-selecting the same file fires onChange
+    e.target.value = '';
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
@@ -71,8 +72,16 @@ export const VendorSettingsPage: React.FC = () => {
       return;
     }
 
-    if (type === 'logo') setUploadingLogo(true);
-    else setUploadingBanner(true);
+    // Set immediate client-side preview
+    const objectUrl = URL.createObjectURL(file);
+    if (type === 'logo') {
+      setLogoPreview(objectUrl);
+      setUploadingLogo(true);
+    } else {
+      setBannerPreview(objectUrl);
+      setUploadingBanner(true);
+    }
+
     setErrorMessage(null);
     setSuccessMessage(null);
 
@@ -82,12 +91,14 @@ export const VendorSettingsPage: React.FC = () => {
       setSuccessMessage(`Store ${type} uploaded and updated successfully!`);
       await refreshUser();
     } catch (err: any) {
-      console.error(err);
-      setErrorMessage(err.response?.data?.error || `Failed to upload ${type}.`);
+      console.error('Branding upload error:', err);
+      // Revert preview on failure
+      if (type === 'logo') setLogoPreview(null);
+      else setBannerPreview(null);
+      setErrorMessage(err.response?.data?.error || `Failed to upload ${type}. Please check image format.`);
     } finally {
       if (type === 'logo') setUploadingLogo(false);
       else setUploadingBanner(false);
-      if (e.target) e.target.value = '';
     }
   };
 
@@ -119,6 +130,9 @@ export const VendorSettingsPage: React.FC = () => {
     );
   }
 
+  const currentLogo = logoPreview || profile?.logo_url || 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=200&q=80';
+  const currentBanner = bannerPreview || profile?.banner_url || 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80';
+
   return (
     <div className="max-w-7xl mx-auto space-y-8">
       <VendorSubNav />
@@ -130,7 +144,7 @@ export const VendorSettingsPage: React.FC = () => {
           Store Settings & Branding
         </h1>
         <p className="text-xs text-[#504e4a] mt-1 font-medium">
-          Upload local storefront assets, manage merchant profile info, and configure bank settlement accounts.
+          Upload local storefront logo & banner assets, manage merchant profile info, and configure bank settlement accounts.
         </p>
       </div>
 
@@ -157,85 +171,100 @@ export const VendorSettingsPage: React.FC = () => {
           </h2>
         </div>
 
-        {/* Hidden inputs */}
-        <input
-          type="file"
-          ref={logoInputRef}
-          accept="image/jpeg,image/png,image/webp"
-          onChange={(e) => handleUploadBranding(e, 'logo')}
-          className="hidden"
-        />
-        <input
-          type="file"
-          ref={bannerInputRef}
-          accept="image/jpeg,image/png,image/webp"
-          onChange={(e) => handleUploadBranding(e, 'banner')}
-          className="hidden"
-        />
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
           {/* Logo Card */}
-          <div className="space-y-4">
-            <span className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-              Storefront Logo
-            </span>
+          <div className="space-y-4 p-5 rounded-2xl border border-neutral-200 bg-neutral-50/50">
+            <div>
+              <span className="block text-xs font-bold uppercase tracking-wider text-slate-800">
+                Storefront Logo
+              </span>
+              <p className="text-[11px] text-slate-500 mt-0.5">Displayed on store header and product cards</p>
+            </div>
+
             <div className="flex items-center gap-5">
-              <div className="w-24 h-24 rounded-2xl border-2 border-neutral-200 overflow-hidden bg-neutral-100 shadow-sm flex-shrink-0">
+              <div className="w-24 h-24 rounded-2xl border-2 border-white shadow-md overflow-hidden bg-white flex-shrink-0 relative group">
                 <img
-                  src={profile?.logo_url || 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=200&q=80'}
+                  src={currentLogo}
                   alt="Store Logo"
                   className="w-full h-full object-cover"
                 />
+                {uploadingLogo && (
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                    <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
-                <button
-                  type="button"
-                  onClick={() => logoInputRef.current?.click()}
-                  disabled={uploadingLogo}
-                  className="px-5 py-2.5 bg-[#0a0500] hover:bg-neutral-800 text-white font-black uppercase tracking-wider text-xs rounded-full shadow transition flex items-center gap-2 disabled:opacity-50"
+                {/* Native Accessible File Input with Label */}
+                <input
+                  id="store-logo-file-input"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleUploadBranding(e, 'logo')}
+                  className="sr-only"
+                />
+
+                <label
+                  htmlFor="store-logo-file-input"
+                  className={`inline-flex items-center gap-2 px-5 py-2.5 bg-[#0a0500] hover:bg-neutral-800 text-white font-black uppercase tracking-wider text-xs rounded-full shadow-md transition cursor-pointer select-none ${
+                    uploadingLogo ? 'opacity-60 pointer-events-none' : ''
+                  }`}
                 >
                   <Upload className="w-3.5 h-3.5 text-[#ffcd05]" />
-                  {uploadingLogo ? 'Uploading...' : 'Upload Logo from Device'}
-                </button>
-                <p className="text-[11px] text-slate-400">Square ratio recommended (PNG or JPG under 5MB)</p>
+                  <span>{uploadingLogo ? 'Uploading...' : 'Upload Logo from Device'}</span>
+                </label>
+
+                <p className="text-[11px] text-slate-400">Square PNG, JPG, or WEBP up to 5MB</p>
               </div>
             </div>
           </div>
 
           {/* Banner Card */}
-          <div className="space-y-4">
-            <span className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-              Storefront Header Banner
-            </span>
-            <div className="h-28 rounded-2xl border-2 border-neutral-200 overflow-hidden bg-neutral-100 shadow-sm relative group">
+          <div className="space-y-4 p-5 rounded-2xl border border-neutral-200 bg-neutral-50/50">
+            <div>
+              <span className="block text-xs font-bold uppercase tracking-wider text-slate-800">
+                Storefront Header Banner
+              </span>
+              <p className="text-[11px] text-slate-500 mt-0.5">Wide promotional showcase at top of store page</p>
+            </div>
+
+            {/* Banner Preview Frame */}
+            <div className="h-32 rounded-2xl border-2 border-white shadow-md overflow-hidden bg-white relative group">
               <img
-                src={profile?.banner_url || 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80'}
+                src={currentBanner}
                 alt="Store Banner"
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <button
-                  type="button"
-                  onClick={() => bannerInputRef.current?.click()}
-                  disabled={uploadingBanner}
-                  className="px-5 py-2.5 bg-[#ffcd05] hover:bg-[#fcb424] text-[#0a0500] font-black uppercase tracking-wider text-xs rounded-full shadow transition flex items-center gap-2 disabled:opacity-50"
-                >
-                  <Upload className="w-3.5 h-3.5 text-[#0a0500]" />
-                  {uploadingBanner ? 'Uploading...' : 'Replace Banner Image'}
-                </button>
-              </div>
+              {uploadingBanner && (
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                  <span className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                </div>
+              )}
             </div>
-            <button
-              type="button"
-              onClick={() => bannerInputRef.current?.click()}
-              disabled={uploadingBanner}
-              className="px-5 py-2.5 border border-neutral-300 hover:border-[#0a0500] text-slate-700 font-black uppercase tracking-wider text-xs rounded-full transition sm:hidden flex items-center gap-2"
-            >
-              <Upload className="w-3.5 h-3.5" />
-              {uploadingBanner ? 'Uploading...' : 'Upload Banner from Device'}
-            </button>
-            <p className="text-[11px] text-slate-400">Wide banner format (1200x400 recommended, under 5MB)</p>
+
+            {/* Visible Dedicated Upload Button */}
+            <div className="flex flex-wrap items-center gap-3">
+              <input
+                id="store-banner-file-input"
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleUploadBranding(e, 'banner')}
+                className="sr-only"
+              />
+
+              <label
+                htmlFor="store-banner-file-input"
+                className={`inline-flex items-center gap-2 px-5 py-2.5 bg-[#0a0500] hover:bg-neutral-800 text-white font-black uppercase tracking-wider text-xs rounded-full shadow-md transition cursor-pointer select-none ${
+                  uploadingBanner ? 'opacity-60 pointer-events-none' : ''
+                }`}
+              >
+                <Upload className="w-3.5 h-3.5 text-[#ffcd05]" />
+                <span>{uploadingBanner ? 'Uploading...' : 'Upload Banner from Device'}</span>
+              </label>
+
+              <span className="text-[11px] text-slate-400">1200x400 recommended (up to 5MB)</span>
+            </div>
           </div>
         </div>
       </div>
