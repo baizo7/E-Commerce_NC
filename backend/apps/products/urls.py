@@ -9,6 +9,7 @@ from apps.products.views import (
     ProductReviewCreateView,
     VendorProductListCreateView,
     VendorProductDetailView,
+    ProductImageUploadView,
     AdminProductListView,
     AdminProductModerationView
 )
@@ -26,6 +27,7 @@ urlpatterns = [
     # Vendor Products
     path('vendor/products/', VendorProductListCreateView.as_view(), name='vendor_product_list_create'),
     path('vendor/products/<int:id>/', VendorProductDetailView.as_view(), name='vendor_product_detail'),
+    path('products/upload-image/', ProductImageUploadView.as_view(), name='product_image_upload'),
 
     # Admin Products & Categories
     path('admin/categories/', AdminCategoryListCreateView.as_view(), name='admin_category_list_create'),

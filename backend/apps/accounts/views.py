@@ -180,6 +180,65 @@ class VendorSelfProfileView(generics.RetrieveUpdateAPIView):
         return self.request.user.vendor_profile
 
 
+class VendorBrandingUploadView(APIView):
+    """
+    POST /api/v1/auth/vendor/branding/
+    Uploads a store logo or banner image directly from local files,
+    validates format and size, stores in media/stores/,
+    and updates VendorProfile.logo_url or banner_url.
+    """
+    permission_classes = [IsVendorUser]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        file_obj = request.FILES.get('file')
+        asset_type = request.data.get('type', 'logo').lower() # 'logo' or 'banner'
+
+        if not file_obj:
+            return Response({'error': 'No image file provided.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if asset_type not in ['logo', 'banner']:
+            return Response({'error': 'type must be either "logo" or "banner".'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate content type
+        content_type = getattr(file_obj, 'content_type', '').lower()
+        allowed_types = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/jpg']
+        if content_type not in allowed_types:
+            return Response(
+                {'error': 'Invalid image format. Please upload JPEG, PNG, WEBP, or GIF.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validate max size (5 MB)
+        max_size = 5 * 1024 * 1024
+        if file_obj.size > max_size:
+            return Response(
+                {'error': 'Image file is too large. Maximum allowed size is 5MB.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        vendor = request.user.vendor_profile
+        ext = os.path.splitext(file_obj.name)[1].lower() or '.jpg'
+        filename = f"stores/store_{vendor.id}_{asset_type}_{uuid.uuid4().hex[:8]}{ext}"
+
+        saved_path = default_storage.save(filename, ContentFile(file_obj.read()))
+        media_url = getattr(settings, 'MEDIA_URL', '/media/')
+        relative_url = f"{media_url.rstrip('/')}/{saved_path.lstrip('/')}"
+
+        if asset_type == 'logo':
+            vendor.logo_url = relative_url
+            vendor.save(update_fields=['logo_url', 'updated_at'])
+        else:
+            vendor.banner_url = relative_url
+            vendor.save(update_fields=['banner_url', 'updated_at'])
+
+        return Response({
+            'message': f'Store {asset_type} uploaded successfully.',
+            'url': relative_url,
+            'vendor': VendorProfileSerializer(vendor).data
+        }, status=status.HTTP_200_OK)
+
+
 class AdminVendorListView(generics.ListAPIView):
     serializer_class = VendorProfileSerializer
     permission_classes = [IsAdminUserRole]

@@ -72,7 +72,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
 class ProductCreateUpdateSerializer(serializers.ModelSerializer):
     image_urls = serializers.ListField(
-        child=serializers.URLField(),
+        child=serializers.CharField(max_length=500),
         write_only=True,
         required=False,
         default=list

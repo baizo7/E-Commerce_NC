@@ -279,6 +279,36 @@ export const vendorService = {
     const res = await api.get('/vendor/analytics/');
     return res.data;
   },
+  uploadProductImage: async (file: File): Promise<{ message: string; image_url: string }> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    const res = await api.post('/products/upload-image/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data;
+  },
+  uploadStoreBranding: async (
+    file: File,
+    type: 'logo' | 'banner'
+  ): Promise<{ message: string; url: string; vendor: VendorProfile }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', type);
+    const res = await api.post('/auth/vendor/branding/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data;
+  },
+  quickUpdateProduct: async (
+    id: number,
+    data: { inventory_count?: number; is_active?: boolean }
+  ): Promise<Product> => {
+    const res = await api.patch(`/vendor/products/${id}/`, data);
+    return res.data;
+  },
+  exportCsvUrl: () => {
+    return '/api/v1/vendor/export-csv/';
+  },
 };
 
 // Admin Services

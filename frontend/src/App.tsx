@@ -25,6 +25,7 @@ import { VendorDashboardPage } from './pages/vendor/VendorDashboardPage';
 import { VendorProductsPage } from './pages/vendor/VendorProductsPage';
 import { VendorOrdersPage } from './pages/vendor/VendorOrdersPage';
 import { VendorEarningsPage } from './pages/vendor/VendorEarningsPage';
+import { VendorSettingsPage } from './pages/vendor/VendorSettingsPage';
 
 // Admin Pages
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
@@ -90,6 +91,7 @@ export const AppContent: React.FC = () => {
           <Route path="/vendor/products" element={<VendorRoute><VendorProductsPage /></VendorRoute>} />
           <Route path="/vendor/orders" element={<VendorRoute><VendorOrdersPage /></VendorRoute>} />
           <Route path="/vendor/earnings" element={<VendorRoute><VendorEarningsPage /></VendorRoute>} />
+          <Route path="/vendor/settings" element={<VendorRoute><VendorSettingsPage /></VendorRoute>} />
 
           {/* Admin Portal */}
           <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />

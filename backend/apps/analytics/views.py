@@ -1,8 +1,10 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from django.http import HttpResponse
 from django.db.models import Sum, Count, Avg, F
 from django.utils import timezone
 from datetime import timedelta
+import csv
 
 from apps.accounts.permissions import IsVendorUser, IsAdminUserRole
 from apps.accounts.models import User, VendorProfile
@@ -57,6 +59,61 @@ class VendorDashboardStatsView(APIView):
             'rating': float(vendor.rating),
             'recent_orders': recent_orders,
         })
+
+
+class VendorExportCsvView(APIView):
+    """
+    GET /api/v1/analytics/vendor/export-csv/
+    Exports vendor's historical sub-order transactions, commissions,
+    and net earnings ledger as a downloadable CSV.
+    """
+    permission_classes = [IsVendorUser]
+
+    def get(self, request):
+        vendor = request.user.vendor_profile
+        vendor_orders = VendorOrder.objects.filter(vendor=vendor).select_related('order').order_by('-created_at')
+
+        response = HttpResponse(content_type='text/csv; charset=utf-8')
+        filename = f"settlement_ledger_{vendor.slug}_{timezone.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+        writer = csv.writer(response)
+        writer.writerow([
+            'Sub-Order ID',
+            'Master Order Number',
+            'Order Date',
+            'Customer Name',
+            'Customer Email',
+            'Gross Subtotal ($)',
+            'Commission Rate (%)',
+            'Commission Fee ($)',
+            'Net Vendor Payout ($)',
+            'Fulfillment Status',
+            'Carrier',
+            'Tracking Number',
+            'Shipped At',
+            'Delivered At',
+        ])
+
+        for vo in vendor_orders:
+            writer.writerow([
+                vo.id,
+                vo.order.order_number,
+                vo.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                vo.order.shipping_name,
+                vo.order.shipping_email,
+                f"{float(vo.subtotal):.2f}",
+                f"{float(vo.commission_rate):.2f}",
+                f"{float(vo.commission_amount):.2f}",
+                f"{float(vo.net_vendor_amount):.2f}",
+                vo.status,
+                vo.carrier or 'N/A',
+                vo.tracking_number or 'N/A',
+                vo.shipped_at.strftime('%Y-%m-%d %H:%M:%S') if vo.shipped_at else 'N/A',
+                vo.delivered_at.strftime('%Y-%m-%d %H:%M:%S') if vo.delivered_at else 'N/A',
+            ])
+
+        return response
 
 
 class AdminDashboardStatsView(APIView):

@@ -58,6 +58,11 @@ class VendorProfile(models.Model):
     commission_rate = models.DecimalField(max_digits=5, decimal_places=2, default=10.00) # 10% platform commission
     rating = models.DecimalField(max_digits=3, decimal_places=2, default=5.00)
     total_sales = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    bank_name = models.CharField(max_length=150, blank=True)
+    bank_account_holder = models.CharField(max_length=150, blank=True)
+    bank_account_number = models.CharField(max_length=100, blank=True)
+    bank_routing_code = models.CharField(max_length=50, blank=True)
+    payout_method = models.CharField(max_length=50, default='DIRECT_DEPOSIT')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

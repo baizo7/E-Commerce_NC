@@ -17,8 +17,14 @@ export interface VendorProfile {
   commission_rate: string | number;
   rating: string | number;
   total_sales: string | number;
+  bank_name?: string;
+  bank_account_holder?: string;
+  bank_account_number?: string;
+  bank_routing_code?: string;
+  payout_method?: string;
   product_count?: number;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface User {

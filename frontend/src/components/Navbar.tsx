@@ -8,6 +8,7 @@ import {
   Search,
   LogOut,
   Package,
+  Settings,
   Menu,
   X,
   Compass
@@ -192,13 +193,22 @@ export const Navbar: React.FC = () => {
                     </Link>
 
                     {isVendor && (
-                      <Link
-                        to="/vendor/dashboard"
-                        className="flex items-center gap-2.5 px-4 py-2 hover:bg-amber-50 text-amber-900 font-semibold"
-                      >
-                        <Store className="w-4 h-4 text-amber-600" />
-                        Vendor Dashboard
-                      </Link>
+                      <>
+                        <Link
+                          to="/vendor/dashboard"
+                          className="flex items-center gap-2.5 px-4 py-2 hover:bg-amber-50 text-amber-900 font-semibold"
+                        >
+                          <Store className="w-4 h-4 text-[#fcb424]" />
+                          Vendor Dashboard
+                        </Link>
+                        <Link
+                          to="/vendor/settings"
+                          className="flex items-center gap-2.5 px-4 py-2 hover:bg-amber-50 text-amber-900 font-semibold"
+                        >
+                          <Settings className="w-4 h-4 text-slate-400" />
+                          Store Settings
+                        </Link>
+                      </>
                     )}
 
                     {isAdmin && (

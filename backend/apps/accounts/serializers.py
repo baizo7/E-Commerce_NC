@@ -13,7 +13,9 @@ class VendorProfileSerializer(serializers.ModelSerializer):
             'id', 'user', 'user_email', 'store_name', 'slug', 'description',
             'logo_url', 'banner_url', 'business_email', 'business_phone',
             'business_address', 'tax_id', 'status', 'commission_rate',
-            'rating', 'total_sales', 'created_at', 'updated_at', 'product_count'
+            'rating', 'total_sales', 'bank_name', 'bank_account_holder',
+            'bank_account_number', 'bank_routing_code', 'payout_method',
+            'created_at', 'updated_at', 'product_count'
         ]
         read_only_fields = ['id', 'user', 'slug', 'status', 'commission_rate', 'total_sales', 'rating', 'created_at', 'updated_at']
 
