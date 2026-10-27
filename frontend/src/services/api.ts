@@ -8,7 +8,8 @@ import {
   Order,
   VendorOrder,
   VendorAnalytics,
-  AdminAnalytics
+  AdminAnalytics,
+  EmailLog
 } from '../types';
 
 const api = axios.create({
@@ -304,6 +305,22 @@ export const adminService = {
   },
   getAnalytics: async (): Promise<AdminAnalytics> => {
     const res = await api.get('/admin/analytics/');
+    return res.data;
+  },
+};
+
+// Email & Notification Services
+export const emailService = {
+  getEmailLogs: async (): Promise<{ results: EmailLog[] } | EmailLog[]> => {
+    const res = await api.get('/v1/emails/');
+    return res.data;
+  },
+  sendTestEmail: async (toEmail: string): Promise<{ success: boolean; recipient: string; status: string; error_message?: string; backend: string }> => {
+    const res = await api.post('/v1/emails/send-test/', { to_email: toEmail });
+    return res.data;
+  },
+  resendEmail: async (id: number): Promise<{ success: boolean; message: string }> => {
+    const res = await api.post(`/v1/emails/${id}/resend/`);
     return res.data;
   },
 };

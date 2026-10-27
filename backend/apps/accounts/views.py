@@ -26,6 +26,12 @@ class RegisterView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
+        try:
+            from apps.orders.services import EmailService
+            EmailService.send_welcome_email(user)
+        except Exception as e:
+            print(f"[RegisterView] Could not dispatch welcome email: {e}")
+
         return Response(
             {
                 "message": "User registered successfully",

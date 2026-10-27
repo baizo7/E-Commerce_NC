@@ -8,7 +8,7 @@ from decimal import Decimal
 import uuid
 import json
 
-from apps.orders.models import Cart, CartItem, Order, VendorOrder, OrderItem, Payment
+from apps.orders.models import Cart, CartItem, Order, VendorOrder, OrderItem, Payment, EmailLog
 from apps.products.models import Product
 from apps.accounts.models import VendorProfile
 from apps.orders.serializers import (
@@ -21,7 +21,9 @@ from apps.orders.serializers import (
     RazorpayCreateOrderSerializer,
     RazorpayVerifyPaymentSerializer,
     RazorpayPaymentFailSerializer,
-    RazorpayRefundSerializer
+    RazorpayRefundSerializer,
+    EmailLogSerializer,
+    SendTestEmailSerializer
 )
 from apps.orders.services import RazorpayService, StripeService, EmailService
 from apps.accounts.permissions import IsVendorUser, IsAdminUserRole
@@ -546,6 +548,10 @@ class VendorOrderStatusUpdateView(APIView):
 
         vendor_order.save()
 
+        # Notify customer with parcel tracking details
+        if new_status == 'SHIPPED':
+            EmailService.send_order_shipped_notification(vendor_order)
+
         # Update parent order if all sub-orders reached milestone
         parent_order = vendor_order.order
         all_sub_orders = parent_order.vendor_orders.all()
@@ -579,3 +585,60 @@ class AdminOrderDetailView(generics.RetrieveAPIView):
     serializer_class = OrderSerializer
     lookup_field = 'order_number'
     permission_classes = [IsAdminUserRole]
+
+
+class EmailLogListView(generics.ListAPIView):
+    """
+    GET /api/v1/emails/
+    Returns outbound email audit trail logs.
+    Admins see all emails; customers and vendors see their own communications.
+    """
+    serializer_class = EmailLogSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff or getattr(user, 'role', '') == 'ADMIN':
+            return EmailLog.objects.all()
+        return EmailLog.objects.filter(recipient=user.email)
+
+
+class SendTestEmailView(APIView):
+    """
+    POST /api/v1/emails/send-test/
+    Sends a live diagnostic test email to verify SMTP configuration and network connectivity.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = SendTestEmailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        to_email = serializer.validated_data['to_email']
+
+        result = EmailService.send_test_email(to_email)
+        return Response(result, status=status.HTTP_200_OK if result['success'] else status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class EmailResendView(APIView):
+    """
+    POST /api/v1/emails/<int:id>/resend/
+    Attempts re-dispatch of a previously logged email.
+    """
+    permission_classes = [IsAdminUserRole]
+
+    def post(self, request, id):
+        try:
+            log = EmailLog.objects.get(id=id)
+        except EmailLog.DoesNotExist:
+            return Response({'error': 'Email record not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        success = EmailService._dispatch(
+            recipient=log.recipient,
+            subject=log.subject,
+            body_text=log.body_text,
+            body_html=log.body_html,
+            email_type=log.email_type,
+            order=log.order
+        )
+        return Response({'success': success, 'message': 'Email re-dispatched.'})
+

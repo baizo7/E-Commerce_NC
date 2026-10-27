@@ -236,3 +236,31 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"Payment {self.razorpay_order_id} [{self.status}] (Verified: {self.is_verified})"
+
+
+class EmailLog(models.Model):
+    """
+    Audit log of all platform outbound emails (Customer, Vendor, Admin).
+    Provides in-app notification tracking, delivery status, and verification.
+    """
+    STATUS_CHOICES = (
+        ('SENT', 'Sent'),
+        ('FAILED', 'Failed'),
+    )
+
+    recipient = models.EmailField()
+    subject = models.CharField(max_length=255)
+    body_text = models.TextField()
+    body_html = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='SENT')
+    error_message = models.TextField(blank=True)
+    email_type = models.CharField(max_length=50, default='ORDER_CONFIRMATION')
+    order = models.ForeignKey(Order, on_delete=models.SET_NULL, null=True, blank=True, related_name='email_logs')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"[{self.status}] {self.recipient} - {self.subject}"
+

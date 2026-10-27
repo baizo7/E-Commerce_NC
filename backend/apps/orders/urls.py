@@ -10,6 +10,9 @@ from apps.orders.views import (
     RazorpayRefundView,
     RazorpayWebhookView,
     StripeCreateIntentView,
+    EmailLogListView,
+    SendTestEmailView,
+    EmailResendView,
     CustomerOrderListView,
     CustomerOrderDetailView,
     VendorOrderListView,
@@ -38,6 +41,11 @@ urlpatterns = [
 
     # Production Stripe Payments
     path('payments/stripe/create-intent/', StripeCreateIntentView.as_view(), name='stripe_create_intent'),
+
+    # Email Service & Audit Log (Diagnostic & Notification Center)
+    path('emails/', EmailLogListView.as_view(), name='email_list'),
+    path('emails/send-test/', SendTestEmailView.as_view(), name='email_send_test'),
+    path('emails/<int:id>/resend/', EmailResendView.as_view(), name='email_resend'),
 
     # Customer Orders
     path('orders/', CustomerOrderListView.as_view(), name='customer_order_list'),

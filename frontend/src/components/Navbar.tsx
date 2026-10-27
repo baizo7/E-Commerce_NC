@@ -11,6 +11,7 @@ import {
   Package,
   Layers,
   Menu,
+  Mail,
   X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -195,13 +196,22 @@ export const Navbar: React.FC = () => {
                     )}
 
                     {isAdmin && (
-                      <Link
-                        to="/admin/dashboard"
-                        className="flex items-center gap-2.5 px-4 py-2 hover:bg-indigo-50 text-indigo-900"
-                      >
-                        <ShieldCheck className="w-4 h-4 text-indigo-600" />
-                        Platform Administration
-                      </Link>
+                      <>
+                        <Link
+                          to="/admin/dashboard"
+                          className="flex items-center gap-2.5 px-4 py-2 hover:bg-indigo-50 text-indigo-900"
+                        >
+                          <ShieldCheck className="w-4 h-4 text-indigo-600" />
+                          Platform Administration
+                        </Link>
+                        <Link
+                          to="/admin/emails"
+                          className="flex items-center gap-2.5 px-4 py-2 hover:bg-indigo-50 text-indigo-900"
+                        >
+                          <Mail className="w-4 h-4 text-indigo-600" />
+                          Email Outbox & Logs
+                        </Link>
+                      </>
                     )}
 
                     {!isVendor && !isAdmin && (

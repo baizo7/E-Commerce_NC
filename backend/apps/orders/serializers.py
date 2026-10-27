@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from apps.orders.models import Cart, CartItem, Order, VendorOrder, OrderItem, Payment
+from apps.orders.models import Cart, CartItem, Order, VendorOrder, OrderItem, Payment, EmailLog
 from apps.products.serializers import ProductListSerializer
 
 class CartItemSerializer(serializers.ModelSerializer):
@@ -144,4 +144,18 @@ class RazorpayRefundSerializer(serializers.Serializer):
     order_number = serializers.CharField(max_length=50)
     amount = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
     reason = serializers.CharField(max_length=255, default='Customer cancellation / return')
+
+
+class EmailLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EmailLog
+        fields = [
+            'id', 'recipient', 'subject', 'body_text', 'body_html',
+            'status', 'error_message', 'email_type', 'order', 'created_at'
+        ]
+
+
+class SendTestEmailSerializer(serializers.Serializer):
+    to_email = serializers.EmailField()
+
 

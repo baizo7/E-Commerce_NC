@@ -260,3 +260,17 @@ export interface AdminAnalytics {
     created_at: string;
   }[];
 }
+
+export interface EmailLog {
+  id: number;
+  recipient: string;
+  subject: string;
+  body_text: string;
+  body_html: string;
+  status: 'SENT' | 'FAILED';
+  error_message?: string;
+  email_type: string;
+  order?: number | null;
+  created_at: string;
+}
+
