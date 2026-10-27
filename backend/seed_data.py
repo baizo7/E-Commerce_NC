@@ -16,7 +16,7 @@ def run_seed():
 
     # 1. Create Admin
     admin_user, _ = User.objects.get_or_create(
-        email='producte23@gmail.com',
+        email='sanjaisam63@gmail.com',
         defaults={
             'username': 'admin',
             'first_name': 'Super',
@@ -28,7 +28,7 @@ def run_seed():
     )
     admin_user.set_password('Admin@123')
     admin_user.save()
-    print("✓ Admin user created: producte23@gmail.com / Admin@123")
+    print("✓ Admin user created: sanjaisam63@gmail.com / Admin@123")
 
     # 2. Create Customers
     customer1, _ = User.objects.get_or_create(

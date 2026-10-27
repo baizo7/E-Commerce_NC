@@ -647,7 +647,7 @@ class EmailResendView(APIView):
 class ContactInquiryView(APIView):
     """
     POST /contact/
-    Processes customer and vendor inquiries, routes to admin (producte23@gmail.com),
+    Processes customer and vendor inquiries, routes to admin (sanjaisam63@gmail.com),
     and sends an auto-acknowledgement email to the user.
     """
     permission_classes = [permissions.AllowAny]

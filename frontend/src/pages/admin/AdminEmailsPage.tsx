@@ -117,7 +117,7 @@ export const AdminEmailsPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 text-amber-700 flex-shrink-0" />
-            <span className="font-bold text-amber-950">Active Admin Recipient: <span className="font-mono text-indigo-700 bg-white px-2 py-0.5 rounded border border-amber-200">producte23@gmail.com</span></span>
+            <span className="font-bold text-amber-950">Active Admin Recipient: <span className="font-mono text-indigo-700 bg-white px-2 py-0.5 rounded border border-amber-200">sanjaisam63@gmail.com</span></span>
           </div>
           <button
             onClick={() => setShowSmtpGuide(!showSmtpGuide)}
@@ -127,7 +127,7 @@ export const AdminEmailsPage: React.FC = () => {
           </button>
         </div>
         <p className="text-amber-800 leading-relaxed">
-          <strong>Why emails are not reaching your physical inbox:</strong> By default, Django uses <code>console.EmailBackend</code> (safe local sandbox mode) so you don't need external email credentials during development. All vendor registrations, inquiries, and orders are 100% captured and viewable below in this dashboard. To deliver real messages to <strong>producte23@gmail.com</strong>, a Google App Password is required.
+          <strong>Why emails are not reaching your physical inbox:</strong> By default, Django uses <code>console.EmailBackend</code> (safe local sandbox mode) so you don't need external email credentials during development. All vendor registrations, inquiries, and orders are 100% captured and viewable below in this dashboard. To deliver real messages to <strong>sanjaisam63@gmail.com</strong>, a Google App Password is required.
         </p>
         {showSmtpGuide && (
           <div className="mt-3 pt-3 border-t border-amber-200 bg-white/80 p-4 rounded-xl space-y-2 text-slate-700">
@@ -141,10 +141,10 @@ export const AdminEmailsPage: React.FC = () => {
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_USE_TLS=True
-EMAIL_HOST_USER=producte23@gmail.com
+EMAIL_HOST_USER=sanjaisam63@gmail.com
 EMAIL_HOST_PASSWORD=your_16_digit_app_password
-ADMIN_EMAIL=producte23@gmail.com
-DEFAULT_FROM_EMAIL=NexaMarket <producte23@gmail.com>`}
+ADMIN_EMAIL=sanjaisam63@gmail.com
+DEFAULT_FROM_EMAIL=NexaMarket <sanjaisam63@gmail.com>`}
                 </pre>
               </li>
             </ol>

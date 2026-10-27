@@ -624,9 +624,9 @@ NexaMarket Fulfillment
     @classmethod
     def send_vendor_registration_to_admin(cls, vendor_profile):
         """
-        Alerts platform administrator (producte23@gmail.com) when a new vendor registers.
+        Alerts platform administrator (sanjaisam63@gmail.com) when a new vendor registers.
         """
-        admin_email = getattr(settings, 'ADMIN_EMAIL', 'producte23@gmail.com')
+        admin_email = getattr(settings, 'ADMIN_EMAIL', 'sanjaisam63@gmail.com')
         store_name = vendor_profile.store_name
         owner_email = vendor_profile.user.email
         owner_name = f"{vendor_profile.user.first_name} {vendor_profile.user.last_name}".strip() or vendor_profile.user.username
@@ -752,7 +752,7 @@ NexaMarket Merchant Team
 
 Your store status on NexaMarket has been changed from {old_status} to {new_status}.
 
-If you have questions regarding your account status, please reach out to admin support at {getattr(settings, 'ADMIN_EMAIL', 'producte23@gmail.com')}.
+If you have questions regarding your account status, please reach out to admin support at {getattr(settings, 'ADMIN_EMAIL', 'sanjaisam63@gmail.com')}.
 
 Sincerely,
 NexaMarket Administration
@@ -770,7 +770,7 @@ NexaMarket Administration
                     {new_status}
                 </div>
                 <p style="font-size: 12px; color: #64748b; margin-top: 16px;">
-                    For inquiries, please contact our administrative team at {getattr(settings, 'ADMIN_EMAIL', 'producte23@gmail.com')}.
+                    For inquiries, please contact our administrative team at {getattr(settings, 'ADMIN_EMAIL', 'sanjaisam63@gmail.com')}.
                 </p>
             </div>
         </body>
@@ -781,10 +781,10 @@ NexaMarket Administration
     @classmethod
     def send_support_query(cls, query_data: dict) -> dict:
         """
-        Routes incoming customer/vendor inquiry to admin email (producte23@gmail.com)
+        Routes incoming customer/vendor inquiry to admin email (sanjaisam63@gmail.com)
         and returns auto-acknowledgement to inquirer.
         """
-        admin_email = getattr(settings, 'ADMIN_EMAIL', 'producte23@gmail.com')
+        admin_email = getattr(settings, 'ADMIN_EMAIL', 'sanjaisam63@gmail.com')
         inquirer_email = query_data['email']
         inquirer_name = query_data.get('name', 'Inquirer')
         subject_text = query_data.get('subject', 'General Inquiry')
@@ -823,7 +823,7 @@ You can reply directly to {inquirer_email}.
         </html>
         """
 
-        # 1. Dispatch to Admin (producte23@gmail.com)
+        # 1. Dispatch to Admin (sanjaisam63@gmail.com)
         cls._dispatch(
             recipient=admin_email,
             subject=admin_subject,

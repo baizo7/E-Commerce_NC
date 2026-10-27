@@ -52,7 +52,7 @@ export const ContactPage: React.FC = () => {
           Contact Platform Administration
         </h1>
         <p className="text-sm text-slate-500 max-w-lg mx-auto">
-          Have questions about vendor onboarding, store approvals, orders, or partnership? Send a message directly to the platform team at <strong className="text-slate-800">producte23@gmail.com</strong>.
+          Have questions about vendor onboarding, store approvals, orders, or partnership? Send a message directly to the platform team at <strong className="text-slate-800">sanjaisam63@gmail.com</strong>.
         </p>
       </div>
 
@@ -64,7 +64,7 @@ export const ContactPage: React.FC = () => {
             <div className="space-y-3 text-xs text-slate-600">
               <div>
                 <span className="text-slate-400 block mb-0.5">Primary Administrator Email</span>
-                <span className="font-semibold text-indigo-600 select-all">producte23@gmail.com</span>
+                <span className="font-semibold text-indigo-600 select-all">sanjaisam63@gmail.com</span>
               </div>
               <div>
                 <span className="text-slate-400 block mb-0.5">Inquiry Types Handled</span>
@@ -88,7 +88,7 @@ export const ContactPage: React.FC = () => {
               Vendor Registration Questions?
             </div>
             <p className="text-indigo-800/80 leading-relaxed">
-              If you have already registered a store, all alerts are automatically routed to <strong>producte23@gmail.com</strong> for administrator review and activation.
+              If you have already registered a store, all alerts are automatically routed to <strong>sanjaisam63@gmail.com</strong> for administrator review and activation.
             </p>
           </div>
         </div>
@@ -102,7 +102,7 @@ export const ContactPage: React.FC = () => {
               </div>
               <h2 className="text-xl font-bold text-slate-900">Inquiry Routed Successfully!</h2>
               <p className="text-sm text-slate-500 max-w-md mx-auto">
-                Your message has been dispatched to the platform admin (<strong className="text-slate-700">producte23@gmail.com</strong>). An automated confirmation email has also been logged.
+                Your message has been dispatched to the platform admin (<strong className="text-slate-700">sanjaisam63@gmail.com</strong>). An automated confirmation email has also been logged.
               </p>
               <button
                 onClick={() => setSuccess(false)}
@@ -227,7 +227,7 @@ export const ContactPage: React.FC = () => {
                 ) : (
                   <>
                     <Send className="w-4 h-4" />
-                    Submit Inquiry to producte23@gmail.com
+                    Submit Inquiry to sanjaisam63@gmail.com
                   </>
                 )}
               </button>
