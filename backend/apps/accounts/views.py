@@ -9,7 +9,8 @@ from apps.accounts.serializers import (
     CustomTokenObtainPairSerializer,
     VendorProfileSerializer,
     VendorPublicSerializer,
-    AdminVendorStatusSerializer
+    AdminVendorStatusSerializer,
+    ChangePasswordSerializer
 )
 from apps.accounts.permissions import IsAdminUserRole, IsVendorUser
 
@@ -47,6 +48,34 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
+
+
+class ChangePasswordView(APIView):
+    """
+    POST /api/v1/auth/change-password/
+    Allows authenticated users (customers, vendors, admins) to securely change their password.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = request.user
+        current_password = serializer.validated_data['current_password']
+        new_password = serializer.validated_data['new_password']
+
+        if not user.check_password(current_password):
+            return Response(
+                {'error': 'Current password does not match.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user.set_password(new_password)
+        user.save()
+        return Response(
+            {'message': 'Password has been updated successfully.'},
+            status=status.HTTP_200_OK
+        )
 
 
 class VendorPublicListView(generics.ListAPIView):

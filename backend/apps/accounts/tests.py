@@ -77,3 +77,38 @@ class AccountTests(TestCase):
         profile.refresh_from_db()
         self.assertEqual(profile.status, 'APPROVED')
         self.assertEqual(float(profile.commission_rate), 12.50)
+
+    def test_customer_profile_update(self):
+        self.client.force_authenticate(user=self.customer)
+        response = self.client.patch('/api/auth/me/', {
+            'first_name': 'UpdatedFirst',
+            'last_name': 'UpdatedLast',
+            'phone': '+1 555-9988',
+            'address': '100 Silicon Blvd',
+            'city': 'San Jose',
+            'postal_code': '95112'
+        })
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.customer.refresh_from_db()
+        self.assertEqual(self.customer.first_name, 'UpdatedFirst')
+        self.assertEqual(self.customer.phone, '+1 555-9988')
+        self.assertEqual(self.customer.city, 'San Jose')
+
+    def test_customer_change_password(self):
+        self.client.force_authenticate(user=self.customer)
+        # Test wrong current password
+        bad_response = self.client.post('/api/auth/change-password/', {
+            'current_password': 'WrongPassword@999',
+            'new_password': 'NewStrongPassword@2026'
+        })
+        self.assertEqual(bad_response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # Test valid password change
+        ok_response = self.client.post('/api/auth/change-password/', {
+            'current_password': 'Password@123',
+            'new_password': 'NewStrongPassword@2026'
+        })
+        self.assertEqual(ok_response.status_code, status.HTTP_200_OK)
+        self.customer.refresh_from_db()
+        self.assertTrue(self.customer.check_password('NewStrongPassword@2026'))
+

@@ -143,6 +143,14 @@ export const Navbar: React.FC = () => {
                     </div>
 
                     <Link
+                      to="/profile"
+                      className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 text-slate-700"
+                    >
+                      <UserIcon className="w-4 h-4 text-slate-400" />
+                      Account & Profile
+                    </Link>
+
+                    <Link
                       to="/orders"
                       className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 text-slate-700"
                     >
@@ -257,6 +265,15 @@ export const Navbar: React.FC = () => {
           >
             My Orders
           </Link>
+          {user && (
+            <Link
+              to="/profile"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block py-2 text-sm font-medium text-slate-800"
+            >
+              Account & Profile
+            </Link>
+          )}
           {isVendor && (
             <Link
               to="/vendor/dashboard"

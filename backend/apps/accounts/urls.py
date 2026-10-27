@@ -4,6 +4,7 @@ from apps.accounts.views import (
     CustomTokenObtainPairView,
     RegisterView,
     UserProfileView,
+    ChangePasswordView,
     VendorPublicListView,
     VendorPublicDetailView,
     VendorSelfProfileView,
@@ -17,6 +18,7 @@ urlpatterns = [
     path('auth/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('auth/me/', UserProfileView.as_view(), name='user_profile'),
+    path('auth/change-password/', ChangePasswordView.as_view(), name='change_password'),
 
     # Public Vendors
     path('vendors/', VendorPublicListView.as_view(), name='vendor_public_list'),

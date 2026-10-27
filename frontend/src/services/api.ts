@@ -90,6 +90,10 @@ export const authService = {
     const res = await api.patch('/auth/me/', data);
     return res.data;
   },
+  changePassword: async (payload: { current_password: string; new_password: string }): Promise<{ message: string }> => {
+    const res = await api.post('/auth/change-password/', payload);
+    return res.data;
+  },
   logout: () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');

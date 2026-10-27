@@ -111,3 +111,9 @@ class AdminVendorStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = VendorProfile
         fields = ['status', 'commission_rate']
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    current_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True, validators=[validate_password])
+

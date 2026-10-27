@@ -18,6 +18,7 @@ import { OrderSuccessPage } from './pages/customer/OrderSuccessPage';
 import { CustomerOrdersPage } from './pages/customer/CustomerOrdersPage';
 import { OrderDetailPage } from './pages/customer/OrderDetailPage';
 import { ContactPage } from './pages/customer/ContactPage';
+import { ProfilePage } from './pages/customer/ProfilePage';
 
 // Vendor Pages
 import { VendorDashboardPage } from './pages/vendor/VendorDashboardPage';
@@ -37,6 +38,15 @@ import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
 
 // Protected Route wrappers
+const AuthRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  return <>{children}</>;
+};
+
 const VendorRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isVendor, isAdmin, loading } = useAuth();
   if (loading) return null;
@@ -72,6 +82,7 @@ export const AppContent: React.FC = () => {
           <Route path="/order-success/:orderNumber" element={<OrderSuccessPage />} />
           <Route path="/orders" element={<CustomerOrdersPage />} />
           <Route path="/orders/:orderNumber" element={<OrderDetailPage />} />
+          <Route path="/profile" element={<AuthRoute><ProfilePage /></AuthRoute>} />
           <Route path="/contact" element={<ContactPage />} />
 
           {/* Vendor Portal */}
