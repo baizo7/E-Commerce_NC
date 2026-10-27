@@ -129,3 +129,19 @@ class RazorpayVerifyPaymentSerializer(serializers.Serializer):
     razorpay_order_id = serializers.CharField(max_length=100)
     razorpay_payment_id = serializers.CharField(max_length=100)
     razorpay_signature = serializers.CharField(max_length=255)
+
+
+class RazorpayPaymentFailSerializer(serializers.Serializer):
+    razorpay_order_id = serializers.CharField(max_length=100)
+    error_code = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    error_description = serializers.CharField(required=False, allow_blank=True)
+    error_source = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    error_step = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    error_reason = serializers.CharField(max_length=100, required=False, allow_blank=True)
+
+
+class RazorpayRefundSerializer(serializers.Serializer):
+    order_number = serializers.CharField(max_length=50)
+    amount = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
+    reason = serializers.CharField(max_length=255, default='Customer cancellation / return')
+

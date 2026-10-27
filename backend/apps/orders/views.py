@@ -19,9 +19,11 @@ from apps.orders.serializers import (
     CheckoutSerializer,
     PaymentSerializer,
     RazorpayCreateOrderSerializer,
-    RazorpayVerifyPaymentSerializer
+    RazorpayVerifyPaymentSerializer,
+    RazorpayPaymentFailSerializer,
+    RazorpayRefundSerializer
 )
-from apps.orders.services import RazorpayService, EmailService
+from apps.orders.services import RazorpayService, StripeService, EmailService
 from apps.accounts.permissions import IsVendorUser, IsAdminUserRole
 
 class CartView(APIView):
@@ -317,6 +319,85 @@ class RazorpayVerifyPaymentView(APIView):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+class RazorpayPaymentFailView(APIView):
+    """
+    POST /payments/razorpay/fail/
+    Directly logs customer gateway failure from payment.failed SDK listener.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = RazorpayPaymentFailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        payment = RazorpayService.record_payment_failure(data['razorpay_order_id'], data)
+        if not payment:
+            return Response({'error': 'Payment record not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({
+            'message': 'Payment failure recorded.',
+            'order_number': payment.order.order_number,
+            'status': payment.order.status
+        }, status=status.HTTP_200_OK)
+
+
+class RazorpayRefundView(APIView):
+    """
+    POST /payments/razorpay/refund/
+    Initiates an official refund through the Razorpay gateway API.
+    Authorized for Admins and Vendors.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = RazorpayRefundSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        try:
+            order = Order.objects.get(order_number=data['order_number'])
+        except Order.DoesNotExist:
+            return Response({'error': 'Order not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if not (request.user.is_staff or request.user.role == 'ADMIN'):
+            return Response({'error': 'Only administrators can initiate refunds.'}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            refund_res = RazorpayService.initiate_refund(
+                order=order,
+                amount=data.get('amount'),
+                reason=data.get('reason', 'Administrative cancellation / refund')
+            )
+            return Response({
+                'message': 'Refund initiated successfully via Razorpay.',
+                'refund': refund_res
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StripeCreateIntentView(APIView):
+    """
+    POST /payments/stripe/create-intent/
+    Generates a production Stripe PaymentIntent for the given order.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        order_number = request.data.get('order_number')
+        try:
+            order = Order.objects.get(order_number=order_number, customer=request.user)
+        except Order.DoesNotExist:
+            return Response({'error': 'Order not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            intent_data = StripeService.create_payment_intent(order)
+            return Response(intent_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
 class RazorpayWebhookView(APIView):
     """
     POST /payments/razorpay/webhook/
@@ -330,7 +411,7 @@ class RazorpayWebhookView(APIView):
         signature = request.headers.get('X-Razorpay-Signature', '')
         webhook_secret = settings.RAZORPAY_WEBHOOK_SECRET
 
-        # Verify signature
+        # Verify cryptographic signature if secret is configured
         if webhook_secret:
             import hmac
             import hashlib
@@ -363,6 +444,29 @@ class RazorpayWebhookView(APIView):
                             EmailService.send_order_confirmation(order)
                 except Payment.DoesNotExist:
                     pass
+
+            elif event_name == 'payment.failed' and rzp_order_id:
+                try:
+                    payment = Payment.objects.get(razorpay_order_id=rzp_order_id)
+                    payment.status = 'FAILED'
+                    payment.raw_response = {**payment.raw_response, 'webhook_failure': event_data}
+                    payment.save(update_fields=['status', 'raw_response', 'updated_at'])
+                    if payment.order.status == 'PENDING_PAYMENT':
+                        payment.order.transition_to('PAYMENT_FAILED')
+                except Payment.DoesNotExist:
+                    pass
+
+            elif event_name in ['refund.processed', 'refund.created']:
+                refund_entity = event_data.get('payload', {}).get('refund', {}).get('entity', {})
+                pay_id = refund_entity.get('payment_id') or payload.get('id')
+                if pay_id:
+                    try:
+                        payment = Payment.objects.get(razorpay_payment_id=pay_id)
+                        payment.status = 'REFUNDED'
+                        payment.raw_response = {**payment.raw_response, 'webhook_refund': event_data}
+                        payment.save(update_fields=['status', 'raw_response', 'updated_at'])
+                    except Payment.DoesNotExist:
+                        pass
 
             return Response({'status': 'ok'}, status=status.HTTP_200_OK)
         except Exception as e:

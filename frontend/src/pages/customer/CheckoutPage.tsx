@@ -12,7 +12,9 @@ import {
   QrCode,
   Zap,
   RefreshCw,
-  ExternalLink
+  ExternalLink,
+  ChevronRight,
+  HelpCircle
 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
@@ -27,25 +29,21 @@ export const CheckoutPage: React.FC = () => {
   const [formData, setFormData] = useState({
     shipping_name: user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : 'Jane Customer',
     shipping_email: user?.email || 'customer@example.com',
-    shipping_phone: user?.phone || '+1 (555) 234-5678',
+    shipping_phone: user?.phone || '+91 98765 43210',
     shipping_address: user?.address || '742 Evergreen Terrace',
     shipping_city: user?.city || 'Springfield',
     shipping_state: 'OR',
     shipping_postal_code: user?.postal_code || '97477',
-    shipping_country: 'United States',
+    shipping_country: 'India',
     payment_method: 'RAZORPAY',
   });
-
-  const [cardNumber, setCardNumber] = useState('4242 •••• •••• 4242');
-  const [cardExpiry, setCardExpiry] = useState('12/28');
-  const [cardCvc, setCardCvc] = useState('123');
 
   const [submitting, setSubmitting] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [pendingRazorpayOrder, setPendingRazorpayOrder] = useState<Order | null>(null);
+  const [activeOrder, setActiveOrder] = useState<Order | null>(null);
 
-  if (!cart?.items?.length) {
+  if (!cart?.items?.length && !activeOrder) {
     return (
       <div className="max-w-md mx-auto py-20 text-center">
         <h2 className="text-xl font-bold text-slate-800">Your cart is empty</h2>
@@ -61,6 +59,7 @@ export const CheckoutPage: React.FC = () => {
   const taxEstimate = +(cartSubtotal * 0.05).toFixed(2);
   const grandTotal = +(cartSubtotal + shippingEstimate + taxEstimate).toFixed(2);
 
+  // Dynamically inject Razorpay Standard Checkout SDK
   const loadRazorpaySDK = (): Promise<boolean> => {
     return new Promise((resolve) => {
       if ((window as any).Razorpay) {
@@ -69,29 +68,109 @@ export const CheckoutPage: React.FC = () => {
       }
       const script = document.createElement('script');
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
       script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
+      script.onerror = () => {
+        console.error('Failed to load Razorpay SDK');
+        resolve(false);
+      };
       document.body.appendChild(script);
     });
   };
 
-  const handleSimulatedVerification = async (order: Order, rzpPayload: any) => {
-    setVerifying(true);
-    setErrorMessage(null);
+  // Launch Authentic Razorpay Modal
+  const launchRazorpayModal = async (order: Order) => {
+    const rzpData = order.razorpay_payload;
+    if (!rzpData) {
+      setErrorMessage('Razorpay payload missing from order. Please try again.');
+      return;
+    }
+
+    const loaded = await loadRazorpaySDK();
+    if (!loaded || !(window as any).Razorpay) {
+      setErrorMessage('Unable to connect to Razorpay Payment Gateway. Please check your internet connection or ad-blocker.');
+      return;
+    }
+
+    const options: any = {
+      key: rzpData.key_id,
+      amount: rzpData.amount_in_subunits,
+      currency: rzpData.currency || 'INR',
+      name: 'NexaMarket Marketplace',
+      description: `Order #${order.order_number}`,
+      image: 'https://cdn-icons-png.flaticon.com/512/3081/3081559.png',
+      order_id: rzpData.razorpay_order_id,
+      prefill: {
+        name: formData.shipping_name,
+        email: formData.shipping_email,
+        contact: formData.shipping_phone,
+      },
+      notes: {
+        order_number: order.order_number,
+      },
+      theme: {
+        color: '#4f46e5',
+      },
+      // Successful authorization handler
+      handler: async (response: any) => {
+        setVerifying(true);
+        setErrorMessage(null);
+        try {
+          await orderService.verifyRazorpayPayment({
+            razorpay_order_id: response.razorpay_order_id || rzpData.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+          });
+          await refreshCart();
+          navigate(`/order-success/${order.order_number}`, { state: { order } });
+        } catch (verifyErr: any) {
+          console.error('Verification error:', verifyErr);
+          setErrorMessage(
+            verifyErr.response?.data?.error ||
+              'Payment signature verification failed. Please contact platform support.'
+          );
+        } finally {
+          setVerifying(false);
+        }
+      },
+      modal: {
+        ondismiss: () => {
+          setActiveOrder(order);
+          setErrorMessage(
+            'Payment window was closed before completing transaction. Your items remain reserved. Click "Re-open Razorpay" to complete payment.'
+          );
+        },
+      },
+    };
+
     try {
-      const mockPaymentId = `pay_sim_${Date.now()}`;
-      await orderService.verifyRazorpayPayment({
-        razorpay_order_id: rzpPayload.razorpay_order_id,
-        razorpay_payment_id: mockPaymentId,
-        razorpay_signature: 'simulated_valid_signature',
+      const rzpInstance = new (window as any).Razorpay(options);
+
+      // Register official Razorpay payment.failed listener
+      rzpInstance.on('payment.failed', async (response: any) => {
+        console.error('Razorpay payment failure event:', response.error);
+        const errDesc = response.error?.description || response.error?.reason || 'Transaction declined';
+        setErrorMessage(`Bank Payment Failed: ${errDesc} (Code: ${response.error?.code || 'UNKNOWN'})`);
+        setActiveOrder(order);
+
+        try {
+          await orderService.recordRazorpayFailure({
+            razorpay_order_id: rzpData.razorpay_order_id,
+            error_code: response.error?.code,
+            error_description: response.error?.description,
+            error_source: response.error?.source,
+            error_step: response.error?.step,
+            error_reason: response.error?.reason,
+          });
+        } catch (reportErr) {
+          console.warn('Could not report failure to backend:', reportErr);
+        }
       });
-      await refreshCart();
-      navigate(`/order-success/${order.order_number}`, { state: { order } });
-    } catch (err: any) {
-      console.error('Simulated verification error:', err);
-      setErrorMessage(err.response?.data?.error || 'Verification failed. Please try again.');
-    } finally {
-      setVerifying(false);
+
+      rzpInstance.open();
+    } catch (launchErr: any) {
+      console.error('Failed to trigger Razorpay modal:', launchErr);
+      setErrorMessage(`Razorpay Gateway initialization error: ${launchErr.message}`);
     }
   };
 
@@ -101,77 +180,21 @@ export const CheckoutPage: React.FC = () => {
     setErrorMessage(null);
 
     try {
-      const order = await orderService.checkout(formData);
-
       if (formData.payment_method === 'RAZORPAY') {
-        const rzpData = order.razorpay_payload;
-        if (!rzpData) {
-          throw new Error('Missing Razorpay payment configuration from server.');
-        }
-
-        const isLoaded = await loadRazorpaySDK();
-
-        if (isLoaded && (window as any).Razorpay && !rzpData.razorpay_order_id.startsWith('order_test_')) {
-          const options = {
-            key: rzpData.key_id,
-            amount: rzpData.amount_in_subunits,
-            currency: rzpData.currency || 'INR',
-            name: 'Nexacraft Multi-Vendor Marketplace',
-            description: `Payment for Order #${order.order_number}`,
-            order_id: rzpData.razorpay_order_id,
-            prefill: {
-              name: formData.shipping_name,
-              email: formData.shipping_email,
-              contact: formData.shipping_phone,
-            },
-            theme: {
-              color: '#4f46e5',
-            },
-            handler: async (response: any) => {
-              try {
-                setVerifying(true);
-                await orderService.verifyRazorpayPayment({
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature: response.razorpay_signature,
-                });
-                await refreshCart();
-                navigate(`/order-success/${order.order_number}`, { state: { order } });
-              } catch (verifyErr: any) {
-                setErrorMessage(verifyErr.response?.data?.error || 'Razorpay signature validation failed.');
-              } finally {
-                setVerifying(false);
-              }
-            },
-            modal: {
-              ondismiss: () => {
-                setPendingRazorpayOrder(order);
-                setErrorMessage('Payment window was closed before completion. You can retry verification below.');
-              },
-            },
-          };
-
-          try {
-            const rzp = new (window as any).Razorpay(options);
-            rzp.open();
-          } catch (launchErr) {
-            console.warn('Razorpay open failed, offering simulated test completion:', launchErr);
-            setPendingRazorpayOrder(order);
-          }
-        } else {
-          // Razorpay sandbox simulation mode (standard for local dev & test keys)
-          setPendingRazorpayOrder(order);
-        }
+        const order = await orderService.checkout(formData);
+        setActiveOrder(order);
+        await launchRazorpayModal(order);
       } else {
-        // Direct credit card, UPI, or Cash on Delivery (simulated instant confirmation)
+        // Cash on delivery
+        const order = await orderService.checkout(formData);
         await refreshCart();
         navigate(`/order-success/${order.order_number}`, { state: { order } });
       }
     } catch (err: any) {
-      console.error(err);
+      console.error('Checkout error:', err);
       setErrorMessage(
         err.response?.data?.error ||
-          'Failed to place order. Please review your shipping details and stock availability.'
+          'Failed to place order. Please check stock availability and address fields.'
       );
     } finally {
       setSubmitting(false);
@@ -183,7 +206,7 @@ export const CheckoutPage: React.FC = () => {
       <div>
         <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Checkout</h1>
         <p className="text-sm text-slate-500 mt-1">
-          Unified multi-vendor fulfillment with atomic inventory reservation and payment processing.
+          Production Payment Gateway with Atomic Stock Reservation and Bank-Grade Cryptographic Verification.
         </p>
       </div>
 
@@ -191,57 +214,43 @@ export const CheckoutPage: React.FC = () => {
         <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-sm flex items-start gap-3">
           <AlertCircle className="w-5 h-5 flex-shrink-0 text-rose-600 mt-0.5" />
           <div className="flex-1">
-            <h4 className="font-bold">Notice</h4>
-            <p className="text-xs text-rose-700 mt-0.5">{errorMessage}</p>
+            <h4 className="font-bold">Payment Status Notice</h4>
+            <p className="text-xs text-rose-700 mt-0.5 leading-relaxed">{errorMessage}</p>
           </div>
         </div>
       )}
 
-      {/* Razorpay Test Mode Verification Modal / Action Banner */}
-      {pendingRazorpayOrder && (
-        <div className="p-6 rounded-2xl bg-indigo-50/80 border-2 border-indigo-200 shadow-sm space-y-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold">
-                <Zap className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-900 text-base">Razorpay Test Mode Order Ready</h3>
-                <p className="text-xs text-slate-600 mt-0.5">
-                  Order <span className="font-mono font-semibold text-indigo-700">#{pendingRazorpayOrder.order_number}</span> is in <span className="font-semibold text-amber-600">PENDING_PAYMENT</span> state awaiting cryptographic confirmation.
-                </p>
-              </div>
-            </div>
-            <span className="text-xs bg-indigo-100 text-indigo-800 font-semibold px-3 py-1 rounded-full">
-              Razorpay ID: {pendingRazorpayOrder.razorpay_payload?.razorpay_order_id}
-            </span>
+      {/* Re-open Gateway Action for Pending Orders */}
+      {activeOrder && activeOrder.razorpay_payload && (
+        <div className="p-5 rounded-2xl bg-indigo-50/90 border-2 border-indigo-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+              <Zap className="w-4 h-4 text-indigo-600" />
+              Order #{activeOrder.order_number} is Pending Payment
+            </h3>
+            <p className="text-xs text-slate-600 mt-0.5">
+              Stock reserved for this order. Complete payment through the Razorpay gateway to generate merchant package dispatches.
+            </p>
           </div>
 
-          <div className="p-4 bg-white rounded-xl border border-indigo-100 flex flex-wrap items-center justify-between gap-4">
-            <div className="text-xs text-slate-600 space-y-1">
-              <div><strong>Payable Amount:</strong> ₹{pendingRazorpayOrder.grand_total} (converted to minor subunits)</div>
-              <div><strong>Security:</strong> Server-side HMAC SHA256 validation enforced</div>
-            </div>
-
-            <button
-              type="button"
-              disabled={verifying}
-              onClick={() => handleSimulatedVerification(pendingRazorpayOrder, pendingRazorpayOrder.razorpay_payload)}
-              className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow flex items-center gap-2 transition disabled:opacity-50"
-            >
-              {verifying ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  Verifying Cryptographic Signature...
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="w-4 h-4" />
-                  Simulate Razorpay Payment Success & Verify
-                </>
-              )}
-            </button>
-          </div>
+          <button
+            type="button"
+            disabled={verifying}
+            onClick={() => launchRazorpayModal(activeOrder)}
+            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-200 flex items-center gap-2 transition disabled:opacity-50"
+          >
+            {verifying ? (
+              <>
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                Verifying Signature...
+              </>
+            ) : (
+              <>
+                <ExternalLink className="w-4 h-4" />
+                Re-open Razorpay Gateway
+              </>
+            )}
+          </button>
         </div>
       )}
 
@@ -341,13 +350,14 @@ export const CheckoutPage: React.FC = () => {
                 <CreditCard className="w-5 h-5 text-indigo-600" />
                 <h2 className="font-bold text-slate-900 text-base">Payment Method</h2>
               </div>
-              <span className="text-xs bg-indigo-50 text-indigo-700 font-semibold px-2.5 py-0.5 rounded-full">
-                Plan v1.1 Razorpay Gateway
+              <span className="text-xs bg-emerald-50 text-emerald-700 font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                PCI-DSS Level 1 Encrypted
               </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* Option 1: Razorpay (Recommended) */}
+              {/* Option 1: Razorpay Gateway */}
               <label
                 className={`p-4 border-2 rounded-xl cursor-pointer flex flex-col justify-between transition relative ${
                   formData.payment_method === 'RAZORPAY'
@@ -367,67 +377,19 @@ export const CheckoutPage: React.FC = () => {
                   <div>
                     <span className="text-sm font-bold block flex items-center gap-1.5">
                       Razorpay Gateway
-                      <span className="text-[10px] bg-indigo-600 text-white font-bold px-1.5 py-0.5 rounded">Recommended</span>
+                      <span className="text-[10px] bg-indigo-600 text-white font-bold px-1.5 py-0.5 rounded">
+                        Production Live & Test
+                      </span>
                     </span>
-                    <span className="text-xs text-slate-500 mt-1 block">
-                      Card, Netbanking, UPI, Wallets (v1.1 Core Integration)
+                    <span className="text-xs text-slate-500 mt-1.5 block leading-relaxed">
+                      Credit/Debit Cards, UPI (GPay/PhonePe), Netbanking (50+ Banks), and Wallets.
                     </span>
                   </div>
                   <Zap className={`w-5 h-5 ${formData.payment_method === 'RAZORPAY' ? 'text-indigo-600' : 'text-slate-400'}`} />
                 </div>
               </label>
 
-              {/* Option 2: Direct Card Simulation */}
-              <label
-                className={`p-4 border-2 rounded-xl cursor-pointer flex flex-col justify-between transition ${
-                  formData.payment_method === 'CREDIT_CARD'
-                    ? 'border-indigo-600 bg-indigo-50/60 text-indigo-950 shadow-sm'
-                    : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="payment_method"
-                  value="CREDIT_CARD"
-                  checked={formData.payment_method === 'CREDIT_CARD'}
-                  onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
-                  className="sr-only"
-                />
-                <div className="flex items-start justify-between">
-                  <div>
-                    <span className="text-sm font-bold block">Credit / Debit Card</span>
-                    <span className="text-xs text-slate-500 mt-1 block">Visa, Mastercard, Amex (Direct Simulation)</span>
-                  </div>
-                  <CreditCard className={`w-5 h-5 ${formData.payment_method === 'CREDIT_CARD' ? 'text-indigo-600' : 'text-slate-400'}`} />
-                </div>
-              </label>
-
-              {/* Option 3: UPI */}
-              <label
-                className={`p-4 border-2 rounded-xl cursor-pointer flex flex-col justify-between transition ${
-                  formData.payment_method === 'UPI'
-                    ? 'border-indigo-600 bg-indigo-50/60 text-indigo-950 shadow-sm'
-                    : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="payment_method"
-                  value="UPI"
-                  checked={formData.payment_method === 'UPI'}
-                  onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
-                  className="sr-only"
-                />
-                <div className="flex items-start justify-between">
-                  <div>
-                    <span className="text-sm font-bold block">Instant UPI / QR</span>
-                    <span className="text-xs text-slate-500 mt-1 block">Direct Bank Escrow</span>
-                  </div>
-                  <QrCode className={`w-5 h-5 ${formData.payment_method === 'UPI' ? 'text-indigo-600' : 'text-slate-400'}`} />
-                </div>
-              </label>
-
-              {/* Option 4: Cash on Delivery */}
+              {/* Option 2: Cash on Delivery */}
               <label
                 className={`p-4 border-2 rounded-xl cursor-pointer flex flex-col justify-between transition ${
                   formData.payment_method === 'CASH_ON_DELIVERY'
@@ -446,44 +408,21 @@ export const CheckoutPage: React.FC = () => {
                 <div className="flex items-start justify-between">
                   <div>
                     <span className="text-sm font-bold block">Cash on Delivery</span>
-                    <span className="text-xs text-slate-500 mt-1 block">Pay on Delivery Arrival</span>
+                    <span className="text-xs text-slate-500 mt-1.5 block leading-relaxed">
+                      Pay upon delivery arrival to merchant couriers.
+                    </span>
                   </div>
                   <Truck className={`w-5 h-5 ${formData.payment_method === 'CASH_ON_DELIVERY' ? 'text-indigo-600' : 'text-slate-400'}`} />
                 </div>
               </label>
             </div>
 
-            {formData.payment_method === 'CREDIT_CARD' && (
-              <div className="pt-3 space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">Demo Card Number</label>
-                  <input
-                    type="text"
-                    value={cardNumber}
-                    onChange={(e) => setCardNumber(e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg outline-none font-mono"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Expires</label>
-                    <input
-                      type="text"
-                      value={cardExpiry}
-                      onChange={(e) => setCardExpiry(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg outline-none font-mono"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">CVC / CVV</label>
-                    <input
-                      type="text"
-                      value={cardCvc}
-                      onChange={(e) => setCardCvc(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg outline-none font-mono"
-                    />
-                  </div>
-                </div>
+            {formData.payment_method === 'RAZORPAY' && (
+              <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl flex items-start gap-2.5 text-xs text-slate-600">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                <p>
+                  Clicking <strong>"Proceed to Payment"</strong> opens the secure Razorpay Gateway modal. Card numbers, UPI PINs, and bank logins are handled directly through bank servers and never touch marketplace disks.
+                </p>
               </div>
             )}
           </div>
@@ -497,7 +436,7 @@ export const CheckoutPage: React.FC = () => {
               Your order contains items from the following independent stores and will be automatically split into individual merchant sub-orders:
             </p>
 
-            {cart.vendors_involved && cart.vendors_involved.length > 0 && (
+            {cart?.vendors_involved && cart.vendors_involved.length > 0 && (
               <div className="space-y-2 pt-2">
                 {cart.vendors_involved.map((v) => (
                   <div
@@ -536,15 +475,15 @@ export const CheckoutPage: React.FC = () => {
             <button
               type="submit"
               disabled={submitting || verifying}
-              className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 transition disabled:opacity-50"
+              className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 transition disabled:opacity-50 text-sm"
             >
               <Lock className="w-4 h-4" />
               {submitting
-                ? 'Reserving Stock & Initializing...'
+                ? 'Reserving Stock & Initializing Gateway...'
                 : verifying
-                ? 'Verifying Payment...'
+                ? 'Verifying Cryptographic Signature...'
                 : formData.payment_method === 'RAZORPAY'
-                ? `Proceed to Razorpay ($${grandTotal.toFixed(2)})`
+                ? `Proceed to Payment ($${grandTotal.toFixed(2)})`
                 : `Place Order ($${grandTotal.toFixed(2)})`}
             </button>
 

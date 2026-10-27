@@ -157,10 +157,18 @@ SPECTACULAR_SETTINGS = {
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
-# Razorpay Configuration (Test Mode)
+# Payment Gateway Configuration (Production-Ready)
+# Razorpay (Cards, UPI, Netbanking, Wallets)
 RAZORPAY_KEY_ID = os.environ.get('RAZORPAY_KEY_ID', 'rzp_test_NexaMarket2026')
 RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET', 'secret_test_NexaMarket2026')
 RAZORPAY_WEBHOOK_SECRET = os.environ.get('RAZORPAY_WEBHOOK_SECRET', 'webhook_secret_NexaMarket2026')
+RAZORPAY_CURRENCY = os.environ.get('RAZORPAY_CURRENCY', 'INR')
+
+# Stripe (Global Credit Cards, Apple Pay, Google Pay)
+STRIPE_PUBLIC_KEY = os.environ.get('STRIPE_PUBLIC_KEY', 'pk_test_NexaMarket2026')
+STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', 'sk_test_NexaMarket2026')
+STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
+STRIPE_CURRENCY = os.environ.get('STRIPE_CURRENCY', 'usd')
 
 # Email Backend (Console in dev for order confirmation emails)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

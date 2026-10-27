@@ -6,7 +6,10 @@ from apps.orders.views import (
     CheckoutView,
     RazorpayCreateOrderView,
     RazorpayVerifyPaymentView,
+    RazorpayPaymentFailView,
+    RazorpayRefundView,
     RazorpayWebhookView,
+    StripeCreateIntentView,
     CustomerOrderListView,
     CustomerOrderDetailView,
     VendorOrderListView,
@@ -26,10 +29,15 @@ urlpatterns = [
     path('orders/checkout/', CheckoutView.as_view(), name='order_checkout'),
     path('checkout/', CheckoutView.as_view(), name='checkout_alias'),
 
-    # Razorpay Payments (Section 8 in v1.1 Report)
+    # Production Razorpay Payments
     path('payments/razorpay/create/', RazorpayCreateOrderView.as_view(), name='razorpay_create'),
     path('payments/razorpay/verify/', RazorpayVerifyPaymentView.as_view(), name='razorpay_verify'),
+    path('payments/razorpay/fail/', RazorpayPaymentFailView.as_view(), name='razorpay_fail'),
+    path('payments/razorpay/refund/', RazorpayRefundView.as_view(), name='razorpay_refund'),
     path('payments/razorpay/webhook/', RazorpayWebhookView.as_view(), name='razorpay_webhook'),
+
+    # Production Stripe Payments
+    path('payments/stripe/create-intent/', StripeCreateIntentView.as_view(), name='stripe_create_intent'),
 
     # Customer Orders
     path('orders/', CustomerOrderListView.as_view(), name='customer_order_list'),

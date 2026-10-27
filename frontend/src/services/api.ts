@@ -178,6 +178,29 @@ export const orderService = {
     const res = await api.post('/v1/payments/razorpay/verify/', payload);
     return res.data;
   },
+  recordRazorpayFailure: async (payload: {
+    razorpay_order_id: string;
+    error_code?: string;
+    error_description?: string;
+    error_source?: string;
+    error_step?: string;
+    error_reason?: string;
+  }) => {
+    const res = await api.post('/v1/payments/razorpay/fail/', payload);
+    return res.data;
+  },
+  createStripeIntent: async (orderNumber: string) => {
+    const res = await api.post('/v1/payments/stripe/create-intent/', { order_number: orderNumber });
+    return res.data;
+  },
+  initiateRefund: async (orderNumber: string, amount?: number, reason?: string) => {
+    const res = await api.post('/v1/payments/razorpay/refund/', {
+      order_number: orderNumber,
+      amount,
+      reason,
+    });
+    return res.data;
+  },
   getCustomerOrders: async (): Promise<{ results: Order[] } | Order[]> => {
     const res = await api.get('/v1/orders/');
     return res.data;
