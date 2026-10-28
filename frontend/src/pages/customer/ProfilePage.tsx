@@ -24,11 +24,12 @@ import {
   Plus,
   Edit3,
   Star,
-  X
+  X,
+  Store
 } from 'lucide-react';
 
 export const ProfilePage: React.FC = () => {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, isVendor } = useAuth();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [activeTab, setActiveTab] = useState<'profile' | 'address' | 'security'>('profile');
@@ -952,6 +953,44 @@ export const ProfilePage: React.FC = () => {
           </div>
         </form>
       )}
+
+      {/* Vendor Portal Section - Placed Below Accounts & Profile */}
+      <div className="bg-gradient-to-r from-slate-900 to-slate-950 rounded-3xl p-6 sm:p-7 text-white shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 border border-slate-800">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-amber-400/20 text-[#ffcd05] flex items-center justify-center border border-amber-400/30 shrink-0">
+            <Store className="w-6 h-6 text-amber-400" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-extrabold text-base text-white">
+                Merchant & Vendor Portal
+              </h3>
+              {isVendor ? (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-400 text-slate-950">
+                  Active Vendor
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-800 text-slate-300 border border-slate-700">
+                  Customer Account
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-slate-300 mt-1 max-w-xl">
+              {isVendor
+                ? 'Access your merchant dashboard to manage store products, inventory levels, order dispatches, and sales revenue.'
+                : 'Interested in selling your crafts or products on Modern Shop? Register as a verified merchant to start your vendor store.'}
+            </p>
+          </div>
+        </div>
+
+        <Link
+          to={isVendor ? "/vendor/dashboard" : "/register?role=vendor"}
+          className="px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs transition shadow-sm shrink-0 flex items-center gap-2"
+        >
+          <Store className="w-4 h-4" />
+          {isVendor ? 'Enter Vendor Portal →' : 'Apply for Vendor Portal →'}
+        </Link>
+      </div>
     </div>
   );
 };
