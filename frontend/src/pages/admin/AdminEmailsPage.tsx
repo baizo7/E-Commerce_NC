@@ -134,7 +134,7 @@ export const AdminEmailsPage: React.FC = () => {
             <h4 className="font-bold text-slate-900">3-Step Gmail SMTP Activation Guide:</h4>
             <ol className="list-decimal list-inside space-y-1.5 text-xs leading-relaxed">
               <li>Open your Google Account Security: <a href="https://myaccount.google.com/security" target="_blank" rel="noreferrer" className="text-indigo-600 underline font-semibold">myaccount.google.com/security</a> and make sure <strong>2-Step Verification</strong> is ON.</li>
-              <li>Go to <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noreferrer" className="text-indigo-600 underline font-semibold">myaccount.google.com/apppasswords</a>, generate a 16-character App Password (app name: <em>NexaMarket</em>).</li>
+              <li>Go to <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noreferrer" className="text-indigo-600 underline font-semibold">myaccount.google.com/apppasswords</a>, generate a 16-character App Password (app name: <em>Modern Shop</em>).</li>
               <li>Open <code>backend/.env</code> and set:
                 <pre className="mt-1.5 p-2.5 bg-slate-900 text-slate-100 rounded-lg font-mono text-[11px] overflow-x-auto">
 {`EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
@@ -144,7 +144,7 @@ EMAIL_USE_TLS=True
 EMAIL_HOST_USER=sanjaisam63@gmail.com
 EMAIL_HOST_PASSWORD=your_16_digit_app_password
 ADMIN_EMAIL=sanjaisam63@gmail.com
-DEFAULT_FROM_EMAIL=NexaMarket <sanjaisam63@gmail.com>`}
+DEFAULT_FROM_EMAIL=Modern Shop <sanjaisam63@gmail.com>`}
                 </pre>
               </li>
             </ol>

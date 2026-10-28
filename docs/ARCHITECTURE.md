@@ -1,6 +1,6 @@
-# NexaMarket Multi-Vendor Architecture Specification
+# Modern Shop Multi-Vendor Architecture Specification
 
-This document provides a comprehensive technical architecture and data design specification for the **NexaMarket Multi-Vendor E-Commerce Marketplace**, developed with React, Vite, TypeScript, Django REST Framework (DRF), and PostgreSQL.
+This document provides a comprehensive technical architecture and data design specification for the **Modern Shop Multi-Vendor E-Commerce Marketplace**, developed with React, Vite, TypeScript, Django REST Framework (DRF), and PostgreSQL.
 
 ---
 

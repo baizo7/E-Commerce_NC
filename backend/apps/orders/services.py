@@ -243,7 +243,7 @@ class StripeService:
                     'order_number': order.order_number,
                     'customer_email': order.customer.email,
                 },
-                description=f"NexaMarket Order #{order.order_number}"
+                description=f"Modern Shop Order #{order.order_number}"
             )
             return {
                 'client_secret': intent.client_secret,
@@ -310,7 +310,7 @@ class EmailService:
         """
         Dispatches customer order confirmation email with full HTML line-item receipt.
         """
-        subject = f"Order Confirmed: #{order.order_number} - NexaMarket"
+        subject = f"Order Confirmed: #{order.order_number} - Modern Shop"
         
         items_text = "\n".join([
             f"- {item.product_title} x {item.quantity} = ${item.subtotal} (Sold by {item.vendor.store_name if hasattr(item, 'vendor') and hasattr(item.vendor, 'store_name') else 'Merchant'})"
@@ -333,7 +333,7 @@ class EmailService:
 
         body_text = f"""Dear {order.shipping_name},
 
-Thank you for your order at NexaMarket! Your payment has been confirmed.
+Thank you for your order at Modern Shop! Your payment has been confirmed.
 
 Order Reference: #{order.order_number}
 Order Date: {order.created_at.strftime('%Y-%m-%d %H:%M:%S UTC')}
@@ -350,7 +350,7 @@ Delivery Address:
 Our independent merchants have been notified and are now packaging your items. You can track individual parcel shipments in your Customer Portal.
 
 Sincerely,
-The NexaMarket Team
+The Modern Shop Team
 """
 
         body_html = f"""
@@ -363,8 +363,8 @@ The NexaMarket Team
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; margin: 0; padding: 24px;">
             <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0;">
                 <!-- Header -->
-                <div style="background-color: #4f46e5; padding: 32px 24px; text-align: center; color: #ffffff;">
-                    <h1 style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">NexaMarket</h1>
+                <div style="background-color: #0a0500; padding: 32px 24px; text-align: center; color: #ffffff;">
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">Modern Shop</h1>
                     <p style="margin: 8px 0 0; font-size: 14px; opacity: 0.9;">Order Confirmed & Payment Verified</p>
                 </div>
 
@@ -427,7 +427,7 @@ The NexaMarket Team
 
                 <!-- Footer -->
                 <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 20px; text-align: center; font-size: 12px; color: #94a3b8;">
-                    <p style="margin: 0;">&copy; 2026 NexaMarket Marketplace. All rights reserved.</p>
+                    <p style="margin: 0;">&copy; 2026 Modern Shop Marketplace. All rights reserved.</p>
                     <p style="margin: 4px 0 0;">This email was sent to {order.shipping_email} regarding your purchase.</p>
                 </div>
             </div>
@@ -478,7 +478,7 @@ Shipping Destination:
 Please log into your Vendor Portal to process and dispatch this order.
 
 Sincerely,
-NexaMarket Merchant Team
+Modern Shop Merchant Team
 """
 
         body_html = f"""
@@ -537,7 +537,7 @@ Order: #{vendor_order.order.order_number}
 You can monitor tracking updates in your Customer Portal.
 
 Best regards,
-NexaMarket Fulfillment
+Modern Shop Fulfillment
 """
 
         body_html = f"""
@@ -580,17 +580,17 @@ NexaMarket Fulfillment
         """
         Sends account registration welcome email.
         """
-        subject = "Welcome to NexaMarket Marketplace!"
+        subject = "Welcome to Modern Shop Marketplace!"
         body_text = f"Welcome {user.first_name or user.username}! Your account has been created. Start browsing products or apply to become a merchant."
         body_html = f"""
         <!DOCTYPE html>
         <html>
         <body style="font-family: sans-serif; background-color: #f8fafc; padding: 20px;">
             <div style="max-width: 500px; margin: auto; background: white; padding: 28px; border-radius: 12px; border: 1px solid #e2e8f0;">
-                <h2 style="color: #4f46e5; margin-top: 0;">Welcome to NexaMarket!</h2>
+                <h2 style="color: #0a0500; margin-top: 0;">Welcome to Modern Shop!</h2>
                 <p style="font-size: 14px; color: #475569;">Hi {user.first_name or user.username}, your account ({user.email}) is ready to use.</p>
                 <div style="margin-top: 20px;">
-                    <a href="http://127.0.0.1:5173/products" style="background: #4f46e5; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: bold;">
+                    <a href="http://127.0.0.1:5173/products" style="background: #0a0500; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: bold;">
                         Explore Products &rarr;
                     </a>
                 </div>
@@ -605,11 +605,11 @@ NexaMarket Fulfillment
         """
         Sends an operational diagnostic test email to verify SMTP / backend configuration.
         """
-        subject = "NexaMarket Email Diagnostic Test"
-        body_text = f"This is an automated diagnostic test from NexaMarket. Server time: {timezone.now().isoformat()}."
+        subject = "Modern Shop Email Diagnostic Test"
+        body_text = f"This is an automated diagnostic test from Modern Shop. Server time: {timezone.now().isoformat()}."
         body_html = f"""
         <div style="padding: 20px; font-family: sans-serif;">
-            <h3 style="color: #4f46e5;">NexaMarket Diagnostic Test</h3>
+            <h3 style="color: #0a0500;">Modern Shop Diagnostic Test</h3>
             <p>Your email service is configured correctly and functioning properly!</p>
             <p>Timestamp: <strong>{timezone.now().isoformat()}</strong></p>
         </div>
@@ -649,7 +649,7 @@ Registered At: {vendor_profile.created_at.strftime('%Y-%m-%d %H:%M:%S UTC')}
 You can review, approve, or adjust merchant commission rates in the Admin Portal:
 http://127.0.0.1:5173/admin/vendors
 
-NexaMarket Administration
+Modern Shop Administration
 """
 
         body_html = f"""
@@ -715,26 +715,26 @@ NexaMarket Administration
         Sends application confirmation to the newly registered vendor.
         """
         store_name = vendor_profile.store_name
-        subject = f"Merchant Application Confirmed: {store_name} - NexaMarket"
+        subject = f"Merchant Application Confirmed: {store_name} - Modern Shop"
         body_text = f"""Hello {store_name},
 
-Thank you for registering your shop on NexaMarket. Your merchant store has been registered.
+Thank you for registering your shop on Modern Shop. Your merchant store has been registered.
 You can now log in, configure your storefront, and begin publishing products.
 
 Store Dashboard: http://127.0.0.1:5173/vendor/dashboard
 
 Welcome aboard!
-NexaMarket Merchant Team
+Modern Shop Merchant Team
 """
         body_html = f"""
         <!DOCTYPE html>
         <html>
         <body style="font-family: sans-serif; background-color: #f8fafc; padding: 24px;">
             <div style="max-width: 550px; margin: auto; background: white; padding: 28px; border-radius: 14px; border: 1px solid #e2e8f0;">
-                <h2 style="color: #4f46e5; margin-top: 0;">Welcome to NexaMarket, {store_name}!</h2>
+                <h2 style="color: #0a0500; margin-top: 0;">Welcome to Modern Shop, {store_name}!</h2>
                 <p style="font-size: 14px; color: #475569;">Your vendor application has been processed. Your merchant portal is now active.</p>
                 <div style="margin-top: 24px; text-align: center;">
-                    <a href="http://127.0.0.1:5173/vendor/dashboard" style="background: #4f46e5; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: bold; display: inline-block;">
+                    <a href="http://127.0.0.1:5173/vendor/dashboard" style="background: #0a0500; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: bold; display: inline-block;">
                         Access Vendor Dashboard &rarr;
                     </a>
                 </div>
@@ -845,15 +845,15 @@ You can reply directly to {inquirer_email}.
         )
 
         # 2. Dispatch Auto-Acknowledgement to Inquirer
-        ack_subject = f"We have received your query: {subject_text} - NexaMarket Support"
+        ack_subject = f"We have received your query: {subject_text} - Modern Shop Support"
         ack_body = f"""Dear {inquirer_name},
 
-Thank you for reaching out to NexaMarket. We have received your query regarding "{subject_text}".
+Thank you for reaching out to Modern Shop. We have received your query regarding "{subject_text}".
 
 Our administrative team ({admin_email}) has been notified and will review your message promptly.
 
 Sincerely,
-NexaMarket Support Team
+Modern Shop Support Team
 """
         ack_html = f"""
         <!DOCTYPE html>

@@ -1,8 +1,8 @@
 {
-  "name": "nexamarket-frontend",
+  "name": "modern-shop-frontend",
   "private": true,
   "version": "1.0.0",
-  "description": "NexaMarket modern multi-vendor e-commerce web application",
+  "description": "Modern Shop multi-vendor e-commerce web application",
   "type": "module",
   "scripts": {
     "dev": "vite",

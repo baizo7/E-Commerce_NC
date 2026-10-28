@@ -1,4 +1,4 @@
-# NexaMarket Deployment & 10-Day MVP Timeline Guide
+# Modern Shop Deployment & 10-Day MVP Timeline Guide
 
 ---
 

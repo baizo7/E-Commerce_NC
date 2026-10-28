@@ -45,6 +45,7 @@ export const VendorDashboardPage: React.FC = () => {
   };
 
   useEffect(() => {
+    document.title = 'Modern Shop | Vendor Dashboard';
     if (isVendor) {
       fetchAnalytics();
     } else {
@@ -73,9 +74,9 @@ export const VendorDashboardPage: React.FC = () => {
             <Store className="w-8 h-8" />
           </div>
           <div className="space-y-2 max-w-xl mx-auto">
-            <span className="text-xs font-black uppercase tracking-widest text-[#fcb424] block">Merchant Network</span>
+            <span className="text-xs font-black uppercase tracking-widest text-[#fcb424] block">Modern Shop Merchant Network</span>
             <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-white">
-              Launch Your Merchant Storefront
+              Launch Your Modern Shop Storefront
             </h1>
             <p className="text-xs text-neutral-300 leading-relaxed">
               Join our certified collective of independent makers, ateliers, and technical brands. Fulfill customer orders with verified escrow protection, upload local product photos, and receive bank disbursements.
@@ -158,7 +159,7 @@ export const VendorDashboardPage: React.FC = () => {
         <div className="space-y-2.5 relative z-10 max-w-xl">
           <div className="flex items-center gap-2.5">
             <span className="px-3 py-0.5 rounded-full bg-[#ffcd05] text-[#0a0500] text-[10px] font-black uppercase tracking-wider shadow-sm">
-              Verified Merchant Portal
+              Modern Shop Merchant Portal
             </span>
             <div className="flex items-center gap-1 text-[#ffcd05] text-xs font-bold">
               <Star className="w-3.5 h-3.5 fill-current" />
@@ -167,10 +168,10 @@ export const VendorDashboardPage: React.FC = () => {
           </div>
 
           <h1 className="text-2xl sm:text-4xl font-black uppercase tracking-tight text-white leading-tight">
-            {analytics?.store_name || 'Vendor Store'}
+            {analytics?.store_name || 'Modern Shop Vendor Store'}
           </h1>
           <p className="text-xs text-neutral-300 leading-relaxed">
-            Manage your autonomous catalog, upload local high-res product photos, assign parcel tracking, and review net bank disbursements.
+            Manage your Modern Shop storefront, upload local high-res product photos, assign parcel tracking, and review net bank disbursements.
           </p>
         </div>
 

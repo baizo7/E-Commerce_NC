@@ -1,4 +1,4 @@
-# NexaMarket REST API Specification
+# Modern Shop REST API Specification
 
 The API is fully documented via OpenAPI 3.0 and interactive Swagger UI at `/api/docs/`.
 

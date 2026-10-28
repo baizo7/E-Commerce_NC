@@ -131,7 +131,7 @@ export const CheckoutPage: React.FC = () => {
       rzpData.is_sandbox ||
       rzpData.razorpay_order_id.startsWith('order_test_') ||
       rzpData.key_id.includes('placeholder') ||
-      rzpData.key_id === 'rzp_test_NexaMarket2026';
+      rzpData.key_id.includes('test_');
 
     if (isSandboxEnv) {
       setIsSandboxModalOpen(true);
@@ -148,7 +148,7 @@ export const CheckoutPage: React.FC = () => {
       key: rzpData.key_id,
       amount: rzpData.amount_in_subunits,
       currency: rzpData.currency || 'INR',
-      name: 'NexaMarket Marketplace',
+      name: 'Modern Shop Marketplace',
       description: `Order #${order.order_number}`,
       image: 'https://cdn-icons-png.flaticon.com/512/3081/3081559.png',
       order_id: rzpData.razorpay_order_id,

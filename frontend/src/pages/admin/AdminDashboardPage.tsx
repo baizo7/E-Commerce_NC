@@ -29,6 +29,7 @@ export const AdminDashboardPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    document.title = 'Modern Shop | Admin Dashboard';
     const fetchStats = async () => {
       try {
         const data = await adminService.getAnalytics();
@@ -122,7 +123,7 @@ export const AdminDashboardPage: React.FC = () => {
           <div className="flex items-center gap-2.5">
             <span className="px-3 py-0.5 rounded-full bg-[#ffcd05] text-[#0a0500] text-[10px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1">
               <ShieldCheck className="w-3 h-3 text-[#0a0500]" />
-              Platform Command Center
+              Modern Shop Command Center
             </span>
             <span className="text-neutral-400 text-xs font-semibold">
               Live Production Operations
@@ -130,10 +131,10 @@ export const AdminDashboardPage: React.FC = () => {
           </div>
 
           <h1 className="text-2xl sm:text-4xl font-black uppercase tracking-tight text-white leading-tight">
-            Marketplace Administration
+            Modern Shop Admin Dashboard
           </h1>
           <p className="text-xs text-neutral-300 leading-relaxed">
-            Audit multi-vendor gross merchandise value, manage tiered merchant fee structures, approve autonomous catalog listings, and disburse platform settlement funds.
+            Audit Modern Shop gross merchandise value, manage tiered merchant fee structures, approve autonomous catalog listings, and disburse platform settlement funds.
           </p>
         </div>
 

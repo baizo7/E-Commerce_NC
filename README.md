@@ -1,4 +1,4 @@
-# NexaMarket — Multi-Vendor E-Commerce Platform
+# Modern Shop — Multi-Vendor E-Commerce Platform
 
 A production-grade, multi-vendor e-commerce marketplace built with **Django REST Framework (DRF)** and **React 19 + TypeScript + Tailwind CSS**, designed around the **Blocksy Modern Shop** aesthetic (`#0a0500`, `#ffcd05`, `#504e4a`).
 
@@ -97,7 +97,7 @@ The application will be live at:
 | Role | Email | Password | Access & Features |
 | :--- | :--- | :--- | :--- |
 | **Platform Administrator** | `sanjaisam63@gmail.com` | `Admin@123` | Full superuser access to `/admin/*`, executive analytics, and payouts. |
-| **Secondary Administrator** | `admin@nexamarket.internal` | `Admin@123` | Internal operational administrator. |
+| **Secondary Administrator** | `admin@modernshop.internal` | `Admin@123` | Internal operational administrator. |
 | **Primary Merchant** | `sanjaidhonicsk@gmail.com` | `Vendor@123` | **Sanjai Modern Tech & Audio** storefront owner. |
 | **Demo Merchant** | `vendor@example.com` | `Vendor@123` | **TechNova Electronics** storefront owner. |
 | **Customer Shopper** | `customer@example.com` | `Customer@123` | Buyer account with pre-filled shopping bag and order history. |

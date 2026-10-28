@@ -146,7 +146,7 @@ SIMPLE_JWT = {
 
 # DRF Spectacular (OpenAPI 3 / Swagger)
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'NexaMarket Multi-Vendor Marketplace API',
+    'TITLE': 'Modern Shop Multi-Vendor Marketplace API',
     'DESCRIPTION': 'Robust enterprise multi-vendor marketplace REST API with Customer, Vendor, and Admin portals.',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
@@ -179,5 +179,5 @@ EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'False').lower() in ('true', '1'
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'sanjaisam63@gmail.com')
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'NexaMarket <sanjaisam63@gmail.com>')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Modern Shop <sanjaisam63@gmail.com>')
 EMAIL_TIMEOUT = 10

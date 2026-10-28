@@ -12,7 +12,7 @@ from apps.products.models import Category, Product, ProductImage, Review
 from apps.orders.models import Order, VendorOrder, OrderItem, Cart, CartItem
 
 def run_seed():
-    print("🌱 Seeding NexaMarket Database with demo data...")
+    print("🌱 Seeding Modern Shop Database with demo data...")
 
     # 1. Admin Account
     admin_user = User.objects.filter(email='sanjaisam63@gmail.com').first()

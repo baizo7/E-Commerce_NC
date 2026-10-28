@@ -51,7 +51,7 @@ export const AdminSubNav: React.FC = () => {
         <div className="flex items-center gap-3 self-end lg:self-auto text-xs">
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/80 font-black text-[11px] uppercase tracking-wider">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>Platform Online</span>
+            <span>Modern Shop Online</span>
           </div>
 
           <Link
@@ -60,7 +60,7 @@ export const AdminSubNav: React.FC = () => {
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-neutral-200 text-neutral-600 hover:text-[#0a0500] hover:border-[#0a0500] font-bold text-[11px] transition"
           >
             <ShieldCheck className="w-3.5 h-3.5 text-[#ffcd05]" />
-            <span>Marketplace Storefront</span>
+            <span>Modern Shop Storefront</span>
             <ExternalLink className="w-3 h-3 text-slate-400" />
           </Link>
         </div>
