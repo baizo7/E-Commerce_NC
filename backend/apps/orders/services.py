@@ -742,33 +742,42 @@ NexaMarket Merchant Team
         cls._dispatch(recipient=vendor_profile.user.email, subject=subject, body_text=body_text, body_html=body_html, email_type='VENDOR_APPLICATION_ACK')
 
     @classmethod
-    def send_vendor_status_updated(cls, vendor_profile, old_status: str, new_status: str):
+    def send_vendor_status_updated(cls, vendor_profile, old_status: str, new_status: str, reason: str = ''):
         """
         Notifies a merchant when an administrator approves, suspends, or modifies their store status.
         """
         store_name = vendor_profile.store_name
-        subject = f"Store Status Update: {store_name} is now {new_status} - NexaMarket"
+        subject = f"Store Status Update: {store_name} is now {new_status} - Modern Shop"
+        reason_paragraph = f"\nAdministrative Note / Reason:\n{reason}\n" if reason else ""
         body_text = f"""Hello {store_name},
 
-Your store status on NexaMarket has been changed from {old_status} to {new_status}.
+Your store status on Modern Shop has been changed from {old_status} to {new_status}.{reason_paragraph}
 
 If you have questions regarding your account status, please reach out to admin support at {getattr(settings, 'ADMIN_EMAIL', 'sanjaisam63@gmail.com')}.
 
 Sincerely,
-NexaMarket Administration
+Modern Shop Administration
 """
+        reason_html = f"""
+                <div style="margin-top: 16px; padding: 12px; background-color: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; font-size: 13px; color: #92400e;">
+                    <strong>Administrative Note / Reason:</strong><br/>
+                    {reason}
+                </div>
+        """ if reason else ""
+
         body_html = f"""
         <!DOCTYPE html>
         <html>
         <body style="font-family: sans-serif; background-color: #f8fafc; padding: 24px;">
             <div style="max-width: 550px; margin: auto; background: white; padding: 28px; border-radius: 14px; border: 1px solid #e2e8f0;">
-                <h3 style="color: #0f172a; margin-top: 0;">Merchant Account Status Update</h3>
+                <h3 style="color: #0a0500; margin-top: 0;">Merchant Account Status Update</h3>
                 <p style="font-size: 14px; color: #475569;">
                     The status of store <strong>{store_name}</strong> has been updated to:
                 </p>
-                <div style="padding: 12px; background-color: #f1f5f9; border-radius: 8px; font-weight: bold; font-size: 16px; color: #4f46e5; text-align: center;">
+                <div style="padding: 12px; background-color: #f1f5f9; border-radius: 8px; font-weight: bold; font-size: 16px; color: #0a0500; text-align: center;">
                     {new_status}
                 </div>
+                {reason_html}
                 <p style="font-size: 12px; color: #64748b; margin-top: 16px;">
                     For inquiries, please contact our administrative team at {getattr(settings, 'ADMIN_EMAIL', 'sanjaisam63@gmail.com')}.
                 </p>

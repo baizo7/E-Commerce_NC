@@ -16,6 +16,7 @@ from apps.accounts.serializers import (
     VendorProfileSerializer,
     VendorPublicSerializer,
     AdminVendorStatusSerializer,
+    AdminUserDetailSerializer,
     ChangePasswordSerializer
 )
 from apps.accounts.permissions import IsAdminUserRole, IsVendorUser
@@ -301,11 +302,65 @@ class AdminVendorUpdateStatusView(generics.UpdateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
+        reason = request.data.get('reason', '')
         if old_status != vendor.status:
             try:
                 from apps.orders.services import EmailService
-                EmailService.send_vendor_status_updated(vendor, old_status, vendor.status)
+                EmailService.send_vendor_status_updated(vendor, old_status, vendor.status, reason=reason)
             except Exception as e:
                 print(f"[AdminVendorUpdateStatusView Warning] Email dispatch failed: {e}")
 
         return Response(VendorProfileSerializer(vendor).data)
+
+
+class AdminUserListView(generics.ListAPIView):
+    serializer_class = AdminUserDetailSerializer
+    permission_classes = [IsAdminUserRole]
+
+    def get_queryset(self):
+        from django.db.models import Q
+        qs = User.objects.all().prefetch_related('orders').select_related('vendor_profile').order_by('-date_joined')
+        role_param = self.request.query_params.get('role')
+        if role_param:
+            qs = qs.filter(role=role_param.upper())
+        search = self.request.query_params.get('search')
+        if search:
+            qs = qs.filter(
+                Q(email__icontains=search) |
+                Q(first_name__icontains=search) |
+                Q(last_name__icontains=search) |
+                Q(phone__icontains=search)
+            )
+        return qs
+
+
+class AdminUserRoleUpdateView(APIView):
+    permission_classes = [IsAdminUserRole]
+
+    def patch(self, request, id):
+        user = User.objects.filter(id=id).first()
+        if not user:
+            return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        new_role = request.data.get('role', '').upper()
+        if new_role not in ['CUSTOMER', 'VENDOR', 'ADMIN']:
+            return Response({'error': 'Invalid role choice.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.role = new_role
+        if new_role == 'ADMIN':
+            user.is_staff = True
+        elif new_role == 'VENDOR' and not hasattr(user, 'vendor_profile'):
+            VendorProfile.objects.create(
+                user=user,
+                store_name=f"{user.first_name or user.username}'s Store",
+                business_email=user.email,
+                business_phone=user.phone or '+1 (555) 000-1122',
+                status='APPROVED',
+                commission_rate=10.00
+            )
+        user.save()
+
+        return Response({
+            'message': f"User role updated to {new_role} successfully.",
+            'user': AdminUserDetailSerializer(user).data
+        }, status=status.HTTP_200_OK)

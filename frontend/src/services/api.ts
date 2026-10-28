@@ -9,6 +9,7 @@ import {
   VendorOrder,
   VendorAnalytics,
   AdminAnalytics,
+  AdminUser,
   EmailLog
 } from '../types';
 
@@ -315,12 +316,12 @@ export const adminService = {
   },
   updateVendorStatus: async (
     vendorId: number,
-    data: { status: string; commission_rate?: number }
+    data: { status: string; commission_rate?: number; reason?: string }
   ): Promise<VendorProfile> => {
     const res = await api.patch(`/admin/vendors/${vendorId}/status/`, data);
     return res.data;
   },
-  getAllProducts: async (params?: { is_approved?: boolean; search?: string }) => {
+  getAllProducts: async (params?: { is_approved?: boolean | string; search?: string; vendor?: string; category?: string }) => {
     const res = await api.get('/admin/products/', { params });
     return res.data;
   },
@@ -331,8 +332,21 @@ export const adminService = {
     const res = await api.patch(`/admin/products/${productId}/moderate/`, data);
     return res.data;
   },
+  bulkModerateProducts: async (
+    productIds: number[],
+    action: 'approve' | 'delist' | 'feature' | 'unfeature'
+  ): Promise<{ message: string; updated_count: number }> => {
+    const res = await api.post('/admin/products/bulk-moderate/', { product_ids: productIds, action });
+    return res.data;
+  },
   createCategory: async (categoryData: Partial<Category>): Promise<Category> => {
     const res = await api.post('/admin/categories/', categoryData);
+    return res.data;
+  },
+  uploadCategoryImage: async (file: File): Promise<{ message: string; image_url: string }> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    const res = await api.post('/categories/upload-image/', formData);
     return res.data;
   },
   updateCategory: async (id: number, categoryData: Partial<Category>): Promise<Category> => {
@@ -346,6 +360,21 @@ export const adminService = {
   getAllOrders: async (params?: { status?: string; search?: string }) => {
     const res = await api.get('/admin/orders/', { params });
     return res.data;
+  },
+  disburseVendorOrder: async (vendorOrderId: number, reference?: string): Promise<{ message: string; is_disbursed: boolean }> => {
+    const res = await api.post(`/admin/vendor-orders/${vendorOrderId}/disburse/`, { reference });
+    return res.data;
+  },
+  getUsers: async (params?: { role?: string; search?: string }): Promise<AdminUser[]> => {
+    const res = await api.get('/admin/users/', { params });
+    return (res.data as any).results || res.data;
+  },
+  updateUserRole: async (userId: number, role: string): Promise<{ message: string; user: AdminUser }> => {
+    const res = await api.patch(`/admin/users/${userId}/role/`, { role });
+    return res.data;
+  },
+  exportLedgerCsvUrl: (): string => {
+    return '/api/v1/analytics/admin/export-csv/';
   },
   getAnalytics: async (): Promise<AdminAnalytics> => {
     const res = await api.get('/admin/analytics/');

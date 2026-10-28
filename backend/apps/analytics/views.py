@@ -186,6 +186,37 @@ class AdminDashboardStatsView(APIView):
             for v in top_vendors_qs
         ]
 
+        # 7-day platform GMV and revenue trajectory
+        now = timezone.now()
+        daily_trends = []
+        for i in range(6, -1, -1):
+            day_start = (now - timedelta(days=i)).replace(hour=0, minute=0, second=0, microsecond=0)
+            day_end = day_start + timedelta(days=1)
+            day_orders = orders.filter(created_at__gte=day_start, created_at__lt=day_end)
+            day_gmv = day_orders.aggregate(t=Sum('grand_total'))['t'] or 0.0
+            day_vos = vendor_orders.filter(created_at__gte=day_start, created_at__lt=day_end)
+            day_comm = day_vos.aggregate(t=Sum('commission_amount'))['t'] or 0.0
+            daily_trends.append({
+                'date': day_start.strftime('%a, %b %d'),
+                'short_date': day_start.strftime('%b %d'),
+                'gmv': float(day_gmv),
+                'commission': float(day_comm),
+                'orders_count': day_orders.count(),
+            })
+
+        # Category sales and inventory distribution
+        categories_qs = Category.objects.annotate(
+            product_count=Count('products')
+        ).order_by('-product_count')[:6]
+        category_distribution = [
+            {
+                'id': c.id,
+                'name': c.name,
+                'product_count': c.product_count,
+            }
+            for c in categories_qs
+        ]
+
         # Recent orders
         recent_orders_qs = orders.order_by('-created_at')[:6]
         recent_orders = [
@@ -212,5 +243,64 @@ class AdminDashboardStatsView(APIView):
             'total_products': total_products,
             'pending_products': pending_products,
             'top_vendors': top_vendors,
+            'daily_trends': daily_trends,
+            'category_distribution': category_distribution,
             'recent_orders': recent_orders,
         })
+
+
+class AdminExportCsvView(APIView):
+    """
+    GET /api/v1/analytics/admin/export-csv/
+    Exports platform global settlement ledger and vendor sub-orders with bank details.
+    """
+    permission_classes = [IsAdminUserRole]
+
+    def get(self, request):
+        vendor_orders = VendorOrder.objects.all().select_related('order', 'vendor', 'vendor__user').order_by('-created_at')
+
+        response = HttpResponse(content_type='text/csv; charset=utf-8')
+        filename = f"master_platform_ledger_{timezone.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+        writer = csv.writer(response)
+        writer.writerow([
+            'Sub-Order ID',
+            'Master Order Ref',
+            'Order Date',
+            'Vendor Store',
+            'Vendor Email',
+            'Vendor Bank Name',
+            'Vendor Account Number',
+            'Vendor Routing/IFSC',
+            'Gross Subtotal ($)',
+            'Commission Rate (%)',
+            'Platform Commission ($)',
+            'Net Vendor Payout ($)',
+            'Disbursement Status',
+            'Disbursement Reference',
+            'Fulfillment Status',
+            'Tracking Number',
+        ])
+
+        for vo in vendor_orders:
+            writer.writerow([
+                vo.id,
+                vo.order.order_number,
+                vo.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                vo.vendor.store_name,
+                vo.vendor.business_email or vo.vendor.user.email,
+                vo.vendor.bank_name or 'N/A',
+                vo.vendor.bank_account_number or 'N/A',
+                vo.vendor.bank_routing_code or 'N/A',
+                f"{float(vo.subtotal):.2f}",
+                f"{float(vo.commission_rate):.2f}",
+                f"{float(vo.commission_amount):.2f}",
+                f"{float(vo.net_vendor_amount):.2f}",
+                'DISBURSED' if vo.is_disbursed else 'HELD_IN_ESCROW',
+                vo.disbursement_reference or 'N/A',
+                vo.status,
+                vo.tracking_number or 'N/A',
+            ])
+
+        return response

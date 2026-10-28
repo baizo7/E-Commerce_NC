@@ -67,6 +67,7 @@ class VendorOrderSerializer(serializers.ModelSerializer):
             'customer_email', 'shipping_name', 'shipping_city', 'shipping_address',
             'subtotal', 'commission_rate', 'commission_amount', 'net_vendor_amount',
             'status', 'tracking_number', 'carrier', 'shipped_at', 'delivered_at',
+            'is_disbursed', 'disbursed_at', 'disbursement_reference',
             'items', 'created_at', 'updated_at'
         ]
 

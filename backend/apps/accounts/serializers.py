@@ -50,6 +50,28 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'role', 'date_joined']
 
 
+class AdminUserDetailSerializer(serializers.ModelSerializer):
+    vendor_profile = VendorProfileSerializer(read_only=True)
+    orders_count = serializers.SerializerMethodField()
+    total_spent = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = [
+            'id', 'email', 'username', 'first_name', 'last_name',
+            'role', 'phone', 'avatar_url', 'address', 'city', 'country',
+            'postal_code', 'vendor_profile', 'orders_count', 'total_spent', 'date_joined'
+        ]
+
+    def get_orders_count(self, obj):
+        return obj.orders.count()
+
+    def get_total_spent(self, obj):
+        from django.db.models import Sum
+        total = obj.orders.filter(payment_status='PAID').aggregate(t=Sum('grand_total'))['t'] or 0.0
+        return float(total)
+
+
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     role = serializers.ChoiceField(choices=User.ROLE_CHOICES, default='CUSTOMER')

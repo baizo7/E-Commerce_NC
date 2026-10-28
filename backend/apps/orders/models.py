@@ -167,6 +167,10 @@ class VendorOrder(models.Model):
     shipped_at = models.DateTimeField(null=True, blank=True)
     delivered_at = models.DateTimeField(null=True, blank=True)
 
+    is_disbursed = models.BooleanField(default=False)
+    disbursed_at = models.DateTimeField(null=True, blank=True)
+    disbursement_reference = models.CharField(max_length=120, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

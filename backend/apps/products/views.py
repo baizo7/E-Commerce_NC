@@ -182,16 +182,47 @@ class AdminProductListView(generics.ListAPIView):
     def get_queryset(self):
         qs = Product.objects.all().select_related('vendor', 'category').prefetch_related('images').order_by('-created_at')
         status_param = self.request.query_params.get('is_approved')
-        if status_param is not None:
+        if status_param is not None and status_param != '':
             is_approved = status_param.lower() in ['true', '1']
             qs = qs.filter(is_approved=is_approved)
-        vendor_id = self.request.query_params.get('vendor_id')
+        vendor_id = self.request.query_params.get('vendor_id') or self.request.query_params.get('vendor')
         if vendor_id:
-            qs = qs.filter(vendor_id=vendor_id)
+            qs = qs.filter(Q(vendor__id__iexact=vendor_id) | Q(vendor__slug=vendor_id))
+        category_id = self.request.query_params.get('category_id') or self.request.query_params.get('category')
+        if category_id:
+            qs = qs.filter(Q(category__id__iexact=category_id) | Q(category__slug=category_id))
         search = self.request.query_params.get('search')
         if search:
-            qs = qs.filter(Q(title__icontains=search) | Q(vendor__store_name__icontains=search))
+            qs = qs.filter(
+                Q(title__icontains=search) |
+                Q(vendor__store_name__icontains=search) |
+                Q(category__name__icontains=search)
+            )
         return qs
+
+
+class AdminProductBulkModerationView(APIView):
+    permission_classes = [IsAdminUserRole]
+
+    def post(self, request):
+        ids = request.data.get('product_ids', [])
+        action = request.data.get('action')
+        if not ids or not isinstance(ids, list):
+            return Response({'error': 'product_ids list required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        qs = Product.objects.filter(id__in=ids)
+        if action == 'approve':
+            count = qs.update(is_approved=True)
+        elif action == 'delist':
+            count = qs.update(is_approved=False)
+        elif action == 'feature':
+            count = qs.update(is_featured=True)
+        elif action == 'unfeature':
+            count = qs.update(is_featured=False)
+        else:
+            return Response({'error': 'Invalid action. Supported: approve, delist, feature, unfeature.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({'message': f'Successfully updated {count} product(s).', 'updated_count': count})
 
 
 class AdminProductModerationView(APIView):
@@ -258,5 +289,48 @@ class ProductImageUploadView(APIView):
 
         return Response({
             'message': 'Product image uploaded successfully.',
+            'image_url': relative_url
+        }, status=status.HTTP_200_OK)
+
+
+class CategoryImageUploadView(APIView):
+    """
+    POST /api/v1/categories/upload-image/
+    Uploads a category cover image directly from administrator's local system,
+    validates file format and size, stores in media/categories/,
+    and returns {"image_url": "/media/categories/..."}
+    """
+    permission_classes = [IsAdminUserRole]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        file_obj = request.FILES.get('image')
+        if not file_obj:
+            return Response({'error': 'No image file provided.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        content_type = getattr(file_obj, 'content_type', '').lower()
+        allowed_types = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/jpg']
+        if content_type not in allowed_types:
+            return Response(
+                {'error': 'Invalid image format. Please upload JPEG, PNG, WEBP, or GIF.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        max_size = 5 * 1024 * 1024
+        if file_obj.size > max_size:
+            return Response(
+                {'error': 'Image file is too large. Maximum allowed size is 5MB.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        ext = os.path.splitext(file_obj.name)[1].lower() or '.jpg'
+        filename = f"categories/cat_{uuid.uuid4().hex[:8]}{ext}"
+
+        saved_path = default_storage.save(filename, ContentFile(file_obj.read()))
+        media_url = getattr(settings, 'MEDIA_URL', '/media/')
+        relative_url = f"{media_url.rstrip('/')}/{saved_path.lstrip('/')}"
+
+        return Response({
+            'message': 'Category image uploaded successfully.',
             'image_url': relative_url
         }, status=status.HTTP_200_OK)

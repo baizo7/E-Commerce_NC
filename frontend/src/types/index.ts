@@ -159,6 +159,9 @@ export interface VendorOrder {
   carrier: string;
   shipped_at?: string | null;
   delivered_at?: string | null;
+  is_disbursed?: boolean;
+  disbursed_at?: string | null;
+  disbursement_reference?: string;
   items?: OrderItem[];
   created_at: string;
   updated_at: string;
@@ -278,6 +281,37 @@ export interface AdminAnalytics {
     payment_status: string;
     created_at: string;
   }[];
+  daily_trends?: {
+    date: string;
+    short_date: string;
+    gmv: number;
+    commission: number;
+    orders_count: number;
+  }[];
+  category_distribution?: {
+    id: number;
+    name: string;
+    product_count: number;
+  }[];
+}
+
+export interface AdminUser {
+  id: number;
+  email: string;
+  username: string;
+  first_name: string;
+  last_name: string;
+  role: Role;
+  phone?: string;
+  avatar_url?: string;
+  address?: string;
+  city?: string;
+  country?: string;
+  postal_code?: string;
+  orders_count: number;
+  total_spent: number;
+  date_joined: string;
+  vendor_profile?: VendorProfile;
 }
 
 export interface EmailLog {

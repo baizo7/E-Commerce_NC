@@ -20,7 +20,8 @@ from apps.orders.views import (
     VendorOrderDetailView,
     VendorOrderStatusUpdateView,
     AdminOrderListView,
-    AdminOrderDetailView
+    AdminOrderDetailView,
+    AdminDisburseVendorOrderView
 )
 
 urlpatterns = [
@@ -61,4 +62,5 @@ urlpatterns = [
     # Admin Orders
     path('admin/orders/', AdminOrderListView.as_view(), name='admin_order_list'),
     path('admin/orders/<str:order_number>/', AdminOrderDetailView.as_view(), name='admin_order_detail'),
+    path('admin/vendor-orders/<int:id>/disburse/', AdminDisburseVendorOrderView.as_view(), name='admin_vendor_order_disburse'),
 ]

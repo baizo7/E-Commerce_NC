@@ -12,7 +12,9 @@ from apps.accounts.views import (
     VendorBrandingUploadView,
     VendorActivateView,
     AdminVendorListView,
-    AdminVendorUpdateStatusView
+    AdminVendorUpdateStatusView,
+    AdminUserListView,
+    AdminUserRoleUpdateView
 )
 
 urlpatterns = [
@@ -37,4 +39,6 @@ urlpatterns = [
     # Admin Portal
     path('admin/vendors/', AdminVendorListView.as_view(), name='admin_vendor_list'),
     path('admin/vendors/<int:id>/status/', AdminVendorUpdateStatusView.as_view(), name='admin_vendor_status_update'),
+    path('admin/users/', AdminUserListView.as_view(), name='admin_user_list'),
+    path('admin/users/<int:id>/role/', AdminUserRoleUpdateView.as_view(), name='admin_user_role_update'),
 ]

@@ -33,6 +33,7 @@ import { AdminVendorsPage } from './pages/admin/AdminVendorsPage';
 import { AdminProductsPage } from './pages/admin/AdminProductsPage';
 import { AdminCategoriesPage } from './pages/admin/AdminCategoriesPage';
 import { AdminOrdersPage } from './pages/admin/AdminOrdersPage';
+import { AdminUsersPage } from './pages/admin/AdminUsersPage';
 
 // Auth Pages
 import { LoginPage } from './pages/auth/LoginPage';
@@ -99,6 +100,7 @@ export const AppContent: React.FC = () => {
           <Route path="/admin/products" element={<AdminRoute><AdminProductsPage /></AdminRoute>} />
           <Route path="/admin/categories" element={<AdminRoute><AdminCategoriesPage /></AdminRoute>} />
           <Route path="/admin/orders" element={<AdminRoute><AdminOrdersPage /></AdminRoute>} />
+          <Route path="/admin/users" element={<AdminRoute><AdminUsersPage /></AdminRoute>} />
 
           {/* Auth */}
           <Route path="/login" element={<LoginPage />} />

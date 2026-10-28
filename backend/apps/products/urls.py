@@ -11,12 +11,15 @@ from apps.products.views import (
     VendorProductDetailView,
     ProductImageUploadView,
     AdminProductListView,
-    AdminProductModerationView
+    AdminProductModerationView,
+    AdminProductBulkModerationView,
+    CategoryImageUploadView
 )
 
 urlpatterns = [
     # Categories
     path('categories/', CategoryListView.as_view(), name='category_list'),
+    path('categories/upload-image/', CategoryImageUploadView.as_view(), name='category_image_upload_public'),
     path('categories/<slug:slug>/', CategoryDetailView.as_view(), name='category_detail'),
 
     # Products (Public)
@@ -33,7 +36,9 @@ urlpatterns = [
 
     # Admin Products & Categories
     path('admin/categories/', AdminCategoryListCreateView.as_view(), name='admin_category_list_create'),
+    path('admin/categories/upload-image/', CategoryImageUploadView.as_view(), name='admin_category_image_upload'),
     path('admin/categories/<int:id>/', AdminCategoryDetailView.as_view(), name='admin_category_detail'),
     path('admin/products/', AdminProductListView.as_view(), name='admin_product_list'),
+    path('admin/products/bulk-moderate/', AdminProductBulkModerationView.as_view(), name='admin_product_bulk_moderate'),
     path('admin/products/<int:id>/moderate/', AdminProductModerationView.as_view(), name='admin_product_moderate'),
 ]

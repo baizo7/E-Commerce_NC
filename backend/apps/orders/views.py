@@ -662,3 +662,32 @@ class ContactInquiryView(APIView):
         }, status=status.HTTP_200_OK)
 
 
+class AdminDisburseVendorOrderView(APIView):
+    """
+    POST /api/v1/admin/vendor-orders/<int:id>/disburse/
+    Marks a vendor sub-order as paid/disbursed, records the transaction reference,
+    and timestamps the settlement.
+    """
+    permission_classes = [IsAdminUserRole]
+
+    def post(self, request, id):
+        vo = VendorOrder.objects.filter(id=id).first()
+        if not vo:
+            return Response({'error': 'Vendor sub-order not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        reference = request.data.get('reference', '').strip()
+        vo.is_disbursed = True
+        vo.disbursed_at = timezone.now()
+        if reference:
+            vo.disbursement_reference = reference
+        vo.save(update_fields=['is_disbursed', 'disbursed_at', 'disbursement_reference', 'updated_at'])
+
+        return Response({
+            'message': f"Vendor sub-order #{vo.id} marked as disbursed.",
+            'id': vo.id,
+            'is_disbursed': vo.is_disbursed,
+            'disbursed_at': vo.disbursed_at,
+            'disbursement_reference': vo.disbursement_reference,
+        }, status=status.HTTP_200_OK)
+
+
