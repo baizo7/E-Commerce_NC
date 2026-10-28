@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Package, Store, ArrowRight, Clock, Truck, Search, DollarSign, Filter, RefreshCw } from 'lucide-react';
 import { orderService } from '../../services/api';
-import { Order } from '../../types';
+import { Order, unwrapResults } from '../../types';
 import { OrderStatusBadge } from '../../components/OrderStatusBadge';
 
 export const CustomerOrdersPage: React.FC = () => {
@@ -15,8 +15,7 @@ export const CustomerOrdersPage: React.FC = () => {
     try {
       setLoading(true);
       const res = await orderService.getCustomerOrders();
-      const list = (res as any).results || res;
-      setOrders(Array.isArray(list) ? list : []);
+      setOrders(unwrapResults<Order>(res));
     } catch (err) {
       console.error(err);
     } finally {

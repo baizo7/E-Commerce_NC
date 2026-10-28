@@ -21,7 +21,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { adminService, productService } from '../../services/api';
-import { Product, Category, VendorProfile } from '../../types';
+import { Product, Category, VendorProfile, unwrapResults } from '../../types';
 import { AdminSubNav } from '../../components/AdminSubNav';
 
 export const AdminProductsPage: React.FC = () => {
@@ -52,9 +52,8 @@ export const AdminProductsPage: React.FC = () => {
           productService.getCategories(),
           adminService.getVendors(),
         ]);
-        setCategories(Array.isArray(catsRes) ? catsRes : (catsRes as any).results || []);
-        const vList = Array.isArray(vendsRes) ? vendsRes : (vendsRes as any).results || [];
-        setVendors(vList);
+        setCategories(unwrapResults<Category>(catsRes));
+        setVendors(unwrapResults<VendorProfile>(vendsRes));
       } catch (err) {
         console.error('Failed to load filter metadata:', err);
       }
@@ -74,7 +73,7 @@ export const AdminProductsPage: React.FC = () => {
       if (selectedCategory) params.category = selectedCategory;
 
       const res = await adminService.getAllProducts(params);
-      const list = (res as any).results || res;
+      const list = unwrapResults<Product>(res);
       setProducts(list);
     } catch (err) {
       console.error('Failed to load products:', err);

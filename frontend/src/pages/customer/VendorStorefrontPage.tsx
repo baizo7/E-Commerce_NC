@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Store, Star, Mail, Phone, Package, ChevronRight, ShieldCheck, AlertTriangle, X, CheckCircle2, Send } from 'lucide-react';
 import { vendorService, productService, emailService } from '../../services/api';
-import { VendorProfile, Product } from '../../types';
+import { VendorProfile, Product, unwrapResults } from '../../types';
 import { ProductCard } from '../../components/ProductCard';
 
 export const VendorStorefrontPage: React.FC = () => {
@@ -26,8 +26,7 @@ export const VendorStorefrontPage: React.FC = () => {
         setVendor(vData);
 
         const prodsRes = await productService.getProducts({ vendor: slug });
-        const prods = (prodsRes as any).results || prodsRes;
-        setProducts(prods);
+        setProducts(unwrapResults<Product>(prodsRes));
       } catch (err) {
         console.error(err);
       } finally {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DollarSign, Download, ShieldCheck, ArrowRight, TrendingUp } from 'lucide-react';
 import { vendorService } from '../../services/api';
-import { VendorAnalytics, VendorOrder } from '../../types';
+import { VendorAnalytics, VendorOrder, unwrapResults } from '../../types';
 import { OrderStatusBadge } from '../../components/OrderStatusBadge';
 import { VendorSubNav } from '../../components/VendorSubNav';
 
@@ -19,7 +19,7 @@ export const VendorEarningsPage: React.FC = () => {
           vendorService.getMyOrders(),
         ]);
         setAnalytics(aData);
-        const list = (oRes as any).results || oRes;
+        const list = unwrapResults<VendorOrder>(oRes);
         setOrders(list);
       } catch (err) {
         console.error(err);

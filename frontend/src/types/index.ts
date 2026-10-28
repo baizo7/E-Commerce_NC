@@ -327,3 +327,27 @@ export interface EmailLog {
   created_at: string;
 }
 
+export interface PaginatedResponse<T> {
+  count?: number;
+  next?: string | null;
+  previous?: string | null;
+  results: T[];
+}
+
+export type ApiResponse<T> = T[] | PaginatedResponse<T> | { results: T[] };
+
+export function unwrapResults<T>(response: ApiResponse<T> | T[] | undefined | null): T[] {
+  if (!response) return [];
+  if (Array.isArray(response)) return response;
+  if ('results' in response && Array.isArray(response.results)) {
+    return response.results;
+  }
+  return [];
+}
+
+declare global {
+  interface Window {
+    Razorpay?: any;
+  }
+}
+

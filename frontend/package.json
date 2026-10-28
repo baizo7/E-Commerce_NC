@@ -1,12 +1,14 @@
 {
-  "name": "frontend",
+  "name": "nexamarket-frontend",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "NexaMarket modern multi-vendor e-commerce web application",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",

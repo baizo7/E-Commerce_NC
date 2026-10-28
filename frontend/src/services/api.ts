@@ -10,7 +10,9 @@ import {
   VendorAnalytics,
   AdminAnalytics,
   AdminUser,
-  EmailLog
+  EmailLog,
+  ApiResponse,
+  unwrapResults
 } from '../types';
 
 const api = axios.create({
@@ -217,7 +219,7 @@ export const orderService = {
     });
     return res.data;
   },
-  getCustomerOrders: async (): Promise<{ results: Order[] } | Order[]> => {
+  getCustomerOrders: async (): Promise<ApiResponse<Order>> => {
     const res = await api.get('/v1/orders/');
     return res.data;
   },
@@ -229,7 +231,7 @@ export const orderService = {
 
 // Vendor Services
 export const vendorService = {
-  getPublicVendors: async (): Promise<{ results: VendorProfile[] } | VendorProfile[]> => {
+  getPublicVendors: async (): Promise<ApiResponse<VendorProfile>> => {
     const res = await api.get('/vendors/');
     return res.data;
   },
@@ -367,7 +369,7 @@ export const adminService = {
   },
   getUsers: async (params?: { role?: string; search?: string }): Promise<AdminUser[]> => {
     const res = await api.get('/admin/users/', { params });
-    return (res.data as any).results || res.data;
+    return unwrapResults<AdminUser>(res.data);
   },
   updateUserRole: async (userId: number, role: string): Promise<{ message: string; user: AdminUser }> => {
     const res = await api.patch(`/admin/users/${userId}/role/`, { role });
@@ -384,7 +386,7 @@ export const adminService = {
 
 // Email & Notification Services
 export const emailService = {
-  getEmailLogs: async (): Promise<{ results: EmailLog[] } | EmailLog[]> => {
+  getEmailLogs: async (): Promise<ApiResponse<EmailLog>> => {
     const res = await api.get('/v1/emails/');
     return res.data;
   },

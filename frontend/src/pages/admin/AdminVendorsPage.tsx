@@ -20,7 +20,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { adminService } from '../../services/api';
-import { VendorProfile } from '../../types';
+import { VendorProfile, unwrapResults } from '../../types';
 import { OrderStatusBadge } from '../../components/OrderStatusBadge';
 import { AdminSubNav } from '../../components/AdminSubNav';
 
@@ -52,7 +52,7 @@ export const AdminVendorsPage: React.FC = () => {
         status: statusFilter || undefined,
         search: searchTerm || undefined,
       });
-      const list = (res as any).results || res;
+      const list = unwrapResults<VendorProfile>(res);
       setVendors(list);
     } catch (err) {
       console.error(err);

@@ -63,7 +63,7 @@ export const CheckoutPage: React.FC = () => {
   // Dynamically inject Razorpay Standard Checkout SDK
   const loadRazorpaySDK = (): Promise<boolean> => {
     return new Promise((resolve) => {
-      if ((window as any).Razorpay) {
+      if (window.Razorpay) {
         resolve(true);
         return;
       }
@@ -139,7 +139,7 @@ export const CheckoutPage: React.FC = () => {
     }
 
     const loaded = await loadRazorpaySDK();
-    if (!loaded || !(window as any).Razorpay) {
+    if (!loaded || !window.Razorpay) {
       setIsSandboxModalOpen(true);
       return;
     }
@@ -195,7 +195,7 @@ export const CheckoutPage: React.FC = () => {
     };
 
     try {
-      const rzpInstance = new (window as any).Razorpay(options);
+      const rzpInstance = new window.Razorpay(options);
 
       rzpInstance.on('payment.failed', async (response: any) => {
         console.error('Razorpay payment failure event:', response.error);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Truck, CheckCircle2, Clock, Package, ExternalLink, X, Printer, Store, AlertCircle } from 'lucide-react';
 import { vendorService } from '../../services/api';
-import { VendorOrder } from '../../types';
+import { VendorOrder, unwrapResults } from '../../types';
 import { OrderStatusBadge } from '../../components/OrderStatusBadge';
 import { VendorSubNav } from '../../components/VendorSubNav';
 import { useAuth } from '../../context/AuthContext';
@@ -26,7 +26,7 @@ export const VendorOrdersPage: React.FC = () => {
     setLoading(true);
     try {
       const res = await vendorService.getMyOrders({ status: statusFilter || undefined });
-      const list = (res as any).results || res;
+      const list = unwrapResults<VendorOrder>(res);
       setOrders(list);
     } catch (err) {
       console.error(err);

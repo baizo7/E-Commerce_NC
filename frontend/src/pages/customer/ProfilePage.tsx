@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { authService, orderService } from '../../services/api';
+import { unwrapResults } from '../../types';
 import { Link } from 'react-router-dom';
 
 export const ProfilePage: React.FC = () => {
@@ -77,8 +78,8 @@ export const ProfilePage: React.FC = () => {
     const fetchOrderStats = async () => {
       try {
         const res = await orderService.getCustomerOrders();
-        const list = (res as any).results || res;
-        setOrdersCount(Array.isArray(list) ? list.length : 0);
+        const list = unwrapResults(res);
+        setOrdersCount(list.length);
       } catch (e) {
         console.error('Could not load order count', e);
       }

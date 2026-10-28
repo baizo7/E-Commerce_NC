@@ -1,11 +1,18 @@
+# Core Framework & REST API
 Django>=5.1,<5.2
 djangorestframework>=3.15.2
-django-cors-headers>=4.4.0
 djangorestframework-simplejwt>=5.3.1
+django-cors-headers>=4.4.0
 drf-spectacular>=0.27.2
-pillow>=10.4.0
+
+# Database & Environment
 psycopg[binary]>=3.2.0
 python-dotenv>=1.0.1
+
+# Image Processing & Storage
+pillow>=10.4.0
+
+# Payments & External Integrations
 razorpay>=2.0.1
-requests>=2.32.0
 stripe>=16.0.1
+requests>=2.32.0

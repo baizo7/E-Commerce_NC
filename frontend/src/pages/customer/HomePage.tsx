@@ -14,7 +14,7 @@ import {
   Award
 } from 'lucide-react';
 import { productService, vendorService } from '../../services/api';
-import { Product, Category, VendorProfile } from '../../types';
+import { Product, Category, VendorProfile, unwrapResults } from '../../types';
 import { ProductCard } from '../../components/ProductCard';
 
 export const HomePage: React.FC = () => {
@@ -32,14 +32,13 @@ export const HomePage: React.FC = () => {
           productService.getProducts(),
           vendorService.getPublicVendors(),
         ]);
-        setCategories(cats);
-        const prods = (prodsRes as any).results || prodsRes;
-        if (Array.isArray(prods)) {
-          setFeaturedProducts(prods.slice(0, 4));
-          setPopularProducts(prods.slice(4, 8).length > 0 ? prods.slice(4, 8) : prods.slice(0, 4));
-        }
-        const vendors = (vendorsRes as any).results || vendorsRes;
-        setTopVendors(Array.isArray(vendors) ? vendors.slice(0, 3) : []);
+        setCategories(unwrapResults<Category>(cats));
+        const prods = unwrapResults<Product>(prodsRes);
+        setFeaturedProducts(prods.slice(0, 4));
+        setPopularProducts(prods.slice(4, 8).length > 0 ? prods.slice(4, 8) : prods.slice(0, 4));
+
+        const vendors = unwrapResults<VendorProfile>(vendorsRes);
+        setTopVendors(vendors.slice(0, 3));
       } catch (err) {
         console.error('Failed to load modern shop home data:', err);
       } finally {

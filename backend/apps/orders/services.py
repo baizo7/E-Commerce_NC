@@ -1,6 +1,7 @@
 import razorpay
 import hmac
 import hashlib
+import logging
 from decimal import Decimal
 from django.conf import settings
 from django.core.mail import send_mail
@@ -8,6 +9,8 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.orders.models import Order, Payment, EmailLog, VendorOrder
+
+logger = logging.getLogger(__name__)
 
 def get_razorpay_client():
     return razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
@@ -283,7 +286,7 @@ class EmailService:
         except Exception as e:
             status = 'FAILED'
             error_msg = str(e)
-            print(f"[EmailService Error] Failed to send {email_type} to {recipient}: {error_msg}")
+            logger.error("Failed to send %s email to %s: %s", email_type, recipient, error_msg)
 
         # Always persist in EmailLog for audit & in-app viewer
         try:
@@ -298,7 +301,7 @@ class EmailService:
                 order=order
             )
         except Exception as log_err:
-            print(f"[EmailService Warning] Could not save EmailLog: {log_err}")
+            logger.warning("Could not persist EmailLog record for %s: %s", recipient, log_err)
 
         return status == 'SENT'
 

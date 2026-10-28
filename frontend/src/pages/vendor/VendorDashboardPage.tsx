@@ -256,9 +256,7 @@ export const VendorDashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* ========================================================================= */}
-      {/* SEPARATE VIEW 1: Standalone 7-Day Sales & Order Trajectory Bar Chart       */}
-      {/* ========================================================================= */}
+      {/* 7-day sales and dispatch performance */}
       <div className="bg-white border border-neutral-200/90 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
         {/* Section Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-neutral-100 gap-4">
@@ -387,9 +385,7 @@ export const VendorDashboardPage: React.FC = () => {
         )}
       </div>
 
-      {/* ========================================================================= */}
-      {/* SEPARATE VIEW 2: Top Products Leaderboard & Warehouse Logistics Grid       */}
-      {/* ========================================================================= */}
+      {/* Product performance and warehouse fulfillment */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Top Performing Catalog Items Leaderboard */}
         <div className="bg-white border border-neutral-200/90 rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col justify-between space-y-6">
@@ -552,9 +548,7 @@ export const VendorDashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* ========================================================================= */}
-      {/* SEPARATE VIEW 3: Recent Customer Sub-Orders (Full Width Table)             */}
-      {/* ========================================================================= */}
+      {/* Recent buyer orders table */}
       <div className="bg-white border border-neutral-200/90 rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-neutral-100 gap-3">
           <div className="flex items-center gap-3">

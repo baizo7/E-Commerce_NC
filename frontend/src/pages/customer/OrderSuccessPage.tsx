@@ -8,7 +8,8 @@ import { OrderStatusBadge } from '../../components/OrderStatusBadge';
 export const OrderSuccessPage: React.FC = () => {
   const { orderNumber } = useParams<{ orderNumber: string }>();
   const location = useLocation();
-  const [order, setOrder] = useState<Order | null>((location.state as any)?.order || null);
+  const locationState = location.state as { order?: Order } | null;
+  const [order, setOrder] = useState<Order | null>(locationState?.order || null);
   const [loading, setLoading] = useState<boolean>(!order);
 
   useEffect(() => {

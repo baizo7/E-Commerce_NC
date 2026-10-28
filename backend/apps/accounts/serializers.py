@@ -1,7 +1,10 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.password_validation import validate_password
+import logging
 from apps.accounts.models import User, VendorProfile
+
+logger = logging.getLogger(__name__)
 
 class VendorProfileSerializer(serializers.ModelSerializer):
     user_email = serializers.EmailField(source='user.email', read_only=True)
@@ -118,8 +121,8 @@ class RegisterSerializer(serializers.ModelSerializer):
                 from apps.orders.services import EmailService
                 EmailService.send_vendor_registration_to_admin(vendor)
                 EmailService.send_vendor_application_received(vendor)
-            except Exception as e:
-                print(f"[RegisterSerializer Warning] Vendor email alert failed: {e}")
+            except Exception as exc:
+                logger.warning("Vendor onboarding notification dispatch failed: %s", exc)
 
         return user
 

@@ -69,7 +69,7 @@ export const AdminUsersPage: React.FC = () => {
   // Open role elevation modal
   const handleOpenRoleModal = (u: AdminUser) => {
     setRoleModalUser(u);
-    setSelectedNewRole(u.role as any);
+    setSelectedNewRole(u.role);
   };
 
   // Submit role update

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Edit2, Trash2, Check, X, AlertTriangle, Package, ChevronRight } from 'lucide-react';
 import { vendorService } from '../../services/api';
-import { Product } from '../../types';
+import { Product, unwrapResults } from '../../types';
 import { VendorProductModal } from './VendorProductModal';
 import { VendorSubNav } from '../../components/VendorSubNav';
 
@@ -17,7 +17,7 @@ export const VendorProductsPage: React.FC = () => {
     setLoading(true);
     try {
       const res = await vendorService.getMyProducts({ search: searchTerm });
-      const list = (res as any).results || res;
+      const list = unwrapResults<Product>(res);
       setProducts(list);
     } catch (err) {
       console.error(err);

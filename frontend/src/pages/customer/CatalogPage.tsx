@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Search, Filter, SlidersHorizontal, RefreshCw, X, ChevronRight, Store, Check } from 'lucide-react';
 import { productService, vendorService } from '../../services/api';
-import { Product, Category, VendorProfile } from '../../types';
+import { Product, Category, VendorProfile, unwrapResults } from '../../types';
 import { ProductCard } from '../../components/ProductCard';
 
 export const CatalogPage: React.FC = () => {
@@ -27,9 +27,8 @@ export const CatalogPage: React.FC = () => {
           productService.getCategories(),
           vendorService.getPublicVendors(),
         ]);
-        setCategories(cats);
-        const vends = (vendsRes as any).results || vendsRes;
-        setVendors(Array.isArray(vends) ? vends : []);
+        setCategories(unwrapResults<Category>(cats));
+        setVendors(unwrapResults<VendorProfile>(vendsRes));
       } catch (err) {
         console.error(err);
       }
@@ -49,8 +48,7 @@ export const CatalogPage: React.FC = () => {
         if (inStockOnly) params.in_stock = true;
 
         const res = await productService.getProducts(params);
-        const prods = (res as any).results || res;
-        setProducts(Array.isArray(prods) ? prods : []);
+        setProducts(unwrapResults<Product>(res));
       } catch (err) {
         console.error(err);
       } finally {

@@ -13,7 +13,7 @@ import {
   FileText
 } from 'lucide-react';
 import { emailService } from '../../services/api';
-import { EmailLog } from '../../types';
+import { EmailLog, unwrapResults } from '../../types';
 
 export const AdminEmailsPage: React.FC = () => {
   const [logs, setLogs] = useState<EmailLog[]>([]);
@@ -37,7 +37,7 @@ export const AdminEmailsPage: React.FC = () => {
     try {
       setLoading(true);
       const data = await emailService.getEmailLogs();
-      const items = Array.isArray(data) ? data : (data as any).results || [];
+      const items = unwrapResults<EmailLog>(data);
       setLogs(items);
     } catch (err) {
       console.error('Failed to fetch email logs:', err);

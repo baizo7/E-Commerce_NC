@@ -21,7 +21,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { adminService } from '../../services/api';
-import { Order, VendorOrder } from '../../types';
+import { Order, VendorOrder, unwrapResults } from '../../types';
 import { OrderStatusBadge } from '../../components/OrderStatusBadge';
 import { AdminSubNav } from '../../components/AdminSubNav';
 
@@ -50,7 +50,7 @@ export const AdminOrdersPage: React.FC = () => {
         search: searchTerm || undefined,
         status: statusFilter || undefined,
       });
-      const list = (res as any).results || res;
+      const list = unwrapResults<Order>(res);
       setOrders(list);
     } catch (err) {
       console.error(err);

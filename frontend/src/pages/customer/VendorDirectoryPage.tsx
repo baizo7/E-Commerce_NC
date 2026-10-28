@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Store, Star, ArrowRight, Search, ShieldCheck, ChevronRight } from 'lucide-react';
 import { vendorService } from '../../services/api';
-import { VendorProfile } from '../../types';
+import { VendorProfile, unwrapResults } from '../../types';
 
 export const VendorDirectoryPage: React.FC = () => {
   const [vendors, setVendors] = useState<VendorProfile[]>([]);
@@ -14,8 +14,7 @@ export const VendorDirectoryPage: React.FC = () => {
       setLoading(true);
       try {
         const res = await vendorService.getPublicVendors();
-        const list = (res as any).results || res;
-        setVendors(list);
+        setVendors(unwrapResults<VendorProfile>(res));
       } catch (err) {
         console.error(err);
       } finally {

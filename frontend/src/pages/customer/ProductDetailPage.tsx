@@ -13,7 +13,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { productService } from '../../services/api';
-import { Product } from '../../types';
+import { Product, unwrapResults } from '../../types';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { ProductCard } from '../../components/ProductCard';
@@ -52,7 +52,7 @@ export const ProductDetailPage: React.FC = () => {
         try {
           const catId = typeof data.category === 'object' && data.category ? data.category.id : data.category;
           const relatedRes = await productService.getProducts(catId ? { category: String(catId) } : {});
-          const relatedList: Product[] = (relatedRes as any).results || relatedRes;
+          const relatedList = unwrapResults<Product>(relatedRes);
           setRelatedProducts(relatedList.filter((p) => p.id !== data.id).slice(0, 4));
         } catch {
           // ignore related product error

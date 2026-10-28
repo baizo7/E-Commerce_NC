@@ -6,8 +6,11 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from django.conf import settings
+import logging
 import os
 import uuid
+
+logger = logging.getLogger(__name__)
 from apps.accounts.models import User, VendorProfile
 from apps.accounts.serializers import (
     UserSerializer,
@@ -37,8 +40,8 @@ class RegisterView(generics.CreateAPIView):
         try:
             from apps.orders.services import EmailService
             EmailService.send_welcome_email(user)
-        except Exception as e:
-            print(f"[RegisterView] Could not dispatch welcome email: {e}")
+        except Exception as exc:
+            logger.warning("Could not dispatch welcome email to %s: %s", user.email, exc)
 
         return Response(
             {
@@ -307,8 +310,8 @@ class AdminVendorUpdateStatusView(generics.UpdateAPIView):
             try:
                 from apps.orders.services import EmailService
                 EmailService.send_vendor_status_updated(vendor, old_status, vendor.status, reason=reason)
-            except Exception as e:
-                print(f"[AdminVendorUpdateStatusView Warning] Email dispatch failed: {e}")
+            except Exception as exc:
+                logger.warning("Vendor status update notification failed for %s: %s", vendor.store_name, exc)
 
         return Response(VendorProfileSerializer(vendor).data)
 
