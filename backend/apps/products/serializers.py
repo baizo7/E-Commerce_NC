@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from apps.products.models import Category, Product, ProductImage, Review, ProductVariant, WishlistItem, PlatformBanner
+from apps.products.models import Category, Product, ProductImage, Review, ProductVariant, WishlistItem, PlatformBanner, PriceHistory
 from apps.accounts.serializers import VendorPublicSerializer
 
 
@@ -32,12 +32,24 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Review
-        fields = ['id', 'product', 'customer', 'customer_name', 'rating', 'title', 'comment', 'created_at']
-        read_only_fields = ['id', 'customer', 'customer_name', 'created_at']
+        fields = ['id', 'product', 'customer', 'customer_name', 'rating', 'title', 'comment', 'is_verified_purchase', 'created_at']
+        read_only_fields = ['id', 'customer', 'customer_name', 'is_verified_purchase', 'created_at']
 
     def get_customer_name(self, obj):
         name = f"{obj.customer.first_name} {obj.customer.last_name}".strip()
         return name if name else obj.customer.email.split('@')[0]
+
+
+class PriceHistorySerializer(serializers.ModelSerializer):
+    variant_title = serializers.CharField(source='variant.title', read_only=True, default='')
+
+    class Meta:
+        model = PriceHistory
+        fields = [
+            'id', 'product', 'variant', 'variant_title', 'price',
+            'compare_at_price', 'currency', 'change_reason', 'effective_from', 'created_at'
+        ]
+        read_only_fields = ['id', 'created_at']
 
 
 class ProductListSerializer(serializers.ModelSerializer):
@@ -64,6 +76,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)
     variants = ProductVariantSerializer(many=True, read_only=True)
     reviews = ReviewSerializer(many=True, read_only=True)
+    price_history = PriceHistorySerializer(many=True, read_only=True)
     primary_image = serializers.ReadOnlyField()
     is_in_stock = serializers.ReadOnlyField()
     is_low_stock = serializers.ReadOnlyField()
@@ -76,7 +89,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'low_stock_threshold', 'is_in_stock', 'is_low_stock',
             'rating', 'review_count', 'is_featured', 'is_active',
             'is_approved', 'primary_image', 'images', 'variants', 'vendor',
-            'category', 'reviews', 'created_at', 'updated_at'
+            'category', 'reviews', 'price_history', 'created_at', 'updated_at'
         ]
 
 

@@ -73,11 +73,12 @@ def process_csv_import_async(self, vendor_id: int, csv_content: str):
                     existing.description = row.get('description').strip()
                 if row.get('short_description'):
                     existing.short_description = row.get('short_description').strip()
+                existing._change_reason = 'BULK_CSV'
                 existing.save()
                 updated_count += 1
                 continue
 
-        Product.objects.create(
+        new_prod = Product(
             vendor=vendor,
             title=title,
             category=category,
@@ -90,6 +91,8 @@ def process_csv_import_async(self, vendor_id: int, csv_content: str):
             is_active=True,
             is_approved=True,
         )
+        new_prod._change_reason = 'BULK_CSV'
+        new_prod.save()
         created_count += 1
 
     summary = {

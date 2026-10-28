@@ -134,7 +134,7 @@ class ProductDetailView(generics.RetrieveAPIView):
             is_active=True,
             is_approved=True,
             vendor__status='APPROVED'
-        ).select_related('vendor', 'category').prefetch_related('images', 'reviews__customer')
+        ).select_related('vendor', 'category').prefetch_related('images', 'reviews__customer', 'price_history')
 
 
 class ProductReviewCreateView(generics.CreateAPIView):
@@ -552,11 +552,12 @@ class VendorProductCsvImportView(APIView):
                         existing.description = row.get('description').strip()
                     if row.get('short_description'):
                         existing.short_description = row.get('short_description').strip()
+                    existing._change_reason = 'BULK_CSV'
                     existing.save()
                     updated_count += 1
                     continue
 
-            Product.objects.create(
+            new_prod = Product(
                 vendor=vendor,
                 title=title,
                 category=category,
@@ -569,6 +570,8 @@ class VendorProductCsvImportView(APIView):
                 is_active=True,
                 is_approved=True
             )
+            new_prod._change_reason = 'BULK_CSV'
+            new_prod.save()
             created_count += 1
 
         return Response({

@@ -68,6 +68,20 @@ export interface Review {
   rating: number;
   title: string;
   comment: string;
+  is_verified_purchase?: boolean;
+  created_at: string;
+}
+
+export interface PriceHistory {
+  id: number;
+  product: number;
+  variant?: number | null;
+  variant_title?: string;
+  price: string | number;
+  compare_at_price?: string | number | null;
+  currency: string;
+  change_reason: 'INITIAL' | 'MANUAL_UPDATE' | 'BULK_CSV' | 'PROMO_START' | 'PROMO_END';
+  effective_from: string;
   created_at: string;
 }
 
@@ -111,6 +125,7 @@ export interface Product {
   category?: number | Category | null;
   category_name?: string;
   reviews?: Review[];
+  price_history?: PriceHistory[];
   created_at: string;
 }
 

@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from django.utils.text import slugify
 from django.core.validators import MinValueValidator, MaxValueValidator
 from decimal import Decimal
@@ -64,6 +65,17 @@ class Product(models.Model):
         ]
 
     def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        old_price = None
+        old_compare = None
+        if not is_new:
+            try:
+                orig = Product.objects.get(pk=self.pk)
+                old_price = orig.price
+                old_compare = orig.compare_at_price
+            except Product.DoesNotExist:
+                pass
+
         if not self.slug:
             base_slug = slugify(self.title)
             slug = base_slug
@@ -73,6 +85,17 @@ class Product(models.Model):
                 counter += 1
             self.slug = slug
         super().save(*args, **kwargs)
+
+        # Record price history upon creation or price change
+        if is_new or (old_price is not None and (old_price != self.price or old_compare != self.compare_at_price)):
+            reason = 'INITIAL' if is_new else getattr(self, '_change_reason', 'MANUAL_UPDATE')
+            PriceHistory.objects.create(
+                product=self,
+                price=self.price,
+                compare_at_price=self.compare_at_price,
+                change_reason=reason,
+                effective_from=timezone.now()
+            )
 
     @property
     def primary_image(self):
@@ -113,6 +136,7 @@ class Review(models.Model):
     rating = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)], default=5)
     title = models.CharField(max_length=150, blank=True)
     comment = models.TextField()
+    is_verified_purchase = models.BooleanField(default=False, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -120,6 +144,20 @@ class Review(models.Model):
         unique_together = ('product', 'customer')
 
     def save(self, *args, **kwargs):
+        # Auto-verify purchase status against completed orders
+        if not self.is_verified_purchase and self.customer_id and self.product_id:
+            try:
+                from apps.orders.models import OrderItem
+                has_bought = OrderItem.objects.filter(
+                    order__customer_id=self.customer_id,
+                    product_id=self.product_id,
+                    order__status__in=['PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED']
+                ).exists()
+                if has_bought:
+                    self.is_verified_purchase = True
+            except Exception:
+                pass
+
         super().save(*args, **kwargs)
         # Update product aggregate rating
         reviews = self.product.reviews.all()
@@ -146,6 +184,31 @@ class ProductVariant(models.Model):
 
     class Meta:
         ordering = ['id']
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        old_price = None
+        old_compare = None
+        if not is_new:
+            try:
+                orig = ProductVariant.objects.get(pk=self.pk)
+                old_price = orig.price
+                old_compare = orig.compare_at_price
+            except ProductVariant.DoesNotExist:
+                pass
+
+        super().save(*args, **kwargs)
+
+        if is_new or (old_price is not None and (old_price != self.price or old_compare != self.compare_at_price)):
+            reason = 'INITIAL' if is_new else getattr(self, '_change_reason', 'MANUAL_UPDATE')
+            PriceHistory.objects.create(
+                product=self.product,
+                variant=self,
+                price=self.price,
+                compare_at_price=self.compare_at_price,
+                change_reason=reason,
+                effective_from=timezone.now()
+            )
 
     def __str__(self):
         return f"{self.product.title} - {self.title}"
@@ -182,4 +245,40 @@ class PlatformBanner(models.Model):
 
     def __str__(self):
         return f"[{self.banner_type}] {self.title}"
+
+
+class PriceHistory(models.Model):
+    """
+    Audit log of product and variant price changes over time (Feature B).
+    Enables authentic historical price tracking, 30-day moving averages,
+    and inflation/discount disclosure without hallucinated baseline figures.
+    """
+    REASON_CHOICES = (
+        ('INITIAL', 'Initial Product Listing'),
+        ('MANUAL_UPDATE', 'Vendor Manual Update'),
+        ('BULK_CSV', 'Bulk CSV Catalog Import'),
+        ('PROMO_START', 'Promotional Campaign Start'),
+        ('PROMO_END', 'Promotional Campaign End'),
+    )
+
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='price_history')
+    variant = models.ForeignKey('products.ProductVariant', on_delete=models.CASCADE, null=True, blank=True, related_name='price_history')
+    price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))])
+    compare_at_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    currency = models.CharField(max_length=10, default='INR')
+    change_reason = models.CharField(max_length=30, choices=REASON_CHOICES, default='MANUAL_UPDATE')
+    effective_from = models.DateTimeField(default=timezone.now, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-effective_from']
+        indexes = [
+            models.Index(fields=['product', '-effective_from'], name='ph_prod_date_idx'),
+            models.Index(fields=['variant', '-effective_from'], name='ph_var_date_idx'),
+        ]
+
+    def __str__(self):
+        target = f"{self.product.title}" if not self.variant else f"{self.product.title} ({self.variant.title})"
+        return f"{target} -> ₹{self.price} ({self.change_reason} @ {self.effective_from.strftime('%Y-%m-%d')})"
+
 
