@@ -7,9 +7,8 @@ from apps.products.models import Product, ProductVariant, PriceHistory
 
 class PriceHistoryService:
     """
-    Deterministic engine for Feature B (Historical Price Comparison).
-    Compares current prices against 30-day moving averages and same-day last month prices.
-    Honestly discloses data limitations when historical tracking is under 30 days old.
+    Analyze product price trends over time.
+    Compares current prices against 30-day averages and previous month milestones.
     """
 
     @classmethod

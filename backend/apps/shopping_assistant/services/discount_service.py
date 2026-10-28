@@ -8,9 +8,8 @@ from apps.orders.models import Coupon
 
 class DiscountFinderService:
     """
-    Deterministic engine for Feature A (Discount Finder).
-    Retrieves authentic verified discounts using compare_at_price and active coupons.
-    Never invents baseline figures or promotes out-of-stock items.
+    Search and calculate verified discounts across the product catalog.
+    Validates prices against compare_at_price and active promotional coupons.
     """
 
     @classmethod
@@ -27,7 +26,7 @@ class DiscountFinderService:
             is_approved=True,
             vendor__status='APPROVED',
             inventory_count__gt=0,
-            compare_at_price__gt=F('price') # True genuine discount
+            compare_at_price__gt=F('price')
         ).select_related('vendor', 'category').prefetch_related('images')
 
         if category_slug:

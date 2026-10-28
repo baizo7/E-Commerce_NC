@@ -7,9 +7,8 @@ from apps.shopping_assistant.services.review_confidence_service import ReviewCon
 
 class AffordableRankerService:
     """
-    Deterministic engine for Feature D (Affordable, Quality-Focused Recommendations).
-    Enforces strict hard budget and stock constraints first,
-    then evaluates candidates through a multi-criteria normalized scoring model.
+    Ranks products within a customer's budget by balancing price savings,
+    customer ratings, and merchant reliability.
     """
 
     WEIGHT_PRESETS = {

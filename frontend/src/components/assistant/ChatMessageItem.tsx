@@ -91,14 +91,6 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
 
       <div className="flex-1 max-w-[90%] space-y-2">
         <div className="bg-white border border-slate-200/90 rounded-2xl rounded-tl-xs p-3.5 shadow-xs text-slate-800">
-          {/* Header indicator if intent is detected */}
-          {message.intent && message.intent !== 'UNKNOWN' && (
-            <div className="inline-flex items-center gap-1 text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1.5">
-              <Sparkles className="w-3 h-3 text-[#ffcd05] fill-[#ffcd05]" />
-              <span>{message.intent.replace(/_/g, ' ')}</span>
-            </div>
-          )}
-
           {/* Formatted Content */}
           <div className="text-slate-800">{renderFormattedText(message.content)}</div>
 
@@ -112,10 +104,10 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
             <div className="mt-3 pt-3 border-t border-slate-100">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[11px] font-bold text-slate-700">
-                  Live Catalog Recommendations ({message.suggested_products.length})
+                  Recommended Products ({message.suggested_products.length})
                 </span>
-                <span className="text-[10px] text-slate-400 font-medium">
-                  Verified stock & prices
+                <span className="text-[10px] text-emerald-600 font-semibold">
+                  In Stock
                 </span>
               </div>
               <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-300">

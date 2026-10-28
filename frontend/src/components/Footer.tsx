@@ -75,7 +75,7 @@ export const Footer: React.FC = () => {
             </span>
           </div>
           <p className="text-xs text-slate-400 leading-relaxed">
-            Massa sed elementum tempus egestas sed sed risus. Risus at ultrices mi tempus imperdiet nulla malesuada pellentesque elit. Direct multi-vendor commerce empowering independent creators.
+            A multi-vendor marketplace connecting conscious shoppers with verified independent makers, studios, and craft brands worldwide.
           </p>
           <div className="text-xs text-slate-400 space-y-1">
             <p className="flex items-center gap-2">

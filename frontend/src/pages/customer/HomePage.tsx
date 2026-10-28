@@ -73,7 +73,7 @@ export const HomePage: React.FC = () => {
             </h1>
 
             <p className="text-base sm:text-lg text-slate-300 font-normal leading-relaxed max-w-xl">
-              Massa sed elementum tempus egestas sed sed risus. Risus at ultrices mi tempus imperdiet nulla malesuada pellentesque elit. Direct multi-vendor craft and essentials.
+              Discover handcrafted goods, functional everyday gear, and design-forward essentials sourced directly from verified independent creators.
             </p>
 
             <div className="flex flex-wrap items-center gap-4 pt-3">
@@ -118,10 +118,10 @@ export const HomePage: React.FC = () => {
               SPORTSMAN / CHAMPION / BACKPACK
             </span>
             <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-              Quisque Diam Quam Elementum
+              Engineered For Movement & Durability
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              Condimentum id venenatis a condimentum vitae sapien. Ullamcorper malesuada proin libero nunc consequat interdum varius sit. Engineered for high performance durability and urban versatility.
+              Crafted from weather-resistant materials with ergonomic support. Field-tested for daily city commutes, long-haul travel, and weekend trails.
             </p>
             <div className="pt-1">
               <Link to="/products" className="text-xs font-black uppercase tracking-wider text-slate-950 hover:text-amber-600 inline-flex items-center gap-1.5 transition">
@@ -132,14 +132,14 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 3. Category Showcase: "Backpack Types" (Blocksy Modern Shop) */}
+      {/* 3. Category Showcase */}
       <section className="space-y-8">
         <div className="text-center max-w-xl mx-auto space-y-2">
           <h2 className="text-3xl sm:text-4xl font-black text-slate-950 tracking-tight uppercase">
-            Backpack Types
+            Curated Categories
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 font-medium">
-            Molestie ac feugiat sed lectus.
+            Explore collections designed for work, travel, and mindful living.
           </p>
         </div>
 
@@ -159,10 +159,10 @@ export const HomePage: React.FC = () => {
                 EVERYDAY CARRY
               </span>
               <h3 className="text-xl font-extrabold text-white group-hover:text-amber-400 transition-colors">
-                Maecenas Ultricies Mieget
+                Everyday Tech & Audio
               </h3>
               <p className="text-xs text-slate-300 mt-1 line-clamp-1">
-                Ultrices neque ornare aenean euismod. Faucibus scelerisque eleifend.
+                Studio-grade wireless headphones, mechanical keyboards, and charging gear.
               </p>
             </div>
           </Link>
@@ -182,10 +182,10 @@ export const HomePage: React.FC = () => {
                 HANDCRAFTED LIVING
               </span>
               <h3 className="text-xl font-extrabold text-white group-hover:text-amber-400 transition-colors">
-                Laoreet Nonarcu Curabitur
+                Artisan Home & Living
               </h3>
               <p className="text-xs text-slate-300 mt-1 line-clamp-1">
-                Ultrices neque ornare aenean euismod. Minimalist ceramic & wood.
+                Hand-thrown stoneware dining sets, solid oak lighting, and soy candles.
               </p>
             </div>
           </Link>
@@ -205,24 +205,24 @@ export const HomePage: React.FC = () => {
                 ORGANIC APPAREL
               </span>
               <h3 className="text-xl font-extrabold text-white group-hover:text-amber-400 transition-colors">
-                Vestibulum Sedarcu Nonodio
+                Organic Casual Wear
               </h3>
               <p className="text-xs text-slate-300 mt-1 line-clamp-1">
-                Sustainable garments, heavyweight hoodies & relaxed trousers.
+                Heavyweight French terry hoodies, tailored trousers, and leather bags.
               </p>
             </div>
           </Link>
         </div>
       </section>
 
-      {/* 4. Featured Products Section (Blocksy Modern Shop) */}
+      {/* 4. Featured Products Section */}
       <section className="space-y-8">
         <div className="text-center max-w-xl mx-auto space-y-2">
           <h2 className="text-3xl sm:text-4xl font-black text-slate-950 tracking-tight uppercase">
             Featured Products
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 font-medium">
-            Tristique senectus netus et malesuada fames.
+            Handpicked platform favorites with proven quality and verified reviews.
           </p>
         </div>
 
@@ -254,7 +254,7 @@ export const HomePage: React.FC = () => {
             </h2>
 
             <p className="text-sm text-slate-300 max-w-lg leading-relaxed">
-              Fringilla urna porttitor rhoncus dolor purus non. Nulla malesuada pellentesque elit eget gravida cum. Don't miss out on verified creator drops at unprecedented savings.
+              Limited seasonal promotions from our verified merchants. All discounts are cross-referenced with real past pricing for genuine savings.
             </p>
 
             <div className="pt-2">
@@ -274,21 +274,21 @@ export const HomePage: React.FC = () => {
                 70%
               </span>
               <p className="text-xs uppercase tracking-widest font-extrabold text-white mt-2">
-                Nulla malesuada pellentesque eget gravida
+                Verified discounts on featured merchant catalog
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 6. Popular Backpacks & Products Section (Blocksy Modern Shop) */}
+      {/* 6. Popular Products Section */}
       <section className="space-y-8">
         <div className="text-center max-w-xl mx-auto space-y-2">
           <h2 className="text-3xl sm:text-4xl font-black text-slate-950 tracking-tight uppercase">
-            Popular Backpacks
+            Popular Backpacks & Gear
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 font-medium">
-            Amet massa vitae tortor condimentum.
+            Top-rated essentials and customer favorites this season.
           </p>
         </div>
 
@@ -307,14 +307,14 @@ export const HomePage: React.FC = () => {
         )}
       </section>
 
-      {/* 7. "Our Happy Clients!" Testimonials (Blocksy Modern Shop) */}
+      {/* 7. Testimonials */}
       <section className="bg-slate-50 border border-slate-200/90 rounded-3xl p-8 sm:p-14 space-y-10">
         <div className="text-center max-w-xl mx-auto space-y-2">
           <h2 className="text-3xl sm:text-4xl font-black text-slate-950 tracking-tight uppercase">
             Our Happy Clients!
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 font-medium">
-            Malesuada bibendum arcu vitae elementum.
+            Real experiences from verified buyers across the marketplace.
           </p>
         </div>
 
@@ -327,7 +327,7 @@ export const HomePage: React.FC = () => {
               ))}
             </div>
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed italic">
-              "Sagittis nisl rhoncus mattis rhoncus urna neque viverra. In iaculis nunc sed augue lacus viverra vitae congue. The split order tracking across independent vendors is seamless!"
+              "Ordering from different makers in a single cart was effortless. Shipments were dispatched promptly with clear per-vendor tracking updates."
             </p>
             <div className="flex items-center gap-3 pt-2 border-t border-slate-100">
               <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden flex-shrink-0">
@@ -339,7 +339,7 @@ export const HomePage: React.FC = () => {
               </div>
               <div>
                 <h4 className="font-bold text-xs text-slate-900">Jason Wong</h4>
-                <span className="text-[10px] text-slate-400 block font-medium">CEO of wongsite.com</span>
+                <span className="text-[10px] text-slate-400 block font-medium">Verified Buyer</span>
               </div>
             </div>
           </div>
@@ -352,7 +352,7 @@ export const HomePage: React.FC = () => {
               ))}
             </div>
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed italic">
-              "Ultrices neque ornare aenean euismod elementum. Exceptional craft quality from verified independent sellers and lightning fast delivery!"
+              "The craftsmanship on the dining set and headphones exceeded expectations. It's rare to find independent studios with this level of polish."
             </p>
             <div className="flex items-center gap-3 pt-2 border-t border-slate-100">
               <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden flex-shrink-0">
@@ -377,7 +377,7 @@ export const HomePage: React.FC = () => {
               ))}
             </div>
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed italic">
-              "Faucibus scelerisque eleifend donec pretium. Best marketplace platform with full escrow protection and direct merchant communication."
+              "Hands down the cleanest marketplace experience. Transparent buyer protection, responsive sellers, and honest prices."
             </p>
             <div className="flex items-center gap-3 pt-2 border-t border-slate-100">
               <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden flex-shrink-0">

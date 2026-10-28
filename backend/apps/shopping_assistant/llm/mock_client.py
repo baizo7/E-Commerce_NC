@@ -60,7 +60,7 @@ class MockLLMClient(BaseLLMClient):
                 cat_slug = 'fitness-outdoors'
 
             return {
-                'text': "I found genuine discounted items from verified merchants:",
+                'text': "Here are products currently on sale with verified discounts:",
                 'tool_calls': [
                     {
                         'name': 'find_discounted_products',
@@ -89,7 +89,7 @@ class MockLLMClient(BaseLLMClient):
                     pass
 
             return {
-                'text': f"Here are the top-rated products ranked by verified customer confidence:",
+                'text': "Here are some top-rated products with the best customer reviews:",
                 'tool_calls': [
                     {
                         'name': 'find_top_rated_products',
@@ -116,7 +116,7 @@ class MockLLMClient(BaseLLMClient):
         search_query = " ".join(clean_words) if clean_words else ""
 
         return {
-            'text': f"Here are the highest-quality affordable options within your budget:",
+            'text': "Here are some great options within your budget:",
             'tool_calls': [
                 {
                     'name': 'recommend_affordable_products',

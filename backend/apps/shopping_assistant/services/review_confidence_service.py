@@ -6,9 +6,8 @@ from apps.products.models import Product, Review
 
 class ReviewConfidenceService:
     """
-    Deterministic engine for Feature C (Highly Rated Product Finder).
-    Computes Bayesian Weighted Ratings to eliminate small-sample bias,
-    incorporates verified buyer indicators, and extracts review sentiment summaries.
+    Ranks products by customer feedback quality using weighted review scoring
+    and verified purchase indicators to avoid sample bias.
     """
 
     CONFIDENCE_THRESHOLD_M = 5  # Minimum reviews before full trust

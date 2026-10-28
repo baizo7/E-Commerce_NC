@@ -10,12 +10,8 @@ logger = logging.getLogger(__name__)
 
 class AssistantOrchestrator:
     """
-    Core RAG Orchestrator:
-    1. Loads session history
-    2. Identifies user shopping intent
-    3. Executes authoritative database retrieval tools
-    4. Injects live product data into the context
-    5. Generates conversational response and structured product cards
+    Coordinates chat conversations by resolving user queries against
+    the marketplace catalog and generating contextual product recommendations.
     """
 
     def __init__(self):
@@ -82,7 +78,7 @@ class AssistantOrchestrator:
                     suggested_products.extend(res.get('products', []))
                     if not assistant_text or assistant_text.strip().endswith('...'):
                         count = len(res.get('products', []))
-                        assistant_text = f"I found {count} active deals with verified reference price reductions:"
+                        assistant_text = f"Here are {count} items currently on sale:"
 
                 elif name == 'compare_price_history':
                     intent = 'PRICE_HISTORY'
@@ -95,9 +91,9 @@ class AssistantOrchestrator:
                         disc = price_analysis.get('history_disclosure')
 
                         if trend == 'CHEAPER':
-                            assistant_text = f"Good news! **{p_title}** is currently ₹{cur_p:,.2f}, which is cheaper than its 30-day average of ₹{avg_p:,.2f}. {disc}"
+                            assistant_text = f"Good news! **{p_title}** is currently ₹{cur_p:,.2f}, which is lower than its 30-day average of ₹{avg_p:,.2f}. {disc}"
                         elif trend == 'MORE_EXPENSIVE':
-                            assistant_text = f"Notice: **{p_title}** is currently ₹{cur_p:,.2f}, higher than its 30-day average of ₹{avg_p:,.2f}. {disc}"
+                            assistant_text = f"**{p_title}** is currently ₹{cur_p:,.2f}, slightly above its 30-day average of ₹{avg_p:,.2f}. {disc}"
                         else:
                             assistant_text = f"**{p_title}** is currently ₹{cur_p:,.2f}, holding steady near its recent average of ₹{avg_p:,.2f}. {disc}"
                     else:
@@ -108,18 +104,18 @@ class AssistantOrchestrator:
                     suggested_products.extend(res.get('products', []))
                     if not assistant_text or assistant_text.strip().endswith('...'):
                         count = len(res.get('products', []))
-                        assistant_text = f"Here are {count} top-rated products ranked using verified buyer review confidence:"
+                        assistant_text = f"Here are {count} top-rated products with great customer reviews:"
 
                 elif name == 'recommend_affordable_products':
                     intent = 'AFFORDABLE_RECOMMENDATION'
                     suggested_products.extend(res.get('products', []))
                     if not assistant_text or assistant_text.strip().endswith('...'):
                         count = len(res.get('products', []))
-                        assistant_text = f"I've selected {count} great options balancing price, review quality, and verified discounts:"
+                        assistant_text = f"Here are {count} top picks within your budget:"
 
         # Default fallback text if nothing matched
         if not assistant_text:
-            assistant_text = "I'm here to help you discover discounts, compare historical price trends, and find highly rated products. What are you shopping for today?"
+            assistant_text = "Hi! What are you looking to shop for today? I can help find discounts, compare prices, or recommend products."
 
         # 6. Persist Assistant Response Turn
         ChatMessage.objects.create(
