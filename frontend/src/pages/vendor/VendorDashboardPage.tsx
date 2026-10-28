@@ -14,7 +14,10 @@ import {
   BarChart3,
   Trophy,
   ShoppingBag,
-  Store
+  Store,
+  Truck,
+  CheckCircle2,
+  ExternalLink
 } from 'lucide-react';
 import { vendorService } from '../../services/api';
 import { VendorAnalytics } from '../../types';
@@ -35,7 +38,7 @@ export const VendorDashboardPage: React.FC = () => {
       const data = await vendorService.getAnalytics();
       setAnalytics(data);
     } catch (err) {
-      console.error(err);
+      console.error('Failed to load vendor analytics:', err);
     } finally {
       setLoading(false);
     }
@@ -65,7 +68,7 @@ export const VendorDashboardPage: React.FC = () => {
   if (!isVendor) {
     return (
       <div className="max-w-4xl mx-auto py-12 px-4 space-y-8">
-        <div className="bg-[#0a0500] text-white rounded-3xl p-8 sm:p-12 shadow-2xl relative overflow-hidden text-center space-y-6">
+        <div className="bg-[#0a0500] text-white rounded-3xl p-8 sm:p-12 shadow-2xl relative overflow-hidden text-center space-y-6 border border-neutral-800">
           <div className="w-16 h-16 rounded-2xl bg-[#ffcd05] text-[#0a0500] flex items-center justify-center mx-auto shadow-lg">
             <Store className="w-8 h-8" />
           </div>
@@ -116,8 +119,17 @@ export const VendorDashboardPage: React.FC = () => {
 
   const lowStockCount = (analytics?.low_stock_count || 0) + (analytics?.out_of_stock_count || 0);
 
+  // 7-day velocity totals for header summary
+  const sevenDayTotals = analytics?.daily_trends?.reduce(
+    (acc, day) => ({
+      revenue: acc.revenue + day.revenue,
+      orders: acc.orders + day.order_count,
+    }),
+    { revenue: 0, orders: 0 }
+  ) || { revenue: 0, orders: 0 };
+
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
+    <div className="max-w-7xl mx-auto space-y-8 pb-16">
       <VendorSubNav />
 
       {/* Low Stock Urgent Alert Banner */}
@@ -140,7 +152,7 @@ export const VendorDashboardPage: React.FC = () => {
       )}
 
       {/* Vendor Store Header Card */}
-      <div className="bg-[#0a0500] text-white rounded-3xl p-6 sm:p-10 shadow-xl relative overflow-hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+      <div className="bg-[#0a0500] text-white rounded-3xl p-6 sm:p-10 shadow-xl relative overflow-hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 border border-neutral-800">
         <div className="absolute right-0 top-0 w-80 h-80 bg-[#ffcd05]/10 rounded-full blur-3xl pointer-events-none"></div>
 
         <div className="space-y-2.5 relative z-10 max-w-xl">
@@ -180,7 +192,7 @@ export const VendorDashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* KPI Stats Cards */}
+      {/* 4 KPI Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Gross Sales */}
         <div className="bg-white border border-neutral-200/90 rounded-2xl p-6 shadow-sm flex items-center gap-4">
@@ -244,166 +256,321 @@ export const VendorDashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Analytics Insights & Leaderboard Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* 7-Day Performance Curve */}
-        <div className="lg:col-span-2 bg-white border border-neutral-200/90 rounded-2xl p-6 sm:p-7 shadow-sm space-y-5">
-          <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-amber-50 text-[#fcb424] flex items-center justify-center">
-                <BarChart3 className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-[#fcb424]">Visual Velocity</span>
-                <h2 className="text-sm font-black text-[#0a0500] uppercase tracking-tight">
-                  7-Day Sales & Order Trajectory
-                </h2>
-              </div>
+      {/* ========================================================================= */}
+      {/* SEPARATE VIEW 1: Standalone 7-Day Sales & Order Trajectory Bar Chart       */}
+      {/* ========================================================================= */}
+      <div className="bg-white border border-neutral-200/90 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+        {/* Section Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-neutral-100 gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-[#0a0500] text-[#ffcd05] flex items-center justify-center shadow-sm">
+              <BarChart3 className="w-5 h-5" />
             </div>
-            <span className="px-2.5 py-1 rounded-full bg-neutral-100 text-[10px] font-black uppercase tracking-wider text-[#504e4a]">
-              Real-Time
-            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-[#fcb424]">
+                  Visual Velocity
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[9px] font-black uppercase tracking-wider">
+                  Live 7-Day Performance
+                </span>
+              </div>
+              <h2 className="text-base sm:text-lg font-black text-[#0a0500] uppercase tracking-tight">
+                7-Day Sales & Order Trajectory
+              </h2>
+            </div>
           </div>
 
-          {/* Bar Chart Visualization */}
-          {analytics?.daily_trends && analytics.daily_trends.length > 0 ? (
-            <div className="space-y-4">
-              <div className="h-44 flex items-end justify-between gap-2 sm:gap-4 pt-6 px-2 border-b border-neutral-100">
+          {/* Quick 7-Day Overview Chips */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="px-3.5 py-1.5 rounded-xl bg-neutral-50 border border-neutral-200/80 text-xs">
+              <span className="text-[10px] text-slate-400 font-black uppercase block">7D Net Revenue:</span>
+              <span className="font-black text-emerald-700">${sevenDayTotals.revenue.toFixed(2)}</span>
+            </div>
+            <div className="px-3.5 py-1.5 rounded-xl bg-neutral-50 border border-neutral-200/80 text-xs">
+              <span className="text-[10px] text-slate-400 font-black uppercase block">7D Packages:</span>
+              <span className="font-black text-[#0a0500]">{sevenDayTotals.orders} packages</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Bar Chart Visualization Canvas - Solid Flat Colors, No Gradients */}
+        {analytics?.daily_trends && analytics.daily_trends.length > 0 ? (
+          <div className="space-y-6">
+            {/* Chart Area with Generous Height */}
+            <div className="relative pt-6 pb-2 px-4 bg-neutral-50/60 rounded-2xl border border-neutral-200/80">
+              {/* Background Guideline markers */}
+              <div className="absolute inset-x-4 top-8 bottom-12 flex flex-col justify-between pointer-events-none opacity-40">
+                <div className="border-b border-dashed border-neutral-300 w-full"></div>
+                <div className="border-b border-dashed border-neutral-200 w-full"></div>
+                <div className="border-b border-dashed border-neutral-200 w-full"></div>
+              </div>
+
+              {/* Bars Row */}
+              <div className="h-60 sm:h-72 flex items-end justify-between gap-3 sm:gap-6 relative z-10 px-2 sm:px-6">
                 {(() => {
-                  const maxRev = Math.max(...analytics.daily_trends.map(d => d.revenue), 10);
+                  const maxRev = Math.max(...analytics.daily_trends.map((d) => d.revenue), 10);
                   return analytics.daily_trends.map((day, idx) => {
-                    const heightPercent = Math.max(Math.round((day.revenue / maxRev) * 100), 12);
+                    const heightPercent = Math.max(Math.round((day.revenue / maxRev) * 100), 8);
                     const isToday = idx === analytics.daily_trends!.length - 1;
                     return (
-                      <div key={idx} className="flex-1 flex flex-col items-center gap-2 group h-full justify-end">
-                        {/* Hover Tooltip */}
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-[#0a0500] text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap pointer-events-none mb-1">
-                          ${day.revenue.toFixed(2)} ({day.order_count} ord)
+                      <div
+                        key={idx}
+                        className="flex-1 flex flex-col items-center gap-2 group h-full justify-end relative"
+                      >
+                        {/* Hover Tooltip - Floating Above Bar with High Z-Index */}
+                        <div className="opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none absolute -top-14 bg-[#0a0500] text-white text-[11px] font-bold px-3 py-2 rounded-xl shadow-2xl whitespace-nowrap z-30 border border-neutral-700">
+                          <div className="text-[10px] text-[#ffcd05] font-black uppercase tracking-wider mb-0.5">
+                            {day.date}
+                          </div>
+                          <div>
+                            Net Payout: <strong className="text-emerald-400">${day.revenue.toFixed(2)}</strong> (
+                            {day.order_count} packages)
+                          </div>
                         </div>
 
-                        {/* Bar */}
-                        <div className="w-full max-w-[42px] bg-neutral-100 rounded-t-xl overflow-hidden flex flex-col justify-end h-full">
+                        {/* Interactive Bar Pillar - Solid Flat Colors */}
+                        <div className="w-full max-w-[56px] bg-neutral-200/60 rounded-t-xl overflow-hidden flex flex-col justify-end h-full shadow-xs group-hover:bg-neutral-200 transition">
                           <div
                             style={{ height: `${heightPercent}%` }}
-                            className={`w-full rounded-t-xl transition-all duration-500 ${
+                            className={`w-full rounded-t-xl transition-all duration-300 ${
                               isToday
-                                ? 'bg-gradient-to-t from-[#0a0500] to-[#fcb424]'
-                                : 'bg-gradient-to-t from-neutral-300 to-[#ffcd05] group-hover:from-neutral-800 group-hover:to-[#ffcd05]'
+                                ? 'bg-[#ffcd05] hover:bg-[#e6b800]'
+                                : 'bg-[#0a0500] hover:bg-neutral-800'
                             }`}
                           ></div>
                         </div>
 
                         {/* Date Label */}
-                        <span className={`text-[10px] font-black tracking-wider uppercase truncate ${
-                          isToday ? 'text-[#0a0500]' : 'text-slate-400'
-                        }`}>
-                          {day.short_date}
-                        </span>
+                        <div className="text-center mt-1">
+                          <span
+                            className={`text-[11px] font-black tracking-wider uppercase block truncate ${
+                              isToday ? 'text-[#0a0500]' : 'text-slate-500'
+                            }`}
+                          >
+                            {day.short_date}
+                          </span>
+                          {isToday && (
+                            <span className="text-[9px] font-black text-[#0a0500] bg-[#ffcd05] px-1.5 py-0.5 rounded-full uppercase block mt-0.5 font-mono">
+                              Today
+                            </span>
+                          )}
+                        </div>
                       </div>
                     );
                   });
                 })()}
               </div>
+            </div>
 
-              <div className="flex items-center justify-between text-[11px] text-[#504e4a] pt-1">
+            {/* Legend and Helper Details */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-[#504e4a] pt-1 px-1">
+              <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-[#ffcd05]"></span>
-                  <span className="font-bold text-[#0a0500]">Net Settled Payouts</span>
+                  <span className="w-3.5 h-3.5 rounded-md bg-[#0a0500]"></span>
+                  <span className="font-bold text-[#0a0500]">Settled Payouts (Previous Days)</span>
                 </div>
-                <span>Hover over bars for package quantities and revenue breakdown</span>
+                <div className="flex items-center gap-2">
+                  <span className="w-3.5 h-3.5 rounded-md bg-[#ffcd05]"></span>
+                  <span className="font-bold text-[#0a0500]">Today's Volume</span>
+                </div>
               </div>
+              <span className="text-slate-400 text-[11px] font-medium">
+                Hover over individual pillars for package quantities and revenue breakdown
+              </span>
             </div>
-          ) : (
-            <div className="text-center py-12 text-[#504e4a] text-xs">
-              Performance curve will calibrate automatically as transactions process.
-            </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="text-center py-16 text-[#504e4a] text-xs">
+            Performance curve will calibrate automatically as transactions process.
+          </div>
+        )}
+      </div>
 
+      {/* ========================================================================= */}
+      {/* SEPARATE VIEW 2: Top Products Leaderboard & Warehouse Logistics Grid       */}
+      {/* ========================================================================= */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Top Performing Catalog Items Leaderboard */}
-        <div className="bg-white border border-neutral-200/90 rounded-2xl p-6 sm:p-7 shadow-sm space-y-5 flex flex-col justify-between">
+        <div className="bg-white border border-neutral-200/90 rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col justify-between space-y-6">
           <div>
-            <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-amber-50 text-[#fcb424] flex items-center justify-center">
-                  <Trophy className="w-4 h-4" />
+            <div className="flex items-center justify-between pb-4 border-b border-neutral-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-50 text-[#fcb424] flex items-center justify-center shadow-xs">
+                  <Trophy className="w-5 h-5" />
                 </div>
                 <div>
                   <span className="text-[10px] font-black uppercase tracking-widest text-[#fcb424]">Top Sellers</span>
-                  <h2 className="text-sm font-black text-[#0a0500] uppercase tracking-tight">
+                  <h2 className="text-base font-black text-[#0a0500] uppercase tracking-tight">
                     Product Leaderboard
                   </h2>
                 </div>
               </div>
               <Link
                 to="/vendor/products"
-                className="text-[10px] font-black uppercase tracking-wider text-[#0a0500] hover:text-[#fcb424]"
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-neutral-200 text-[11px] font-black uppercase tracking-wider text-[#0a0500] hover:bg-neutral-50 transition"
               >
-                Catalog &rarr;
+                <span>Catalog</span>
+                <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
 
-            <div className="mt-4 space-y-3">
+            <div className="mt-5 space-y-3">
               {analytics?.top_products && analytics.top_products.length > 0 ? (
                 analytics.top_products.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-neutral-50 hover:bg-neutral-100/80 transition">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black flex-shrink-0 ${
-                        idx === 0 ? 'bg-[#ffcd05] text-[#0a0500]' : 'bg-neutral-200 text-slate-600'
-                      }`}>
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-neutral-50 hover:bg-neutral-100/80 transition border border-neutral-100"
+                  >
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <span
+                        className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-black flex-shrink-0 ${
+                          idx === 0
+                            ? 'bg-[#ffcd05] text-[#0a0500] shadow-xs'
+                            : idx === 1
+                            ? 'bg-neutral-300 text-neutral-800'
+                            : idx === 2
+                            ? 'bg-amber-100 text-amber-900'
+                            : 'bg-neutral-200 text-slate-600'
+                        }`}
+                      >
                         #{idx + 1}
                       </span>
                       {item.image_url ? (
-                        <img src={item.image_url} alt="" className="w-9 h-9 rounded-lg object-cover flex-shrink-0 border border-neutral-200" />
+                        <img
+                          src={item.image_url}
+                          alt=""
+                          className="w-11 h-11 rounded-xl object-cover flex-shrink-0 border border-neutral-200 bg-white"
+                        />
                       ) : (
-                        <div className="w-9 h-9 rounded-lg bg-neutral-200 flex items-center justify-center text-slate-400 flex-shrink-0">
-                          <ShoppingBag className="w-4 h-4" />
+                        <div className="w-11 h-11 rounded-xl bg-neutral-200 flex items-center justify-center text-slate-400 flex-shrink-0">
+                          <ShoppingBag className="w-5 h-5" />
                         </div>
                       )}
                       <div className="min-w-0">
-                        <p className="text-xs font-bold text-[#0a0500] truncate">{item.title}</p>
-                        <p className="text-[10px] text-slate-400 font-medium">{item.units_sold} unit{item.units_sold > 1 ? 's' : ''} sold</p>
+                        <p className="text-xs font-black text-[#0a0500] truncate">{item.title}</p>
+                        <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                          {item.units_sold} unit{item.units_sold > 1 ? 's' : ''} sold
+                        </p>
                       </div>
                     </div>
-                    <span className="text-xs font-black text-emerald-700 whitespace-nowrap">
+                    <span className="text-xs font-black text-emerald-700 whitespace-nowrap bg-white px-2.5 py-1 rounded-lg border border-neutral-200 shadow-2xs">
                       ${item.revenue.toFixed(2)}
                     </span>
                   </div>
                 ))
               ) : (
-                <div className="text-center py-8 text-[#504e4a] text-xs space-y-2">
+                <div className="text-center py-12 text-[#504e4a] text-xs space-y-3">
                   <p>No products sold yet.</p>
-                  <Link
-                    to="/vendor/products"
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#ffcd05] text-[#0a0500] font-black text-[11px] uppercase rounded-full shadow-xs hover:bg-[#fcb424]"
+                  <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#0a0500] text-[#ffcd05] font-black text-xs uppercase tracking-wider rounded-full shadow-sm hover:bg-neutral-800 transition"
                   >
-                    <Plus className="w-3.5 h-3.5" />
-                    List First Item
-                  </Link>
+                    <Plus className="w-4 h-4" />
+                    <span>List First Item</span>
+                  </button>
                 </div>
               )}
             </div>
           </div>
 
-          <div className="pt-3 border-t border-neutral-100 flex items-center justify-between text-[11px] text-slate-400">
-            <span>Ranked by gross sales</span>
-            <span className="font-bold text-[#0a0500]">{analytics?.total_products || 0} Total in Catalog</span>
+          <div className="pt-4 border-t border-neutral-100 flex items-center justify-between text-xs text-slate-400">
+            <span>Ranked by gross sales volume</span>
+            <span className="font-black text-[#0a0500]">{analytics?.total_products || 0} Total in Catalog</span>
+          </div>
+        </div>
+
+        {/* Warehouse Fulfillment & Logistics Pipeline */}
+        <div className="bg-white border border-neutral-200/90 rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col justify-between space-y-6">
+          <div>
+            <div className="flex items-center justify-between pb-4 border-b border-neutral-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-50 text-[#fcb424] flex items-center justify-center shadow-xs">
+                  <Truck className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[#fcb424]">
+                    Warehouse Logistics
+                  </span>
+                  <h2 className="text-base font-black text-[#0a0500] uppercase tracking-tight">
+                    Fulfillment Pipeline
+                  </h2>
+                </div>
+              </div>
+              <Link
+                to="/vendor/orders"
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-neutral-200 text-[11px] font-black uppercase tracking-wider text-[#0a0500] hover:bg-neutral-50 transition"
+              >
+                <span>Orders Queue</span>
+                <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
+
+            <div className="mt-5 space-y-3">
+              <div className="flex items-center justify-between text-xs p-3.5 rounded-2xl bg-neutral-50 border border-neutral-100">
+                <div className="flex items-center gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span className="font-bold text-[#0a0500]">Completed Shipments</span>
+                </div>
+                <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-[10px] font-black uppercase border border-emerald-200">
+                  {analytics?.completed_orders || 0} Delivered
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between text-xs p-3.5 rounded-2xl bg-neutral-50 border border-neutral-100">
+                <div className="flex items-center gap-2.5">
+                  <Clock className="w-4 h-4 text-amber-600" />
+                  <span className="font-bold text-[#0a0500]">Awaiting Dispatch</span>
+                </div>
+                <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-900 text-[10px] font-black uppercase border border-amber-200">
+                  {analytics?.pending_fulfillment || 0} Pending
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between text-xs p-3.5 rounded-2xl bg-neutral-50 border border-neutral-100">
+                <div className="flex items-center gap-2.5">
+                  <Package className="w-4 h-4 text-neutral-600" />
+                  <span className="font-bold text-[#0a0500]">Warehouse Stock Health</span>
+                </div>
+                <span className="px-3 py-1 rounded-full bg-white border border-neutral-200 text-[10px] font-black text-[#0a0500] shadow-2xs">
+                  {Math.max(0, (analytics?.total_products || 0) - lowStockCount)} Healthy / {lowStockCount} Alert
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-neutral-100 flex items-center justify-between text-xs text-slate-400">
+            <span>Parcel Logistics & Tracking</span>
+            <Link
+              to="/vendor/orders"
+              className="font-black text-[#0a0500] hover:text-[#fcb424] flex items-center gap-1"
+            >
+              <span>Manage Shipments</span>
+              <ExternalLink className="w-3 h-3" />
+            </Link>
           </div>
         </div>
       </div>
 
-      {/* Recent Orders Section */}
-      <div className="bg-white border border-neutral-200/90 rounded-2xl p-6 sm:p-8 shadow-sm space-y-5">
-        <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
-          <div>
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#fcb424]">Recent Buyer Activity</span>
-            <h2 className="text-base font-black text-[#0a0500] uppercase tracking-tight mt-0.5">
-              Recent Customer Sub-Orders
-            </h2>
+      {/* ========================================================================= */}
+      {/* SEPARATE VIEW 3: Recent Customer Sub-Orders (Full Width Table)             */}
+      {/* ========================================================================= */}
+      <div className="bg-white border border-neutral-200/90 rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-neutral-100 gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-neutral-100 text-[#0a0500] flex items-center justify-center">
+              <Clock className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#fcb424]">Recent Buyer Activity</span>
+              <h2 className="text-base font-black text-[#0a0500] uppercase tracking-tight mt-0.5">
+                Recent Customer Sub-Orders
+              </h2>
+            </div>
           </div>
           <Link
             to="/vendor/orders"
-            className="text-xs font-black uppercase tracking-wider text-[#0a0500] hover:text-[#fcb424] flex items-center gap-1 transition"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#0a0500] text-white hover:bg-neutral-800 text-xs font-black uppercase tracking-wider transition self-start sm:self-auto"
           >
             <span>All Packages</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -429,7 +596,7 @@ export const VendorDashboardPage: React.FC = () => {
                     <td className="py-3.5 px-4 font-mono font-bold text-[#0a0500]">
                       #{ord.order_number}
                     </td>
-                    <td className="py-3.5 px-4 text-[#504e4a]">{ord.customer_email}</td>
+                    <td className="py-3.5 px-4 text-[#504e4a] font-medium">{ord.customer_email}</td>
                     <td className="py-3.5 px-4 font-black text-[#0a0500]">${ord.subtotal.toFixed(2)}</td>
                     <td className="py-3.5 px-4 font-black text-emerald-700">${ord.net_amount.toFixed(2)}</td>
                     <td className="py-3.5 px-4">
@@ -438,9 +605,10 @@ export const VendorDashboardPage: React.FC = () => {
                     <td className="py-3.5 px-4 text-right">
                       <Link
                         to="/vendor/orders"
-                        className="px-3.5 py-1 text-[11px] font-black uppercase tracking-wider bg-neutral-100 hover:bg-[#ffcd05] text-[#0a0500] rounded-full transition"
+                        className="px-3.5 py-1.5 text-[11px] font-black uppercase tracking-wider bg-neutral-100 hover:bg-[#ffcd05] text-[#0a0500] rounded-full transition inline-flex items-center gap-1"
                       >
-                        Dispatch &rarr;
+                        <span>Dispatch</span>
+                        <ArrowRight className="w-3 h-3" />
                       </Link>
                     </td>
                   </tr>
