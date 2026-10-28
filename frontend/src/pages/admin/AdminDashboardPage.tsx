@@ -266,7 +266,7 @@ export const AdminDashboardPage: React.FC = () => {
         {analytics?.daily_trends && analytics.daily_trends.length > 0 ? (
           <div className="space-y-6">
             {/* Chart Area with Generous Height */}
-            <div className="relative pt-6 pb-2 px-4 bg-gradient-to-b from-neutral-50/50 to-white rounded-2xl border border-neutral-100">
+            <div className="relative pt-6 pb-2 px-4 bg-neutral-50/60 rounded-2xl border border-neutral-200/80">
               {/* Background Guideline markers */}
               <div className="absolute inset-x-4 top-8 bottom-12 flex flex-col justify-between pointer-events-none opacity-40">
                 <div className="border-b border-dashed border-neutral-300 w-full"></div>
@@ -293,37 +293,34 @@ export const AdminDashboardPage: React.FC = () => {
                           </div>
                           <div>
                             GMV: <strong className="text-white">${day.gmv.toFixed(2)}</strong> | Fee:{' '}
-                            <strong className="text-emerald-400">${day.commission.toFixed(2)}</strong> (
+                            <strong className="text-[#ffcd05]">${day.commission.toFixed(2)}</strong> (
                             {day.orders_count} ord)
                           </div>
                         </div>
 
-                        {/* Interactive Bar Pillar */}
-                        <div className="w-full max-w-[56px] bg-neutral-100 rounded-t-2xl overflow-hidden flex flex-col justify-end h-full shadow-xs group-hover:shadow-md transition">
+                        {/* Interactive Bar Pillar - Solid Flat Colors */}
+                        <div className="w-full max-w-[56px] bg-neutral-200/60 rounded-t-xl overflow-hidden flex flex-col justify-end h-full shadow-xs group-hover:bg-neutral-200 transition">
                           <div
                             style={{ height: `${heightPercent}%` }}
-                            className={`w-full rounded-t-2xl transition-all duration-500 relative ${
+                            className={`w-full rounded-t-xl transition-all duration-300 ${
                               isToday
-                                ? 'bg-gradient-to-t from-[#0a0500] via-[#0a0500] to-[#ffcd05]'
-                                : 'bg-gradient-to-t from-neutral-800 to-[#ffcd05] group-hover:from-neutral-900 group-hover:to-[#fcb424]'
+                                ? 'bg-[#ffcd05] hover:bg-[#e6b800]'
+                                : 'bg-[#0a0500] hover:bg-neutral-800'
                             }`}
-                          >
-                            {/* Commission Accent Top Cap */}
-                            <div className="h-2 w-full bg-[#ffcd05] rounded-t-2xl opacity-90"></div>
-                          </div>
+                          ></div>
                         </div>
 
                         {/* Date Label */}
                         <div className="text-center mt-1">
                           <span
                             className={`text-[11px] font-black tracking-wider uppercase block truncate ${
-                              isToday ? 'text-[#0a0500]' : 'text-slate-400'
+                              isToday ? 'text-[#0a0500]' : 'text-slate-500'
                             }`}
                           >
                             {day.short_date}
                           </span>
                           {isToday && (
-                            <span className="text-[9px] font-black text-[#ffcd05] bg-[#0a0500] px-1.5 py-0.2 rounded-full uppercase block mt-0.5">
+                            <span className="text-[9px] font-black text-[#0a0500] bg-[#ffcd05] px-1.5 py-0.5 rounded-full uppercase block mt-0.5 font-mono">
                               Today
                             </span>
                           )}
@@ -340,11 +337,11 @@ export const AdminDashboardPage: React.FC = () => {
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2">
                   <span className="w-3.5 h-3.5 rounded-md bg-[#0a0500]"></span>
-                  <span className="font-bold text-[#0a0500]">Gross Platform Volume (GMV)</span>
+                  <span className="font-bold text-[#0a0500]">Gross Volume (Previous Days)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-3.5 h-3.5 rounded-md bg-[#ffcd05]"></span>
-                  <span className="font-bold text-[#0a0500]">Platform Commission Cut</span>
+                  <span className="font-bold text-[#0a0500]">Today's Volume</span>
                 </div>
               </div>
               <span className="text-slate-400 text-[11px] font-medium">
