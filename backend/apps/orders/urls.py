@@ -21,7 +21,17 @@ from apps.orders.views import (
     VendorOrderStatusUpdateView,
     AdminOrderListView,
     AdminOrderDetailView,
-    AdminDisburseVendorOrderView
+    AdminDisburseVendorOrderView,
+    CouponApplyView,
+    OrderCancelView,
+    OrderDisputeCreateView,
+    VendorDisputeListView,
+    VendorDisputeReplyView,
+    AdminDisputeListView,
+    AdminDisputeResolveView,
+    VendorPayoutRequestListCreateView,
+    AdminPayoutRequestListView,
+    AdminPayoutRequestActionView
 )
 
 urlpatterns = [
@@ -50,17 +60,27 @@ urlpatterns = [
     path('emails/<int:id>/resend/', EmailResendView.as_view(), name='email_resend'),
     path('contact/', ContactInquiryView.as_view(), name='contact_inquiry'),
 
-    # Customer Orders
+    # Customer Orders & Coupons & Disputes
+    path('orders/coupons/apply/', CouponApplyView.as_view(), name='coupon_apply'),
     path('orders/', CustomerOrderListView.as_view(), name='customer_order_list'),
     path('orders/<str:order_number>/', CustomerOrderDetailView.as_view(), name='customer_order_detail'),
+    path('orders/<str:order_number>/cancel/', OrderCancelView.as_view(), name='order_cancel'),
+    path('orders/<str:order_number>/dispute/', OrderDisputeCreateView.as_view(), name='order_dispute_create'),
 
-    # Vendor Orders
+    # Vendor Orders & Payouts & Disputes
     path('vendor/orders/', VendorOrderListView.as_view(), name='vendor_order_list'),
     path('vendor/orders/<int:id>/', VendorOrderDetailView.as_view(), name='vendor_order_detail'),
     path('vendor/orders/<int:id>/status/', VendorOrderStatusUpdateView.as_view(), name='vendor_order_status_update'),
+    path('vendor/payout-requests/', VendorPayoutRequestListCreateView.as_view(), name='vendor_payout_requests'),
+    path('vendor/disputes/', VendorDisputeListView.as_view(), name='vendor_disputes'),
+    path('vendor/disputes/<int:pk>/reply/', VendorDisputeReplyView.as_view(), name='vendor_dispute_reply'),
 
-    # Admin Orders
+    # Admin Orders & Disputes & Payouts
     path('admin/orders/', AdminOrderListView.as_view(), name='admin_order_list'),
     path('admin/orders/<str:order_number>/', AdminOrderDetailView.as_view(), name='admin_order_detail'),
     path('admin/vendor-orders/<int:id>/disburse/', AdminDisburseVendorOrderView.as_view(), name='admin_vendor_order_disburse'),
+    path('admin/disputes/', AdminDisputeListView.as_view(), name='admin_disputes'),
+    path('admin/disputes/<int:pk>/resolve/', AdminDisputeResolveView.as_view(), name='admin_dispute_resolve'),
+    path('admin/payout-requests/', AdminPayoutRequestListView.as_view(), name='admin_payout_requests'),
+    path('admin/payout-requests/<int:pk>/', AdminPayoutRequestActionView.as_view(), name='admin_payout_request_action'),
 ]

@@ -25,19 +25,63 @@ class Cart(models.Model):
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    variant = models.ForeignKey('products.ProductVariant', on_delete=models.SET_NULL, null=True, blank=True, related_name='cart_items')
     quantity = models.PositiveIntegerField(default=1)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ('cart', 'product')
+        unique_together = ('cart', 'product', 'variant')
+
+    @property
+    def unit_price(self):
+        return self.variant.price if self.variant else self.product.price
 
     @property
     def subtotal(self):
-        return self.product.price * self.quantity
+        return self.unit_price * self.quantity
 
     def __str__(self):
-        return f"{self.quantity}x {self.product.title}"
+        title = f"{self.product.title} ({self.variant.title})" if self.variant else self.product.title
+        return f"{self.quantity}x {title}"
+
+
+class Coupon(models.Model):
+    DISCOUNT_TYPES = (
+        ('PERCENTAGE', 'Percentage Discount'),
+        ('FIXED', 'Fixed Amount Discount'),
+    )
+    code = models.CharField(max_length=50, unique=True)
+    discount_type = models.CharField(max_length=20, choices=DISCOUNT_TYPES, default='PERCENTAGE')
+    value = models.DecimalField(max_digits=10, decimal_places=2)
+    min_purchase_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    max_discount_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    usage_count = models.PositiveIntegerField(default=0)
+    max_uses = models.PositiveIntegerField(null=True, blank=True)
+    valid_from = models.DateTimeField(default=timezone.now)
+    valid_until = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def calculate_discount(self, subtotal):
+        from decimal import Decimal
+        subtotal_dec = Decimal(str(subtotal))
+        if not self.is_active or subtotal_dec < self.min_purchase_amount:
+            return Decimal('0.00')
+        if self.valid_until and timezone.now() > self.valid_until:
+            return Decimal('0.00')
+        if self.max_uses and self.usage_count >= self.max_uses:
+            return Decimal('0.00')
+        if self.discount_type == 'PERCENTAGE':
+            discount = (subtotal_dec * self.value) / Decimal('100')
+        else:
+            discount = self.value
+        if self.max_discount_amount:
+            discount = min(discount, self.max_discount_amount)
+        return min(discount, subtotal_dec)
+
+    def __str__(self):
+        return f"{self.code} ({self.value} {self.discount_type})"
 
 
 class Order(models.Model):
@@ -82,12 +126,18 @@ class Order(models.Model):
     total_items_amount = models.DecimalField(max_digits=10, decimal_places=2)
     shipping_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     grand_total = models.DecimalField(max_digits=10, decimal_places=2)
+    coupon = models.ForeignKey(Coupon, on_delete=models.SET_NULL, null=True, blank=True, related_name='orders')
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING_PAYMENT')
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='PENDING')
     payment_method = models.CharField(max_length=50, default='RAZORPAY')
     payment_id = models.CharField(max_length=100, blank=True)
+
+    # Cancellation
+    cancellation_reason = models.TextField(blank=True)
+    cancelled_at = models.DateTimeField(null=True, blank=True)
 
     # Shipping details
     shipping_name = models.CharField(max_length=150)
@@ -191,10 +241,12 @@ class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
     vendor_order = models.ForeignKey(VendorOrder, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True, related_name='order_items')
+    variant = models.ForeignKey('products.ProductVariant', on_delete=models.SET_NULL, null=True, blank=True, related_name='order_items')
     vendor = models.ForeignKey(VendorProfile, on_delete=models.CASCADE)
 
     # Historical product snapshots (Section 7.1)
     product_title = models.CharField(max_length=255)
+    variant_title = models.CharField(max_length=150, blank=True)
     product_sku = models.CharField(max_length=100, blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     tax_rate = models.DecimalField(max_digits=5, decimal_places=2, default=5.00) # 5% tax snapshot
@@ -267,4 +319,63 @@ class EmailLog(models.Model):
 
     def __str__(self):
         return f"[{self.status}] {self.recipient} - {self.subject}"
+
+
+class PayoutRequest(models.Model):
+    STATUS_CHOICES = (
+        ('PENDING', 'Pending Approval'),
+        ('APPROVED', 'Approved'),
+        ('REJECTED', 'Rejected'),
+        ('PROCESSED', 'Processed'),
+    )
+    vendor = models.ForeignKey(VendorProfile, on_delete=models.CASCADE, related_name='payout_requests')
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    bank_name = models.CharField(max_length=150, blank=True)
+    bank_account_number = models.CharField(max_length=100, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    admin_notes = models.TextField(blank=True)
+    reference = models.CharField(max_length=100, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    processed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Payout #{self.id} - {self.vendor.store_name} (${self.amount})"
+
+
+class Dispute(models.Model):
+    STATUS_CHOICES = (
+        ('OPEN', 'Open'),
+        ('UNDER_REVIEW', 'Under Review'),
+        ('RESOLVED_REFUNDED', 'Resolved & Refunded'),
+        ('REJECTED', 'Rejected'),
+    )
+    REASON_CHOICES = (
+        ('DAMAGED', 'Damaged or Defective Item'),
+        ('NOT_RECEIVED', 'Package Never Arrived'),
+        ('WRONG_ITEM', 'Wrong Item Received'),
+        ('NOT_AS_DESCRIBED', 'Significantly Different than Described'),
+        ('OTHER', 'Other Reason'),
+    )
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='disputes')
+    vendor_order = models.ForeignKey(VendorOrder, on_delete=models.SET_NULL, null=True, blank=True, related_name='disputes')
+    customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='disputes_filed')
+    vendor = models.ForeignKey(VendorProfile, on_delete=models.CASCADE, related_name='disputes')
+    reason = models.CharField(max_length=50, choices=REASON_CHOICES, default='NOT_AS_DESCRIBED')
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    customer_notes = models.TextField()
+    vendor_reply = models.TextField(blank=True)
+    admin_decision = models.TextField(blank=True)
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='OPEN')
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Dispute #{self.id} on Order #{self.order.order_number}"
+
 

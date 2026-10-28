@@ -123,3 +123,55 @@ class Review(models.Model):
 
     def __str__(self):
         return f"{self.rating}* by {self.customer.email} for {self.product.title}"
+
+
+class ProductVariant(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='variants')
+    title = models.CharField(max_length=100) # e.g. "Space Gray / 256GB", "Red / XL"
+    sku = models.CharField(max_length=100, blank=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))])
+    compare_at_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    inventory_count = models.PositiveIntegerField(default=10)
+    attributes = models.JSONField(default=dict, blank=True) # {"Color": "Black", "Size": "XL"}
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['id']
+
+    def __str__(self):
+        return f"{self.product.title} - {self.title}"
+
+
+class WishlistItem(models.Model):
+    customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='wishlist_items')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='wishlisted_by')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('customer', 'product')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.customer.email} -> {self.product.title}"
+
+
+class PlatformBanner(models.Model):
+    BANNER_TYPES = (
+        ('PROMO', 'Promotion'),
+        ('INFO', 'Informational'),
+        ('WARNING', 'Alert / Notice'),
+    )
+    title = models.CharField(max_length=150)
+    message = models.TextField()
+    link_url = models.CharField(max_length=300, blank=True)
+    banner_type = models.CharField(max_length=20, choices=BANNER_TYPES, default='PROMO')
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"[{self.banner_type}] {self.title}"
+

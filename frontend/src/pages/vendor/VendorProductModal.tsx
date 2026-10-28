@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Plus, Trash2, Upload, AlertCircle, CheckCircle2, Image as ImageIcon, Star } from 'lucide-react';
-import { Product, Category } from '../../types';
+import { X, Plus, Trash2, Upload, AlertCircle, CheckCircle2, Image as ImageIcon, Star, Layers } from 'lucide-react';
+import { Product, Category, ProductVariant } from '../../types';
 import { productService, vendorService } from '../../services/api';
 
 interface VendorProductModalProps {
@@ -35,11 +35,63 @@ export const VendorProductModal: React.FC<VendorProductModalProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Variants State
+  const [variants, setVariants] = useState<ProductVariant[]>([]);
+  const [loadingVariants, setLoadingVariants] = useState(false);
+  const [newVariantTitle, setNewVariantTitle] = useState('');
+  const [newVariantSku, setNewVariantSku] = useState('');
+  const [newVariantPrice, setNewVariantPrice] = useState('');
+  const [newVariantStock, setNewVariantStock] = useState('10');
+  const [isAddingVariant, setIsAddingVariant] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     productService.getCategories().then(setCategories).catch(console.error);
   }, []);
+
+  useEffect(() => {
+    if (productToEdit && isOpen) {
+      setLoadingVariants(true);
+      productService.getProductVariants(productToEdit.id)
+        .then(setVariants)
+        .catch(console.error)
+        .finally(() => setLoadingVariants(false));
+    } else {
+      setVariants([]);
+    }
+  }, [productToEdit, isOpen]);
+
+  const handleAddVariant = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!productToEdit || !newVariantTitle.trim() || !newVariantPrice) return;
+    try {
+      const created = await productService.createProductVariant(productToEdit.id, {
+        title: newVariantTitle.trim(),
+        sku: newVariantSku.trim() || undefined,
+        price: parseFloat(newVariantPrice),
+        inventory_count: parseInt(newVariantStock, 10) || 0,
+        is_active: true,
+      });
+      setVariants((prev) => [...prev, created]);
+      setNewVariantTitle('');
+      setNewVariantSku('');
+      setNewVariantPrice('');
+      setNewVariantStock('10');
+      setIsAddingVariant(false);
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to add variant');
+    }
+  };
+
+  const handleDeleteVariant = async (variantId: number) => {
+    try {
+      await productService.deleteProductVariant(variantId);
+      setVariants((prev) => prev.filter((v) => v.id !== variantId));
+    } catch (err) {
+      setError('Failed to delete variant');
+    }
+  };
 
   useEffect(() => {
     if (productToEdit) {
@@ -430,6 +482,120 @@ export const VendorProductModal: React.FC<VendorProductModalProps> = ({
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               className="w-full px-4 py-2.5 text-xs bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:border-[#0a0500] focus:bg-white transition resize-none"
             ></textarea>
+          </div>
+
+          {/* Product Variants (Size, Color, SKU) */}
+          <div className="p-5 bg-neutral-50 rounded-2xl border border-neutral-200/80 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-[#fcb424]" />
+                <h4 className="font-black text-[#0a0500] uppercase text-xs tracking-wider">
+                  Product Variants ({variants.length})
+                </h4>
+              </div>
+              {productToEdit && !isAddingVariant && (
+                <button
+                  type="button"
+                  onClick={() => setIsAddingVariant(true)}
+                  className="inline-flex items-center gap-1 px-3 py-1 bg-slate-950 hover:bg-slate-800 text-white text-[11px] font-bold rounded-lg transition"
+                >
+                  <Plus className="w-3 h-3 text-amber-400" />
+                  Add Variant
+                </button>
+              )}
+            </div>
+
+            {!productToEdit ? (
+              <p className="text-[11px] text-slate-500">
+                You can configure custom SKUs, sizes, colors, and variant-specific pricing right after saving this product.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {variants.length === 0 && !isAddingVariant && (
+                  <p className="text-[11px] text-slate-500 italic">
+                    No custom variants added yet. Click "Add Variant" to provide sizes or colors.
+                  </p>
+                )}
+
+                {variants.map((v) => (
+                  <div
+                    key={v.id}
+                    className="flex items-center justify-between p-2.5 bg-white rounded-xl border border-neutral-200 text-xs"
+                  >
+                    <div>
+                      <span className="font-bold text-slate-900">{v.title}</span>
+                      {v.sku && <span className="text-slate-400 font-mono ml-2 text-[11px]">({v.sku})</span>}
+                      <span className="text-slate-500 ml-3">
+                        ${Number(v.price).toFixed(2)} • {v.inventory_count} in stock
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteVariant(v.id)}
+                      className="p-1 text-slate-400 hover:text-rose-600 rounded transition"
+                      title="Delete variant"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+
+                {isAddingVariant && (
+                  <div className="p-3 bg-white rounded-xl border border-amber-300 space-y-2.5">
+                    <span className="font-bold text-[11px] uppercase tracking-wider text-slate-700 block">
+                      New Variant Details
+                    </span>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      <input
+                        type="text"
+                        placeholder="Title (e.g. Size L - Black)"
+                        value={newVariantTitle}
+                        onChange={(e) => setNewVariantTitle(e.target.value)}
+                        className="px-2.5 py-1.5 text-xs bg-neutral-50 border border-neutral-200 rounded-lg outline-none col-span-2 sm:col-span-1"
+                      />
+                      <input
+                        type="text"
+                        placeholder="SKU"
+                        value={newVariantSku}
+                        onChange={(e) => setNewVariantSku(e.target.value)}
+                        className="px-2.5 py-1.5 text-xs bg-neutral-50 border border-neutral-200 rounded-lg outline-none font-mono"
+                      />
+                      <input
+                        type="number"
+                        step="0.01"
+                        placeholder="Price ($)"
+                        value={newVariantPrice}
+                        onChange={(e) => setNewVariantPrice(e.target.value)}
+                        className="px-2.5 py-1.5 text-xs bg-neutral-50 border border-neutral-200 rounded-lg outline-none"
+                      />
+                      <input
+                        type="number"
+                        placeholder="Stock"
+                        value={newVariantStock}
+                        onChange={(e) => setNewVariantStock(e.target.value)}
+                        className="px-2.5 py-1.5 text-xs bg-neutral-50 border border-neutral-200 rounded-lg outline-none"
+                      />
+                    </div>
+                    <div className="flex justify-end gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingVariant(false)}
+                        className="px-3 py-1 border border-neutral-200 rounded-lg text-xs font-bold hover:bg-neutral-50"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleAddVariant}
+                        className="px-3 py-1 bg-slate-950 text-white rounded-lg text-xs font-bold hover:bg-slate-800"
+                      >
+                        Save Variant
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Active status toggle */}

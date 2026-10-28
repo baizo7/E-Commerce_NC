@@ -10,10 +10,11 @@ import {
   AlertTriangle,
   RotateCcw,
   Zap,
-  ChevronRight
+  ChevronRight,
+  Heart
 } from 'lucide-react';
-import { productService } from '../../services/api';
-import { Product, unwrapResults } from '../../types';
+import { productService, wishlistService } from '../../services/api';
+import { Product, ProductVariant, unwrapResults } from '../../types';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { ProductCard } from '../../components/ProductCard';
@@ -25,6 +26,9 @@ export const ProductDetailPage: React.FC = () => {
   const { user } = useAuth();
 
   const [product, setProduct] = useState<Product | null>(null);
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  const [isWishlisted, setIsWishlisted] = useState<boolean>(false);
+  const [wishlistLoading, setWishlistLoading] = useState<boolean>(false);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [selectedImage, setSelectedImage] = useState<string>('');
   const [quantity, setQuantity] = useState<number>(1);
@@ -46,7 +50,23 @@ export const ProductDetailPage: React.FC = () => {
       try {
         const data = await productService.getProductDetail(slug);
         setProduct(data);
+        if (data.variants && data.variants.length > 0) {
+          setSelectedVariant(data.variants[0]);
+        } else {
+          setSelectedVariant(null);
+        }
         setSelectedImage(data.primary_image || (data.images?.[0]?.image_url ?? ''));
+
+        // Check if item is in wishlist
+        if (user) {
+          try {
+            const wishlistItems = await wishlistService.getWishlist();
+            const exists = wishlistItems.some((item) => item.product.id === data.id);
+            setIsWishlisted(exists);
+          } catch {
+            // Ignore wishlist fetch error
+          }
+        }
 
         // Fetch related products from the same category or marketplace
         try {
@@ -64,7 +84,7 @@ export const ProductDetailPage: React.FC = () => {
       }
     };
     fetchDetail();
-  }, [slug]);
+  }, [slug, user]);
 
   if (loading) {
     return (
@@ -104,7 +124,7 @@ export const ProductDetailPage: React.FC = () => {
 
   const handleAddToCart = async () => {
     try {
-      await addToCart(product.id, quantity);
+      await addToCart(product.id, quantity, selectedVariant?.id);
     } catch {
       // Notification handled in context
     }
@@ -112,10 +132,27 @@ export const ProductDetailPage: React.FC = () => {
 
   const handleBuyNow = async () => {
     try {
-      await addToCart(product.id, quantity);
+      await addToCart(product.id, quantity, selectedVariant?.id);
       navigate('/checkout');
     } catch {
       // Error handled in context
+    }
+  };
+
+  const handleToggleWishlist = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    if (!product) return;
+    try {
+      setWishlistLoading(true);
+      const res = await wishlistService.toggleWishlist(product.id);
+      setIsWishlisted(res.wishlisted);
+    } catch {
+      // Ignore
+    } finally {
+      setWishlistLoading(false);
     }
   };
 
@@ -151,10 +188,15 @@ export const ProductDetailPage: React.FC = () => {
   const vendorSlug = vendorObj?.slug || product.vendor_slug;
   const categoryName = typeof product.category === 'object' && product.category ? product.category.name : product.category_name;
 
-  const priceNum = Number(product.price);
-  const compareNum = product.compare_at_price ? Number(product.compare_at_price) : null;
+  const priceNum = selectedVariant ? Number(selectedVariant.price) : Number(product.price);
+  const compareNum = selectedVariant?.compare_at_price
+    ? Number(selectedVariant.compare_at_price)
+    : (product.compare_at_price ? Number(product.compare_at_price) : null);
   const isOnSale = compareNum !== null && compareNum > priceNum;
   const discountPercent = isOnSale && compareNum ? Math.round(((compareNum - priceNum) / compareNum) * 100) : null;
+  const availableStock = selectedVariant ? selectedVariant.inventory_count : product.inventory_count;
+  const lowStockThreshold = product.low_stock_threshold || 5;
+  const isLowStock = availableStock > 0 && availableStock <= lowStockThreshold;
 
   return (
     <div className="space-y-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -296,12 +338,62 @@ export const ProductDetailPage: React.FC = () => {
             {product.short_description || product.description}
           </p>
 
+          {/* Variants Selector (Size / Color / Title) */}
+          {product.variants && product.variants.length > 0 && (
+            <div className="space-y-2.5 pt-3 border-t border-neutral-200">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-extrabold uppercase tracking-wider text-slate-900">
+                  Select Option:
+                </span>
+                <span className="font-bold text-amber-600">
+                  {selectedVariant ? selectedVariant.title : 'Choose an option'}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {product.variants.map((v) => {
+                  const isSelected = selectedVariant?.id === v.id;
+                  const isOut = v.inventory_count <= 0;
+                  return (
+                    <button
+                      key={v.id}
+                      type="button"
+                      disabled={isOut}
+                      onClick={() => {
+                        setSelectedVariant(v);
+                        if (quantity > v.inventory_count) {
+                          setQuantity(Math.max(1, v.inventory_count));
+                        }
+                      }}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 border ${
+                        isSelected
+                          ? 'bg-slate-950 text-amber-400 border-slate-950 shadow-sm ring-2 ring-amber-400/40'
+                          : isOut
+                          ? 'bg-slate-100 text-slate-400 border-slate-200 line-through cursor-not-allowed'
+                          : 'bg-white text-slate-800 border-slate-200 hover:border-amber-400'
+                      }`}
+                    >
+                      <span>{v.title}</span>
+                      <span className="text-[11px] opacity-80">${Number(v.price).toFixed(2)}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Stock Indicator */}
           <div className="pt-1">
-            {product.inventory_count > 0 ? (
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-bold">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span>In Stock ({product.inventory_count} units available)</span>
+            {availableStock > 0 ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-bold">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span>In Stock ({availableStock} units available)</span>
+                </div>
+                {isLowStock && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 font-extrabold text-[11px] border border-rose-200 animate-pulse">
+                    Only {availableStock} left — order soon!
+                  </span>
+                )}
               </div>
             ) : (
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-50 text-rose-700 text-xs font-bold">
@@ -312,7 +404,7 @@ export const ProductDetailPage: React.FC = () => {
           </div>
 
           {/* Quantity Selector & Action Buttons */}
-          {product.inventory_count > 0 && (
+          {availableStock > 0 && (
             <div className="space-y-4 pt-4 border-t border-neutral-200">
               <div className="flex flex-wrap items-center gap-4">
                 {/* Stepper */}
@@ -325,7 +417,7 @@ export const ProductDetailPage: React.FC = () => {
                   </button>
                   <span className="w-10 text-center text-sm font-black text-[#0a0500]">{quantity}</span>
                   <button
-                    onClick={() => setQuantity(Math.min(product.inventory_count, quantity + 1))}
+                    onClick={() => setQuantity(Math.min(availableStock, quantity + 1))}
                     className="w-10 h-10 flex items-center justify-center text-slate-700 hover:bg-neutral-100 font-bold transition"
                   >
                     +
@@ -336,7 +428,7 @@ export const ProductDetailPage: React.FC = () => {
                 <button
                   onClick={handleAddToCart}
                   disabled={cartLoading}
-                  className="flex-1 min-w-[200px] px-8 py-3.5 bg-[#ffcd05] hover:bg-[#fcb424] text-[#0a0500] font-black uppercase tracking-wider text-xs rounded-full shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 disabled:opacity-60"
+                  className="flex-1 min-w-[180px] px-8 py-3.5 bg-[#ffcd05] hover:bg-[#fcb424] text-[#0a0500] font-black uppercase tracking-wider text-xs rounded-full shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 disabled:opacity-60"
                 >
                   <ShoppingCart className="w-4 h-4 text-[#0a0500]" />
                   Add to Cart
@@ -350,6 +442,21 @@ export const ProductDetailPage: React.FC = () => {
                 >
                   <Zap className="w-3.5 h-3.5 text-[#ffcd05]" />
                   Buy Now
+                </button>
+
+                {/* Wishlist toggle */}
+                <button
+                  type="button"
+                  onClick={handleToggleWishlist}
+                  disabled={wishlistLoading}
+                  className={`w-12 h-12 rounded-full border flex items-center justify-center transition shadow-sm ${
+                    isWishlisted
+                      ? 'bg-rose-50 border-rose-300 text-rose-600'
+                      : 'bg-white border-neutral-200 text-slate-700 hover:text-rose-600 hover:bg-rose-50'
+                  }`}
+                  title={isWishlisted ? 'Saved in Wishlist' : 'Add to Wishlist'}
+                >
+                  <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-rose-500 text-rose-500' : ''}`} />
                 </button>
               </div>
             </div>

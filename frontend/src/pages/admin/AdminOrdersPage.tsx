@@ -21,12 +21,14 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { adminService } from '../../services/api';
-import { Order, VendorOrder, unwrapResults } from '../../types';
+import { Order, VendorOrder, PayoutRequest, unwrapResults } from '../../types';
 import { OrderStatusBadge } from '../../components/OrderStatusBadge';
 import { AdminSubNav } from '../../components/AdminSubNav';
 
 export const AdminOrdersPage: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [payoutRequests, setPayoutRequests] = useState<PayoutRequest[]>([]);
+  const [viewMode, setViewMode] = useState<'orders' | 'payouts'>('orders');
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -43,19 +45,49 @@ export const AdminOrdersPage: React.FC = () => {
     submitting: boolean;
   } | null>(null);
 
+  // Payout Request Action Modal
+  const [payoutActionModal, setPayoutActionModal] = useState<{
+    payout: PayoutRequest;
+    status: 'APPROVED' | 'PROCESSED' | 'REJECTED';
+    notes: string;
+  } | null>(null);
+  const [payoutSubmitting, setPayoutSubmitting] = useState(false);
+
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const res = await adminService.getAllOrders({
-        search: searchTerm || undefined,
-        status: statusFilter || undefined,
-      });
-      const list = unwrapResults<Order>(res);
+      const [oRes, pData] = await Promise.all([
+        adminService.getAllOrders({
+          search: searchTerm || undefined,
+          status: statusFilter || undefined,
+        }),
+        adminService.getPayoutRequests().catch(() => []),
+      ]);
+      const list = unwrapResults<Order>(oRes);
       setOrders(list);
+      setPayoutRequests(pData);
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePayoutAction = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!payoutActionModal) return;
+    try {
+      setPayoutSubmitting(true);
+      await adminService.actionPayoutRequest(payoutActionModal.payout.id, {
+        status: payoutActionModal.status,
+        admin_notes: payoutActionModal.notes,
+      });
+      setPayoutActionModal(null);
+      await fetchOrders();
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Failed to update payout request');
+    } finally {
+      setPayoutSubmitting(false);
     }
   };
 
@@ -260,8 +292,152 @@ export const AdminOrdersPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="bg-white border border-neutral-200/90 rounded-2xl p-5 shadow-sm space-y-4">
+      {/* View Switcher: Customer Orders vs Vendor Payout Requests */}
+      <div className="flex items-center gap-2 border-b border-neutral-200 pb-3">
+        <button
+          onClick={() => setViewMode('orders')}
+          className={`px-5 py-2.5 rounded-full text-xs font-black uppercase tracking-wider transition ${
+            viewMode === 'orders'
+              ? 'bg-[#0a0500] text-amber-400 shadow-sm'
+              : 'bg-white border border-neutral-200 text-neutral-600 hover:border-neutral-300'
+          }`}
+        >
+          Customer Orders ({orders.length})
+        </button>
+        <button
+          onClick={() => setViewMode('payouts')}
+          className={`px-5 py-2.5 rounded-full text-xs font-black uppercase tracking-wider transition flex items-center gap-1.5 ${
+            viewMode === 'payouts'
+              ? 'bg-[#0a0500] text-amber-400 shadow-sm'
+              : 'bg-white border border-neutral-200 text-neutral-600 hover:border-neutral-300'
+          }`}
+        >
+          <CreditCard className="w-3.5 h-3.5" />
+          Vendor Withdrawal Requests ({payoutRequests.length})
+        </button>
+      </div>
+
+      {viewMode === 'payouts' ? (
+        <div className="bg-white border border-neutral-200/90 rounded-3xl overflow-hidden shadow-sm">
+          <div className="px-6 py-4 border-b border-neutral-200 flex items-center justify-between bg-neutral-50">
+            <h2 className="font-black text-[#0a0500] uppercase text-xs tracking-wider">
+              Vendor Withdrawal / Payout Queue
+            </h2>
+            <span className="text-xs text-neutral-500 font-medium">
+              Review and disburse merchant balances from platform escrow
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-neutral-50 text-neutral-500 uppercase font-black text-[10px] tracking-wider border-b border-neutral-100">
+                <tr>
+                  <th className="py-4 px-4">Request ID</th>
+                  <th className="py-4 px-4">Merchant Store</th>
+                  <th className="py-4 px-4">Requested Amount</th>
+                  <th className="py-4 px-4">Status</th>
+                  <th className="py-4 px-4">Requested Date</th>
+                  <th className="py-4 px-4">Vendor Notes</th>
+                  <th className="py-4 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-100">
+                {payoutRequests.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-12 text-center text-xs text-neutral-400">
+                      No withdrawal requests in queue.
+                    </td>
+                  </tr>
+                ) : (
+                  payoutRequests.map((pr) => (
+                    <tr key={pr.id} className="hover:bg-neutral-50/70 transition">
+                      <td className="py-4 px-4 font-mono font-bold text-neutral-900">
+                        #{pr.id}
+                      </td>
+                      <td className="py-4 px-4 font-bold text-neutral-900">
+                        {pr.store_name || pr.vendor_store_name || `Vendor #${pr.vendor}`}
+                      </td>
+                      <td className="py-4 px-4 font-black text-neutral-900 text-sm">
+                        ${Number(pr.amount).toFixed(2)}
+                      </td>
+                      <td className="py-4 px-4">
+                        <span
+                          className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                            pr.status === 'PROCESSED'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : pr.status === 'APPROVED'
+                              ? 'bg-blue-100 text-blue-800'
+                              : pr.status === 'REJECTED'
+                              ? 'bg-rose-100 text-rose-800'
+                              : 'bg-amber-100 text-amber-800'
+                          }`}
+                        >
+                          {pr.status}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 text-neutral-500">
+                        {new Date(pr.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="py-4 px-4 text-neutral-600 truncate max-w-xs">
+                        {pr.admin_notes || pr.notes || '—'}
+                      </td>
+                      <td className="py-4 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {pr.status === 'PENDING' && (
+                            <>
+                              <button
+                                onClick={() =>
+                                  setPayoutActionModal({
+                                    payout: pr,
+                                    status: 'APPROVED',
+                                    notes: 'Approved by admin',
+                                  })
+                                }
+                                className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-[11px]"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={() =>
+                                  setPayoutActionModal({
+                                    payout: pr,
+                                    status: 'REJECTED',
+                                    notes: 'Declined due to policy review',
+                                  })
+                                }
+                                className="px-3 py-1 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-lg font-bold text-[11px]"
+                              >
+                                Reject
+                              </button>
+                            </>
+                          )}
+                          {pr.status === 'APPROVED' && (
+                            <button
+                              onClick={() =>
+                                setPayoutActionModal({
+                                  payout: pr,
+                                  status: 'PROCESSED',
+                                  notes: 'Bank wire / UPI transferred',
+                                })
+                              }
+                              className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[11px]"
+                            >
+                              Mark Disbursed
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Filter and Search Bar */}
+          <div className="bg-white border border-neutral-200/90 rounded-2xl p-5 shadow-sm space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5">
           {/* Search Input */}
           <div className="md:col-span-6 relative">
@@ -440,6 +616,8 @@ export const AdminOrdersPage: React.FC = () => {
           </div>
         )}
       </div>
+      </>
+      )}
 
       {/* Deep Order Inspection & Settlement Modal */}
       {inspectOrder && (
@@ -698,6 +876,77 @@ export const AdminOrdersPage: React.FC = () => {
                 {disburseModal.submitting ? 'Reconciling...' : 'Confirm & Mark Disbursed'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payout Action Modal */}
+      {payoutActionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0500]/70 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-neutral-200 space-y-4 animate-fadeIn">
+            <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
+              <h3 className="font-mono font-black text-neutral-900 text-sm">
+                Payout Action: {payoutActionModal.status}
+              </h3>
+              <button
+                onClick={() => setPayoutActionModal(null)}
+                className="p-1 rounded-full text-neutral-400 hover:text-neutral-800"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handlePayoutAction} className="space-y-4 text-xs">
+              <div className="p-3 bg-neutral-50 rounded-xl border border-neutral-200 space-y-1">
+                <span className="font-bold text-neutral-500 uppercase text-[10px]">Merchant Request:</span>
+                <p className="font-black text-neutral-900 text-base">
+                  ${Number(payoutActionModal.payout.amount).toFixed(2)} — {payoutActionModal.payout.store_name || payoutActionModal.payout.vendor_store_name || 'Vendor'}
+                </p>
+                {(payoutActionModal.payout.admin_notes || payoutActionModal.payout.notes) && (
+                  <p className="text-[11px] text-neutral-600">"{payoutActionModal.payout.admin_notes || payoutActionModal.payout.notes}"</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block font-bold text-neutral-700 mb-1">Administrative Reconciliation Notes:</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Disbursed via Bank Transfer / Ref #..."
+                  value={payoutActionModal.notes}
+                  onChange={(e) =>
+                    setPayoutActionModal({
+                      ...payoutActionModal,
+                      notes: e.target.value,
+                    })
+                  }
+                  className="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0a0500]"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-neutral-100">
+                <button
+                  type="button"
+                  onClick={() => setPayoutActionModal(null)}
+                  className="px-4 py-2 rounded-full border border-neutral-200 text-neutral-600 font-bold hover:bg-neutral-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={payoutSubmitting}
+                  className={`px-5 py-2 rounded-full text-white font-black uppercase tracking-wider text-xs shadow-sm disabled:opacity-50 ${
+                    payoutActionModal.status === 'REJECTED'
+                      ? 'bg-rose-600 hover:bg-rose-700'
+                      : payoutActionModal.status === 'PROCESSED'
+                      ? 'bg-emerald-600 hover:bg-emerald-700'
+                      : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
+                >
+                  {payoutSubmitting ? 'Recording...' : `Confirm ${payoutActionModal.status}`}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

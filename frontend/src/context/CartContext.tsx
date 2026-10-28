@@ -8,7 +8,7 @@ interface CartContextType {
   loading: boolean;
   cartCount: number;
   cartSubtotal: number;
-  addToCart: (productId: number, quantity?: number) => Promise<void>;
+  addToCart: (productId: number, quantity?: number, variantId?: number | null) => Promise<void>;
   updateQuantity: (itemId: number, quantity: number) => Promise<void>;
   removeItem: (itemId: number) => Promise<void>;
   clearCart: () => Promise<void>;
@@ -58,14 +58,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [user]);
 
-  const addToCart = async (productId: number, quantity: number = 1) => {
+  const addToCart = async (productId: number, quantity: number = 1, variantId?: number | null) => {
     if (!user) {
       showNotification('Please log in to add items to your cart.');
       return;
     }
     try {
       setLoading(true);
-      const updatedCart = await cartService.addToCart(productId, quantity);
+      const updatedCart = await cartService.addToCart(productId, quantity, variantId);
       setCart(updatedCart);
       showNotification('Item successfully added to cart!');
     } catch (err: any) {

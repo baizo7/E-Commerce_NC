@@ -19,6 +19,7 @@ import { CustomerOrdersPage } from './pages/customer/CustomerOrdersPage';
 import { OrderDetailPage } from './pages/customer/OrderDetailPage';
 import { ContactPage } from './pages/customer/ContactPage';
 import { ProfilePage } from './pages/customer/ProfilePage';
+import { WishlistPage } from './pages/customer/WishlistPage';
 
 // Vendor Pages
 import { VendorDashboardPage } from './pages/vendor/VendorDashboardPage';
@@ -34,6 +35,8 @@ import { AdminProductsPage } from './pages/admin/AdminProductsPage';
 import { AdminCategoriesPage } from './pages/admin/AdminCategoriesPage';
 import { AdminOrdersPage } from './pages/admin/AdminOrdersPage';
 import { AdminUsersPage } from './pages/admin/AdminUsersPage';
+import { AdminDisputesPage } from './pages/admin/AdminDisputesPage';
+import { AdminAuditLogsPage } from './pages/admin/AdminAuditLogsPage';
 
 // Auth Pages
 import { LoginPage } from './pages/auth/LoginPage';
@@ -84,6 +87,7 @@ export const AppContent: React.FC = () => {
           <Route path="/order-success/:orderNumber" element={<OrderSuccessPage />} />
           <Route path="/orders" element={<CustomerOrdersPage />} />
           <Route path="/orders/:orderNumber" element={<OrderDetailPage />} />
+          <Route path="/wishlist" element={<AuthRoute><WishlistPage /></AuthRoute>} />
           <Route path="/profile" element={<AuthRoute><ProfilePage /></AuthRoute>} />
           <Route path="/contact" element={<ContactPage />} />
 
@@ -101,6 +105,8 @@ export const AppContent: React.FC = () => {
           <Route path="/admin/categories" element={<AdminRoute><AdminCategoriesPage /></AdminRoute>} />
           <Route path="/admin/orders" element={<AdminRoute><AdminOrdersPage /></AdminRoute>} />
           <Route path="/admin/users" element={<AdminRoute><AdminUsersPage /></AdminRoute>} />
+          <Route path="/admin/disputes" element={<AdminRoute><AdminDisputesPage /></AdminRoute>} />
+          <Route path="/admin/audit-logs" element={<AdminRoute><AdminAuditLogsPage /></AdminRoute>} />
 
           {/* Auth */}
           <Route path="/login" element={<LoginPage />} />

@@ -13,7 +13,16 @@ from apps.products.views import (
     AdminProductListView,
     AdminProductModerationView,
     AdminProductBulkModerationView,
-    CategoryImageUploadView
+    CategoryImageUploadView,
+    ProductVariantListCreateView,
+    ProductVariantDetailView,
+    WishlistListView,
+    WishlistToggleView,
+    PublicActiveBannerListView,
+    AdminBannerListCreateView,
+    AdminBannerDetailView,
+    VendorProductCsvExportView,
+    VendorProductCsvImportView
 )
 
 urlpatterns = [
@@ -32,7 +41,20 @@ urlpatterns = [
     # Vendor Products
     path('vendor/products/', VendorProductListCreateView.as_view(), name='vendor_product_list_create'),
     path('vendor/products/upload-image/', ProductImageUploadView.as_view(), name='vendor_product_image_upload'),
+    path('vendor/products/export-csv/', VendorProductCsvExportView.as_view(), name='vendor_products_export_csv'),
+    path('vendor/products/import-csv/', VendorProductCsvImportView.as_view(), name='vendor_products_import_csv'),
     path('vendor/products/<int:id>/', VendorProductDetailView.as_view(), name='vendor_product_detail'),
+    path('vendor/products/<int:product_id>/variants/', ProductVariantListCreateView.as_view(), name='product_variants'),
+    path('vendor/variants/<int:pk>/', ProductVariantDetailView.as_view(), name='product_variant_detail'),
+
+    # Wishlist
+    path('wishlist/', WishlistListView.as_view(), name='wishlist_list'),
+    path('wishlist/toggle/', WishlistToggleView.as_view(), name='wishlist_toggle'),
+
+    # Banners
+    path('banners/active/', PublicActiveBannerListView.as_view(), name='banners_active'),
+    path('admin/banners/', AdminBannerListCreateView.as_view(), name='admin_banners'),
+    path('admin/banners/<int:id>/', AdminBannerDetailView.as_view(), name='admin_banner_detail'),
 
     # Admin Products & Categories
     path('admin/categories/', AdminCategoryListCreateView.as_view(), name='admin_category_list_create'),

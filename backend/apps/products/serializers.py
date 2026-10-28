@@ -1,6 +1,14 @@
 from rest_framework import serializers
-from apps.products.models import Category, Product, ProductImage, Review
+from apps.products.models import Category, Product, ProductImage, Review, ProductVariant, WishlistItem, PlatformBanner
 from apps.accounts.serializers import VendorPublicSerializer
+
+
+class ProductVariantSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductVariant
+        fields = ['id', 'product', 'title', 'sku', 'price', 'compare_at_price', 'inventory_count', 'attributes', 'is_active', 'created_at']
+        read_only_fields = ['id', 'created_at']
+
 
 class CategorySerializer(serializers.ModelSerializer):
     product_count = serializers.SerializerMethodField()
@@ -38,13 +46,14 @@ class ProductListSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True, default='')
     primary_image = serializers.ReadOnlyField()
     is_in_stock = serializers.ReadOnlyField()
+    variants = ProductVariantSerializer(many=True, read_only=True)
 
     class Meta:
         model = Product
         fields = [
             'id', 'title', 'slug', 'short_description', 'price', 'compare_at_price',
             'inventory_count', 'is_in_stock', 'rating', 'review_count',
-            'is_featured', 'is_active', 'is_approved', 'primary_image',
+            'is_featured', 'is_active', 'is_approved', 'primary_image', 'variants',
             'vendor', 'vendor_name', 'vendor_slug', 'category', 'category_name', 'created_at'
         ]
 
@@ -53,6 +62,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     vendor = VendorPublicSerializer(read_only=True)
     category = CategorySerializer(read_only=True)
     images = ProductImageSerializer(many=True, read_only=True)
+    variants = ProductVariantSerializer(many=True, read_only=True)
     reviews = ReviewSerializer(many=True, read_only=True)
     primary_image = serializers.ReadOnlyField()
     is_in_stock = serializers.ReadOnlyField()
@@ -65,7 +75,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'price', 'compare_at_price', 'sku', 'inventory_count',
             'low_stock_threshold', 'is_in_stock', 'is_low_stock',
             'rating', 'review_count', 'is_featured', 'is_active',
-            'is_approved', 'primary_image', 'images', 'vendor',
+            'is_approved', 'primary_image', 'images', 'variants', 'vendor',
             'category', 'reviews', 'created_at', 'updated_at'
         ]
 
@@ -120,3 +130,24 @@ class ProductCreateUpdateSerializer(serializers.ModelSerializer):
                 )
 
         return instance
+
+
+class WishlistItemSerializer(serializers.ModelSerializer):
+    product = ProductListSerializer(read_only=True)
+    product_id = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.filter(is_active=True, is_approved=True),
+        source='product',
+        write_only=True
+    )
+
+    class Meta:
+        model = WishlistItem
+        fields = ['id', 'customer', 'product', 'product_id', 'created_at']
+        read_only_fields = ['id', 'customer', 'product', 'created_at']
+
+
+class PlatformBannerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PlatformBanner
+        fields = ['id', 'title', 'message', 'link_url', 'banner_type', 'is_active', 'created_at']
+

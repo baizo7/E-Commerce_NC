@@ -306,6 +306,46 @@ class EmailService:
         return status == 'SENT'
 
     @classmethod
+    def send_low_stock_alert(cls, product):
+        """
+        Alerts vendor when their inventory drops below their configured low-stock threshold.
+        """
+        vendor = product.vendor
+        recipient = vendor.business_email or vendor.user.email
+        subject = f"Low Stock Warning: {product.title} (Only {product.inventory_count} remaining)"
+        body_text = f"""Dear {vendor.store_name},
+
+This is an automated inventory alert from Modern Shop.
+Your listing "{product.title}" has reached a low stock level.
+
+Current Inventory: {product.inventory_count} unit(s)
+Configured Threshold: {product.low_stock_threshold} unit(s)
+
+Please log into your Vendor Portal to restock inventory before this item sells out:
+http://127.0.0.1:5173/vendor/products
+
+Sincerely,
+Modern Shop Merchant Operations
+"""
+        body_html = f"""
+        <div style="font-family: sans-serif; padding: 20px; background-color: #fffbeb; border: 1px solid #fef3c7; border-radius: 12px; max-width: 500px;">
+            <h3 style="color: #b45309; margin-top: 0;">⚠️ Low Stock Inventory Alert</h3>
+            <p>Your product <strong>{product.title}</strong> has only <strong>{product.inventory_count}</strong> unit(s) remaining.</p>
+            <p style="font-size: 13px; color: #78350f;">Threshold: {product.low_stock_threshold} units.</p>
+            <a href="http://127.0.0.1:5173/vendor/products" style="display: inline-block; background-color: #0a0500; color: #ffffff; padding: 10px 20px; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 13px; margin-top: 12px;">
+                Restock Inventory &rarr;
+            </a>
+        </div>
+        """
+        cls._dispatch(
+            recipient=recipient,
+            subject=subject,
+            body_text=body_text,
+            body_html=body_html,
+            email_type='LOW_STOCK_ALERT'
+        )
+
+    @classmethod
     def send_order_confirmation(cls, order: Order):
         """
         Dispatches customer order confirmation email with full HTML line-item receipt.

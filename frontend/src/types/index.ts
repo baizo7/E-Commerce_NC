@@ -71,6 +71,19 @@ export interface Review {
   created_at: string;
 }
 
+export interface ProductVariant {
+  id: number;
+  product?: number;
+  title: string;
+  sku?: string;
+  price: string | number;
+  compare_at_price?: string | number | null;
+  inventory_count: number;
+  attributes?: Record<string, string>;
+  is_active: boolean;
+  created_at?: string;
+}
+
 export interface Product {
   id: number;
   title: string;
@@ -91,6 +104,7 @@ export interface Product {
   is_approved: boolean;
   primary_image: string;
   images?: ProductImage[];
+  variants?: ProductVariant[];
   vendor: number | VendorProfile;
   vendor_name?: string;
   vendor_slug?: string;
@@ -103,6 +117,7 @@ export interface Product {
 export interface CartItem {
   id: number;
   product: Product;
+  variant?: ProductVariant | null;
   quantity: number;
   subtotal: string | number;
 }
@@ -128,6 +143,8 @@ export interface OrderItem {
   id: number;
   product?: number;
   product_title: string;
+  variant?: ProductVariant | null;
+  variant_title?: string;
   product_sku: string;
   vendor: number;
   vendor_name: string;
@@ -189,7 +206,12 @@ export interface Order {
   total_items_amount: string | number;
   shipping_amount: string | number;
   tax_amount: string | number;
+  discount_amount?: string | number;
   grand_total: string | number;
+  coupon?: Coupon | null;
+  coupon_code?: string;
+  cancellation_reason?: string;
+  cancelled_at?: string | null;
   status: 'PENDING_PAYMENT' | 'PAID' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'PAYMENT_FAILED';
   payment_status: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
   payment_method: string;
@@ -324,6 +346,99 @@ export interface EmailLog {
   error_message?: string;
   email_type: string;
   order?: number | null;
+  created_at: string;
+}
+
+export interface UserAddress {
+  id: number;
+  user?: number;
+  title: string;
+  recipient_name: string;
+  full_name?: string;
+  phone: string;
+  phone_number?: string;
+  street_address: string;
+  city: string;
+  state?: string;
+  postal_code: string;
+  country: string;
+  is_default: boolean;
+  created_at?: string;
+}
+
+export interface WishlistItem {
+  id: number;
+  customer?: number;
+  product: Product;
+  created_at: string;
+}
+
+export interface PlatformBanner {
+  id: number;
+  title: string;
+  message: string;
+  link_url?: string;
+  banner_type: 'PROMO' | 'INFO' | 'WARNING';
+  is_active: boolean;
+  created_at?: string;
+}
+
+export interface Coupon {
+  id: number;
+  code: string;
+  discount_type: 'PERCENTAGE' | 'FIXED';
+  value: string | number;
+  min_purchase_amount: string | number;
+  max_discount_amount?: string | number | null;
+  is_active: boolean;
+}
+
+export interface PayoutRequest {
+  id: number;
+  vendor?: number;
+  store_name?: string;
+  vendor_store_name?: string;
+  vendor_slug?: string;
+  amount: string | number;
+  bank_name?: string;
+  bank_account_number?: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'PROCESSED';
+  admin_notes?: string;
+  reference?: string;
+  notes?: string;
+  created_at: string;
+  processed_at?: string | null;
+}
+
+export interface Dispute {
+  id: number;
+  order?: number;
+  order_number: string;
+  vendor_order?: number;
+  customer?: number;
+  customer_email: string;
+  vendor?: number;
+  vendor_name: string;
+  reason: 'DAMAGED' | 'NOT_RECEIVED' | 'WRONG_ITEM' | 'NOT_AS_DESCRIBED' | 'OTHER' | string;
+  amount: string | number;
+  customer_notes: string;
+  vendor_reply?: string;
+  admin_decision?: string;
+  resolution_notes?: string;
+  status: 'OPEN' | 'UNDER_REVIEW' | 'RESOLVED_REFUNDED' | 'REJECTED';
+  created_at: string;
+  resolved_at?: string | null;
+}
+
+export interface AuditLog {
+  id: number;
+  actor?: number;
+  actor_email?: string;
+  action: string;
+  target_model: string;
+  target_id: string;
+  details: Record<string, any>;
+  ip_address?: string;
   created_at: string;
 }
 

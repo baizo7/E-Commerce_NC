@@ -2,7 +2,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.password_validation import validate_password
 import logging
-from apps.accounts.models import User, VendorProfile
+from apps.accounts.models import User, VendorProfile, UserAddress, AuditLog
 
 logger = logging.getLogger(__name__)
 
@@ -143,4 +143,28 @@ class AdminVendorStatusSerializer(serializers.ModelSerializer):
 class ChangePasswordSerializer(serializers.Serializer):
     current_password = serializers.CharField(required=True)
     new_password = serializers.CharField(required=True, validators=[validate_password])
+
+
+class UserAddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserAddress
+        fields = [
+            'id', 'user', 'title', 'recipient_name', 'phone',
+            'street_address', 'city', 'state', 'postal_code',
+            'country', 'is_default', 'created_at'
+        ]
+        read_only_fields = ['id', 'user', 'created_at']
+
+
+class AuditLogSerializer(serializers.ModelSerializer):
+    actor_email = serializers.EmailField(source='actor.email', read_only=True)
+
+    class Meta:
+        model = AuditLog
+        fields = [
+            'id', 'actor', 'actor_email', 'action', 'target_model',
+            'target_id', 'details', 'ip_address', 'created_at'
+        ]
+        read_only_fields = ['id', 'actor', 'actor_email', 'action', 'target_model', 'target_id', 'details', 'ip_address', 'created_at']
+
 

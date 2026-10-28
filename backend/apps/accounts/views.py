@@ -11,7 +11,7 @@ import os
 import uuid
 
 logger = logging.getLogger(__name__)
-from apps.accounts.models import User, VendorProfile
+from apps.accounts.models import User, VendorProfile, UserAddress, AuditLog
 from apps.accounts.serializers import (
     UserSerializer,
     RegisterSerializer,
@@ -20,8 +20,11 @@ from apps.accounts.serializers import (
     VendorPublicSerializer,
     AdminVendorStatusSerializer,
     AdminUserDetailSerializer,
-    ChangePasswordSerializer
+    ChangePasswordSerializer,
+    UserAddressSerializer,
+    AuditLogSerializer
 )
+from apps.accounts.services import AuditService
 from apps.accounts.permissions import IsAdminUserRole, IsVendorUser
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -313,6 +316,20 @@ class AdminVendorUpdateStatusView(generics.UpdateAPIView):
             except Exception as exc:
                 logger.warning("Vendor status update notification failed for %s: %s", vendor.store_name, exc)
 
+        AuditService.log(
+            request=request,
+            action=f"VENDOR_STATUS_{vendor.status}",
+            target_model="VendorProfile",
+            target_id=str(vendor.id),
+            details={
+                'store_name': vendor.store_name,
+                'old_status': old_status,
+                'new_status': vendor.status,
+                'reason': reason,
+                'commission_rate': str(vendor.commission_rate)
+            }
+        )
+
         return Response(VendorProfileSerializer(vendor).data)
 
 
@@ -363,7 +380,74 @@ class AdminUserRoleUpdateView(APIView):
             )
         user.save()
 
+        AuditService.log(
+            request=request,
+            action=f"USER_ROLE_CHANGED_TO_{new_role}",
+            target_model="User",
+            target_id=str(user.id),
+            details={'target_email': user.email, 'new_role': new_role}
+        )
+
         return Response({
             'message': f"User role updated to {new_role} successfully.",
             'user': AdminUserDetailSerializer(user).data
         }, status=status.HTTP_200_OK)
+
+
+class UserAddressListCreateView(generics.ListCreateAPIView):
+    serializer_class = UserAddressSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return UserAddress.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        # If this is the user's first address, mark it as default
+        has_existing = UserAddress.objects.filter(user=self.request.user).exists()
+        is_default = serializer.validated_data.get('is_default', False) or not has_existing
+        serializer.save(user=self.request.user, is_default=is_default)
+
+
+class UserAddressDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = UserAddressSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return UserAddress.objects.filter(user=self.request.user)
+
+
+class UserAddressSetDefaultView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        address = UserAddress.objects.filter(id=pk, user=request.user).first()
+        if not address:
+            return Response({'error': 'Address not found.'}, status=status.HTTP_404_NOT_FOUND)
+        address.is_default = True
+        address.save()
+        return Response({'message': 'Default address updated.', 'address': UserAddressSerializer(address).data})
+
+
+class AdminAuditLogListView(generics.ListAPIView):
+    serializer_class = AuditLogSerializer
+    permission_classes = [IsAdminUserRole]
+
+    def get_queryset(self):
+        from django.db.models import Q
+        qs = AuditLog.objects.all().select_related('actor').order_by('-created_at')
+        action_param = self.request.query_params.get('action')
+        if action_param:
+            qs = qs.filter(action__icontains=action_param)
+        target_param = self.request.query_params.get('target_model')
+        if target_param:
+            qs = qs.filter(target_model__iexact=target_param)
+        search = self.request.query_params.get('search')
+        if search:
+            qs = qs.filter(
+                Q(action__icontains=search) |
+                Q(target_id__icontains=search) |
+                Q(target_model__icontains=search) |
+                Q(actor__email__icontains=search)
+            )
+        return qs
+

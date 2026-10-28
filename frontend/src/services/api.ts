@@ -12,7 +12,15 @@ import {
   AdminUser,
   EmailLog,
   ApiResponse,
-  unwrapResults
+  unwrapResults,
+  ProductVariant,
+  UserAddress,
+  WishlistItem,
+  PlatformBanner,
+  Coupon,
+  PayoutRequest,
+  Dispute,
+  AuditLog
 } from '../types';
 
 const api = axios.create({
@@ -142,6 +150,17 @@ export const productService = {
     const res = await api.post(`/products/${slug}/reviews/`, review);
     return res.data;
   },
+  getProductVariants: async (productId: number): Promise<ProductVariant[]> => {
+    const res = await api.get(`/vendor/products/${productId}/variants/`);
+    return unwrapResults<ProductVariant>(res.data);
+  },
+  createProductVariant: async (productId: number, data: Partial<ProductVariant>): Promise<ProductVariant> => {
+    const res = await api.post(`/vendor/products/${productId}/variants/`, data);
+    return res.data;
+  },
+  deleteProductVariant: async (variantId: number): Promise<void> => {
+    await api.delete(`/vendor/variants/${variantId}/`);
+  },
 };
 
 // Cart Services
@@ -150,8 +169,8 @@ export const cartService = {
     const res = await api.get('/cart/');
     return res.data;
   },
-  addToCart: async (productId: number, quantity: number = 1): Promise<Cart> => {
-    const res = await api.post('/cart/', { product_id: productId, quantity });
+  addToCart: async (productId: number, quantity: number = 1, variantId?: number | null): Promise<Cart> => {
+    const res = await api.post('/cart/', { product_id: productId, quantity, variant_id: variantId });
     return res.data;
   },
   updateCartItem: async (itemId: number, quantity: number): Promise<Cart> => {
@@ -180,8 +199,21 @@ export const orderService = {
     shipping_postal_code: string;
     shipping_country?: string;
     payment_method: string;
+    coupon_code?: string;
   }): Promise<Order> => {
     const res = await api.post('/v1/orders/checkout/', payload);
+    return res.data;
+  },
+  applyCoupon: async (code: string, subtotal: number): Promise<{ valid: boolean; code: string; discount_type: string; discount_amount: number; new_subtotal: number }> => {
+    const res = await api.post('/v1/orders/coupons/apply/', { code, subtotal });
+    return res.data;
+  },
+  cancelOrder: async (orderNumber: string, reason?: string): Promise<{ message: string; order: Order }> => {
+    const res = await api.post(`/v1/orders/${orderNumber}/cancel/`, { reason });
+    return res.data;
+  },
+  createDispute: async (orderNumber: string, data: { vendor_order_id?: number; reason: string; amount?: number; customer_notes: string }): Promise<{ message: string; dispute: Dispute }> => {
+    const res = await api.post(`/v1/orders/${orderNumber}/dispute/`, data);
     return res.data;
   },
   createRazorpayOrder: async (orderNumber: string) => {
@@ -306,7 +338,29 @@ export const vendorService = {
     return res.data;
   },
   exportCsvUrl: () => {
-    return '/api/v1/vendor/export-csv/';
+    return '/api/products/vendor/products/export-csv/';
+  },
+  importProductsCsv: async (file: File): Promise<{ message: string; created_count: number; updated_count: number; errors: string[] }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await api.post('/products/vendor/products/import-csv/', formData);
+    return res.data;
+  },
+  getPayoutRequests: async (): Promise<PayoutRequest[]> => {
+    const res = await api.get('/v1/vendor/payout-requests/');
+    return unwrapResults<PayoutRequest>(res.data);
+  },
+  requestPayout: async (data: { amount: number; bank_name?: string; bank_account_number?: string; notes?: string }): Promise<{ message: string; payout: PayoutRequest }> => {
+    const res = await api.post('/v1/vendor/payout-requests/', data);
+    return res.data;
+  },
+  getDisputes: async (): Promise<Dispute[]> => {
+    const res = await api.get('/v1/vendor/disputes/');
+    return unwrapResults<Dispute>(res.data);
+  },
+  replyDispute: async (id: number, vendor_reply: string): Promise<{ message: string; dispute: Dispute }> => {
+    const res = await api.post(`/v1/vendor/disputes/${id}/reply/`, { vendor_reply });
+    return res.data;
   },
 };
 
@@ -375,12 +429,90 @@ export const adminService = {
     const res = await api.patch(`/admin/users/${userId}/role/`, { role });
     return res.data;
   },
+  getPayoutRequests: async (status?: string): Promise<PayoutRequest[]> => {
+    const res = await api.get('/v1/admin/payout-requests/', { params: { status } });
+    return unwrapResults<PayoutRequest>(res.data);
+  },
+  actionPayoutRequest: async (id: number, data: { status: string; reference?: string; admin_notes?: string }): Promise<{ message: string; payout: PayoutRequest }> => {
+    const res = await api.patch(`/v1/admin/payout-requests/${id}/`, data);
+    return res.data;
+  },
+  getDisputes: async (params?: { status?: string }): Promise<Dispute[]> => {
+    const res = await api.get('/v1/admin/disputes/', { params });
+    return unwrapResults<Dispute>(res.data);
+  },
+  resolveDispute: async (id: number, data: { action: string; decision_notes?: string }): Promise<{ message: string; dispute: Dispute; refund_details?: any }> => {
+    const res = await api.post(`/v1/admin/disputes/${id}/resolve/`, data);
+    return res.data;
+  },
+  getAuditLogs: async (params?: { action?: string; target_model?: string; search?: string }): Promise<AuditLog[]> => {
+    const res = await api.get('/admin/audit-logs/', { params });
+    return unwrapResults<AuditLog>(res.data);
+  },
   exportLedgerCsvUrl: (): string => {
     return '/api/v1/analytics/admin/export-csv/';
   },
   getAnalytics: async (): Promise<AdminAnalytics> => {
     const res = await api.get('/admin/analytics/');
     return res.data;
+  },
+};
+
+// Address Services
+export const addressService = {
+  getAddresses: async (): Promise<UserAddress[]> => {
+    const res = await api.get('/auth/addresses/');
+    return unwrapResults<UserAddress>(res.data);
+  },
+  createAddress: async (data: Partial<UserAddress>): Promise<UserAddress> => {
+    const res = await api.post('/auth/addresses/', data);
+    return res.data;
+  },
+  updateAddress: async (id: number, data: Partial<UserAddress>): Promise<UserAddress> => {
+    const res = await api.patch(`/auth/addresses/${id}/`, data);
+    return res.data;
+  },
+  deleteAddress: async (id: number): Promise<void> => {
+    await api.delete(`/auth/addresses/${id}/`);
+  },
+  setDefaultAddress: async (id: number): Promise<UserAddress> => {
+    const res = await api.post(`/auth/addresses/${id}/set-default/`);
+    return res.data.address;
+  },
+};
+
+// Wishlist Services
+export const wishlistService = {
+  getWishlist: async (): Promise<WishlistItem[]> => {
+    const res = await api.get('/products/wishlist/');
+    return unwrapResults<WishlistItem>(res.data);
+  },
+  toggleWishlist: async (productId: number): Promise<{ wishlisted: boolean; message: string; product_id: number }> => {
+    const res = await api.post('/products/wishlist/toggle/', { product_id: productId });
+    return res.data;
+  },
+};
+
+// Platform Banner Services
+export const bannerService = {
+  getActiveBanners: async (): Promise<PlatformBanner[]> => {
+    const res = await api.get('/products/banners/active/');
+    return unwrapResults<PlatformBanner>(res.data);
+  },
+  getAdminBanners: async (): Promise<PlatformBanner[]> => {
+    const res = await api.get('/products/admin/banners/');
+    return unwrapResults<PlatformBanner>(res.data);
+  },
+  createBanner: async (data: Partial<PlatformBanner>): Promise<PlatformBanner> => {
+    const res = await api.post('/products/admin/banners/', data);
+    return res.data;
+  },
+  updateBanner: async (id: number, data: Partial<PlatformBanner>): Promise<PlatformBanner> => {
+    const res = await api.patch(`/products/admin/banners/${id}/`, data);
+    return res.data;
+  },
+  deleteBanner: async (id: number): Promise<void> => {
+    await api.delete(`/products/admin/banners/${id}/`);
   },
 };
 

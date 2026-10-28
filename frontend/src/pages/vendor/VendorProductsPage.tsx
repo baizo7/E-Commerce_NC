@@ -1,5 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit2, Trash2, Check, X, AlertTriangle, Package, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  Plus,
+  Search,
+  Edit2,
+  Trash2,
+  Check,
+  X,
+  AlertTriangle,
+  Package,
+  ChevronRight,
+  Download,
+  UploadCloud,
+  FileSpreadsheet,
+  CheckCircle2
+} from 'lucide-react';
 import { vendorService } from '../../services/api';
 import { Product, unwrapResults } from '../../types';
 import { VendorProductModal } from './VendorProductModal';
@@ -12,6 +26,18 @@ export const VendorProductsPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+
+  // CSV Import State
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{
+    message: string;
+    created_count: number;
+    updated_count: number;
+    errors: string[];
+  } | null>(null);
+  const csvInputRef = useRef<HTMLInputElement>(null);
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -71,12 +97,39 @@ export const VendorProductsPage: React.FC = () => {
     }
   };
 
+  const handleImportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!importFile) return;
+    try {
+      setImporting(true);
+      setImportResult(null);
+      const res = await vendorService.importProductsCsv(importFile);
+      setImportResult(res);
+      await fetchProducts();
+    } catch (err: any) {
+      setImportResult({
+        message: 'Import failed',
+        created_count: 0,
+        updated_count: 0,
+        errors: [err.response?.data?.error || 'Failed to process CSV file.'],
+      });
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const handleExportCsv = () => {
+    const token = localStorage.getItem('access_token');
+    const url = `/api/products/vendor/products/export-csv/?token=${token}`;
+    window.open(url, '_blank');
+  };
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <VendorSubNav />
 
       {/* Header Banner */}
-      <div className="bg-white border border-neutral-200/90 rounded-2xl p-6 sm:p-8 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="bg-white border border-neutral-200/90 rounded-2xl p-6 sm:p-8 shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
         <div>
           <span className="text-xs font-black uppercase tracking-widest text-[#fcb424]">Inventory Management</span>
           <h1 className="text-2xl sm:text-3xl font-black text-[#0a0500] uppercase tracking-tight mt-1">
@@ -87,15 +140,39 @@ export const VendorProductsPage: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={() => {
-            setEditingProduct(null);
-            setIsModalOpen(true);
-          }}
-          className="px-6 py-3 bg-[#ffcd05] hover:bg-[#fcb424] text-[#0a0500] font-black uppercase tracking-wider text-xs rounded-full shadow-md hover:shadow-lg flex items-center gap-2 transition flex-shrink-0"
-        >
-          <Plus className="w-4 h-4 text-[#0a0500]" /> Add New Product
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            onClick={handleExportCsv}
+            className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-full border border-slate-200 transition flex items-center gap-1.5"
+            title="Export catalog as CSV"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Export CSV
+          </button>
+
+          <button
+            onClick={() => {
+              setImportResult(null);
+              setImportFile(null);
+              setIsImportModalOpen(true);
+            }}
+            className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-full border border-slate-200 transition flex items-center gap-1.5"
+            title="Import products via CSV"
+          >
+            <UploadCloud className="w-3.5 h-3.5 text-amber-500" />
+            Import CSV
+          </button>
+
+          <button
+            onClick={() => {
+              setEditingProduct(null);
+              setIsModalOpen(true);
+            }}
+            className="px-5 py-2.5 bg-[#ffcd05] hover:bg-[#fcb424] text-[#0a0500] font-black uppercase tracking-wider text-xs rounded-full shadow-md hover:shadow-lg flex items-center gap-2 transition flex-shrink-0"
+          >
+            <Plus className="w-4 h-4 text-[#0a0500]" /> Add New Product
+          </button>
+        </div>
       </div>
 
       {/* Filter / Search Bar */}
@@ -270,6 +347,90 @@ export const VendorProductsPage: React.FC = () => {
         onSuccess={fetchProducts}
         productToEdit={editingProduct}
       />
+
+      {/* CSV Import Modal */}
+      {isImportModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-5 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="font-black text-slate-900 text-sm flex items-center gap-2">
+                <FileSpreadsheet className="w-4 h-4 text-amber-500" />
+                Import Products via CSV
+              </h3>
+              <button
+                onClick={() => setIsImportModalOpen(false)}
+                className="p-1 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleImportSubmit} className="space-y-4 text-xs">
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                <span className="font-bold text-slate-800 block">CSV File Format:</span>
+                <p className="text-slate-600 leading-relaxed text-[11px]">
+                  Columns supported: <code className="bg-white px-1.5 py-0.5 rounded font-mono border text-slate-800">title, price, compare_at_price, sku, inventory_count, category, short_description</code>.
+                  Existing SKUs will automatically update stock and prices.
+                </p>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1.5">Select CSV file from device:</label>
+                <input
+                  type="file"
+                  ref={csvInputRef}
+                  accept=".csv,text/csv"
+                  required
+                  onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                  className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-950 file:text-white hover:file:bg-slate-800 cursor-pointer"
+                />
+              </div>
+
+              {importResult && (
+                <div
+                  className={`p-3.5 rounded-xl border text-xs space-y-1 ${
+                    importResult.errors.length > 0 && importResult.created_count === 0 && importResult.updated_count === 0
+                      ? 'bg-rose-50 border-rose-200 text-rose-800'
+                      : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5 font-bold">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span>{importResult.message}</span>
+                  </div>
+                  <p className="text-[11px]">
+                    Created: <strong>{importResult.created_count}</strong> | Updated: <strong>{importResult.updated_count}</strong>
+                  </p>
+                  {importResult.errors.length > 0 && (
+                    <div className="pt-1 text-[11px] text-rose-600 space-y-0.5">
+                      {importResult.errors.slice(0, 3).map((err, i) => (
+                        <p key={i}>• {err}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsImportModalOpen(false)}
+                  className="px-4 py-2 border border-slate-200 rounded-xl font-bold hover:bg-slate-50"
+                >
+                  Close
+                </button>
+                <button
+                  type="submit"
+                  disabled={importing || !importFile}
+                  className="px-5 py-2 bg-slate-950 hover:bg-slate-800 text-white rounded-xl font-bold shadow-xs disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {importing ? 'Processing CSV...' : 'Start Import'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

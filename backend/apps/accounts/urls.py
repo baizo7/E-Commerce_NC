@@ -14,7 +14,11 @@ from apps.accounts.views import (
     AdminVendorListView,
     AdminVendorUpdateStatusView,
     AdminUserListView,
-    AdminUserRoleUpdateView
+    AdminUserRoleUpdateView,
+    UserAddressListCreateView,
+    UserAddressDetailView,
+    UserAddressSetDefaultView,
+    AdminAuditLogListView
 )
 
 urlpatterns = [
@@ -36,9 +40,15 @@ urlpatterns = [
     path('auth/vendor/branding/', VendorBrandingUploadView.as_view(), name='vendor_branding_upload'),
     path('vendor/branding/', VendorBrandingUploadView.as_view(), name='vendor_branding_upload_alt'),
 
+    # Address Book
+    path('auth/addresses/', UserAddressListCreateView.as_view(), name='user_addresses'),
+    path('auth/addresses/<int:pk>/', UserAddressDetailView.as_view(), name='user_address_detail'),
+    path('auth/addresses/<int:pk>/set-default/', UserAddressSetDefaultView.as_view(), name='user_address_set_default'),
+
     # Admin Portal
     path('admin/vendors/', AdminVendorListView.as_view(), name='admin_vendor_list'),
     path('admin/vendors/<int:id>/status/', AdminVendorUpdateStatusView.as_view(), name='admin_vendor_status_update'),
     path('admin/users/', AdminUserListView.as_view(), name='admin_user_list'),
     path('admin/users/<int:id>/role/', AdminUserRoleUpdateView.as_view(), name='admin_user_role_update'),
+    path('admin/audit-logs/', AdminAuditLogListView.as_view(), name='admin_audit_logs'),
 ]

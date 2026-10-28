@@ -1,15 +1,27 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Star, ShoppingBag, Store, AlertCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Star, ShoppingBag, Store, Heart } from 'lucide-react';
 import { Product } from '../types';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
+import { wishlistService } from '../services/api';
 
 interface ProductCardProps {
   product: Product;
+  initiallyWishlisted?: boolean;
+  onWishlistChange?: (productId: number, wishlisted: boolean) => void;
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
+export const ProductCard: React.FC<ProductCardProps> = ({
+  product,
+  initiallyWishlisted = false,
+  onWishlistChange,
+}) => {
   const { addToCart, loading } = useCart();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [isWishlisted, setIsWishlisted] = useState(initiallyWishlisted);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -18,6 +30,27 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       await addToCart(product.id, 1);
     } catch {
       // Handled in context
+    }
+  };
+
+  const handleToggleWishlist = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    try {
+      setWishlistLoading(true);
+      const res = await wishlistService.toggleWishlist(product.id);
+      setIsWishlisted(res.wishlisted);
+      if (onWishlistChange) {
+        onWishlistChange(product.id, res.wishlisted);
+      }
+    } catch {
+      // Ignore error
+    } finally {
+      setWishlistLoading(false);
     }
   };
 
@@ -52,13 +85,27 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </span>
         ) : null}
 
+        {/* Wishlist Floating Button */}
+        <button
+          onClick={handleToggleWishlist}
+          disabled={wishlistLoading}
+          aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+          className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition shadow-md z-10 ${
+            isWishlisted
+              ? 'bg-rose-500 text-white hover:bg-rose-600'
+              : 'bg-white/90 text-slate-700 hover:text-rose-500 hover:bg-white'
+          }`}
+        >
+          <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-white' : ''}`} />
+        </button>
+
         {/* Stock Status Badge */}
         {!product.is_in_stock ? (
-          <span className="absolute top-3 right-3 bg-slate-950/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded">
+          <span className="absolute bottom-3 left-3 bg-slate-950/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded">
             Out of Stock
           </span>
         ) : product.inventory_count <= (product.low_stock_threshold || 5) ? (
-          <span className="absolute top-3 right-3 bg-rose-600 text-white text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1 shadow-sm">
+          <span className="absolute bottom-3 left-3 bg-rose-600 text-white text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1 shadow-sm">
             Only {product.inventory_count} left
           </span>
         ) : null}

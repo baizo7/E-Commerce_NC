@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   ShieldCheck,
@@ -10,18 +10,32 @@ import {
   Zap,
   RefreshCw,
   ExternalLink,
-  ChevronRight
+  ChevronRight,
+  MapPin,
+  Tag,
+  CheckCircle2,
+  Plus
 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
-import { orderService } from '../../services/api';
-import { Order } from '../../types';
+import { orderService, addressService } from '../../services/api';
+import { Order, UserAddress } from '../../types';
 import { RazorpaySandboxModal } from '../../components/RazorpaySandboxModal';
 
 export const CheckoutPage: React.FC = () => {
   const { cart, cartSubtotal, refreshCart } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  const [savedAddresses, setSavedAddresses] = useState<UserAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
+
+  const [couponCode, setCouponCode] = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponSuccess, setCouponSuccess] = useState<string | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [discountAmount, setDiscountAmount] = useState<number>(0);
+  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     shipping_name: user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : 'Jane Customer',
@@ -41,24 +55,100 @@ export const CheckoutPage: React.FC = () => {
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [isSandboxModalOpen, setIsSandboxModalOpen] = useState(false);
 
-  if (!cart?.items?.length && !activeOrder) {
-    return (
-      <div className="max-w-md mx-auto py-24 text-center px-4">
-        <h2 className="text-2xl font-black text-[#0a0500] uppercase tracking-wide">Your Bag is Empty</h2>
-        <p className="text-sm text-[#504e4a] mt-2">Select items from our verified merchants before checking out.</p>
-        <Link
-          to="/products"
-          className="mt-6 inline-block px-8 py-3.5 bg-[#0a0500] hover:bg-neutral-800 text-white font-black uppercase tracking-wider text-xs rounded-full shadow-md transition"
-        >
-          Return to Shop
-        </Link>
-      </div>
-    );
-  }
+  useEffect(() => {
+    // Load saved addresses
+    const loadAddresses = async () => {
+      try {
+        const addresses = await addressService.getAddresses();
+        setSavedAddresses(addresses);
+        const defaultAddr = addresses.find((a) => a.is_default) || addresses[0];
+        if (defaultAddr) {
+          setSelectedAddressId(defaultAddr.id);
+          setFormData((prev) => ({
+            ...prev,
+            shipping_name: defaultAddr.recipient_name,
+            shipping_phone: defaultAddr.phone,
+            shipping_address: defaultAddr.street_address,
+            shipping_city: defaultAddr.city,
+            shipping_state: defaultAddr.state || '',
+            shipping_postal_code: defaultAddr.postal_code,
+            shipping_country: defaultAddr.country || 'India',
+          }));
+        }
+      } catch (err) {
+        // Continue with default values
+      }
+    };
+    loadAddresses();
 
-  const shippingEstimate = cartSubtotal >= 100 ? 0 : 10.0;
-  const taxEstimate = +(cartSubtotal * 0.05).toFixed(2);
-  const grandTotal = +(cartSubtotal + shippingEstimate + taxEstimate).toFixed(2);
+    // Check for saved coupon from Cart
+    const storedCoupon = sessionStorage.getItem('modernshop_coupon');
+    if (storedCoupon) {
+      setCouponCode(storedCoupon);
+      orderService.applyCoupon(storedCoupon, cartSubtotal)
+        .then((res) => {
+          if (res.valid) {
+            setDiscountAmount(res.discount_amount);
+            setAppliedCoupon(res.code);
+            setCouponSuccess(`Coupon ${res.code} active (-$${res.discount_amount.toFixed(2)})`);
+          }
+        })
+        .catch(() => {
+          sessionStorage.removeItem('modernshop_coupon');
+        });
+    }
+  }, [cartSubtotal]);
+
+  const handleSelectAddress = (addr: UserAddress) => {
+    setSelectedAddressId(addr.id);
+    setFormData((prev) => ({
+      ...prev,
+      shipping_name: addr.recipient_name,
+      shipping_phone: addr.phone,
+      shipping_address: addr.street_address,
+      shipping_city: addr.city,
+      shipping_state: addr.state || '',
+      shipping_postal_code: addr.postal_code,
+      shipping_country: addr.country || 'India',
+    }));
+  };
+
+  const handleApplyCoupon = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!couponCode.trim()) return;
+    setCouponLoading(true);
+    setCouponError(null);
+    setCouponSuccess(null);
+    try {
+      const res = await orderService.applyCoupon(couponCode.trim(), cartSubtotal);
+      if (res.valid) {
+        setDiscountAmount(res.discount_amount);
+        setAppliedCoupon(res.code);
+        setCouponSuccess(`Coupon ${res.code} applied! Saved $${res.discount_amount.toFixed(2)}`);
+        sessionStorage.setItem('modernshop_coupon', res.code);
+      }
+    } catch (err: any) {
+      setDiscountAmount(0);
+      setAppliedCoupon(null);
+      setCouponError(err.response?.data?.error || 'Invalid or expired coupon code.');
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setDiscountAmount(0);
+    setAppliedCoupon(null);
+    setCouponCode('');
+    setCouponSuccess(null);
+    setCouponError(null);
+    sessionStorage.removeItem('modernshop_coupon');
+  };
+
+  const discountedSubtotal = Math.max(0, cartSubtotal - discountAmount);
+  const shippingEstimate = discountedSubtotal >= 100 || cartSubtotal >= 100 ? 0 : 10.0;
+  const taxEstimate = +(discountedSubtotal * 0.05).toFixed(2);
+  const grandTotal = +(discountedSubtotal + shippingEstimate + taxEstimate).toFixed(2);
 
   // Dynamically inject Razorpay Standard Checkout SDK
   const loadRazorpaySDK = (): Promise<boolean> => {
@@ -231,12 +321,16 @@ export const CheckoutPage: React.FC = () => {
     setErrorMessage(null);
 
     try {
+      const checkoutPayload = {
+        ...formData,
+        coupon_code: appliedCoupon || undefined,
+      };
       if (formData.payment_method === 'RAZORPAY') {
-        const order = await orderService.checkout(formData);
+        const order = await orderService.checkout(checkoutPayload);
         setActiveOrder(order);
         await launchPayment(order);
       } else {
-        const order = await orderService.checkout(formData);
+        const order = await orderService.checkout(checkoutPayload);
         await refreshCart();
         navigate(`/order-success/${order.order_number}`, { state: { order } });
       }
@@ -337,10 +431,55 @@ export const CheckoutPage: React.FC = () => {
         <div className="lg:col-span-2 space-y-8">
           {/* Shipping Address */}
           <div className="bg-white border border-neutral-200/90 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
-            <div className="flex items-center gap-2.5 pb-4 border-b border-neutral-100">
-              <Truck className="w-5 h-5 text-[#fcb424]" />
-              <h2 className="font-black text-[#0a0500] uppercase text-sm tracking-wider">Shipping Address</h2>
+            <div className="flex items-center justify-between pb-4 border-b border-neutral-100">
+              <div className="flex items-center gap-2.5">
+                <Truck className="w-5 h-5 text-[#fcb424]" />
+                <h2 className="font-black text-[#0a0500] uppercase text-sm tracking-wider">Shipping Address</h2>
+              </div>
+              <Link to="/profile" className="text-xs text-amber-600 hover:underline font-bold flex items-center gap-1">
+                Manage Address Book &rarr;
+              </Link>
             </div>
+
+            {/* Saved Addresses quick-selector */}
+            {savedAddresses.length > 0 && (
+              <div className="space-y-2 pb-4 border-b border-neutral-100">
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 block">
+                  Select From Saved Address Book:
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {savedAddresses.map((addr) => {
+                    const isSelected = selectedAddressId === addr.id;
+                    return (
+                      <button
+                        key={addr.id}
+                        type="button"
+                        onClick={() => handleSelectAddress(addr)}
+                        className={`p-3.5 rounded-xl border text-left transition flex items-start gap-2.5 ${
+                          isSelected
+                            ? 'border-slate-950 bg-neutral-50 shadow-xs ring-1 ring-slate-950'
+                            : 'border-neutral-200 bg-white hover:border-neutral-300'
+                        }`}
+                      >
+                        <MapPin className={`w-4 h-4 mt-0.5 flex-shrink-0 ${isSelected ? 'text-amber-500' : 'text-slate-400'}`} />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-extrabold text-xs text-slate-900">{addr.title}</span>
+                            {addr.is_default && (
+                              <span className="px-1.5 py-0.5 bg-slate-950 text-amber-400 text-[9px] font-black uppercase rounded">
+                                Default
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-slate-600 truncate mt-0.5">{addr.recipient_name} • {addr.phone}</p>
+                          <p className="text-[11px] text-slate-500 truncate">{addr.street_address}, {addr.city}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -529,6 +668,14 @@ export const CheckoutPage: React.FC = () => {
                 <span>Items Subtotal</span>
                 <span className="font-bold text-[#0a0500]">${cartSubtotal.toFixed(2)}</span>
               </div>
+
+              {discountAmount > 0 && (
+                <div className="flex justify-between text-emerald-600 font-bold">
+                  <span>Promo Discount ({appliedCoupon})</span>
+                  <span>-${discountAmount.toFixed(2)}</span>
+                </div>
+              )}
+
               <div className="flex justify-between">
                 <span>Shipping</span>
                 <span>{shippingEstimate === 0 ? <strong className="text-emerald-700 font-bold uppercase">FREE</strong> : `$${shippingEstimate.toFixed(2)}`}</span>
@@ -541,6 +688,63 @@ export const CheckoutPage: React.FC = () => {
                 <span className="font-black uppercase tracking-wider text-sm text-[#0a0500]">Total Due</span>
                 <span className="text-2xl font-black text-[#0a0500]">${grandTotal.toFixed(2)}</span>
               </div>
+            </div>
+
+            {/* Promo Code Input Block */}
+            <div className="pt-2 border-t border-neutral-100">
+              <label className="text-[11px] font-black uppercase tracking-wider text-slate-700 block mb-1.5">
+                Promo Code
+              </label>
+              {appliedCoupon ? (
+                <div className="flex items-center justify-between p-2 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800">
+                  <div className="flex items-center gap-1.5 font-bold">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>{appliedCoupon} (-${discountAmount.toFixed(2)})</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRemoveCoupon}
+                    className="text-xs text-slate-400 hover:text-rose-600 font-bold ml-2"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Tag className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="Coupon code"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                        className="w-full pl-9 pr-3 py-2 text-xs uppercase bg-neutral-50 border border-neutral-200 rounded-xl focus:bg-white focus:border-amber-400 outline-none"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleApplyCoupon}
+                      disabled={couponLoading || !couponCode.trim()}
+                      className="px-3.5 py-2 bg-slate-950 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition disabled:opacity-50"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                  {couponError && (
+                    <p className="text-[11px] text-rose-600 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                      {couponError}
+                    </p>
+                  )}
+                  {couponSuccess && (
+                    <p className="text-[11px] text-emerald-600 flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3 flex-shrink-0" />
+                      {couponSuccess}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             <button

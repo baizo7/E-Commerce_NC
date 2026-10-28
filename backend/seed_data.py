@@ -7,9 +7,9 @@ from decimal import Decimal
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'marketplace_core.settings')
 django.setup()
 
-from apps.accounts.models import User, VendorProfile
-from apps.products.models import Category, Product, ProductImage, Review
-from apps.orders.models import Order, VendorOrder, OrderItem, Cart, CartItem
+from apps.accounts.models import User, VendorProfile, UserAddress
+from apps.products.models import Category, Product, ProductImage, Review, ProductVariant, PlatformBanner
+from apps.orders.models import Order, VendorOrder, OrderItem, Cart, CartItem, Coupon
 
 def run_seed():
     print("🌱 Seeding Modern Shop Database with demo data...")
@@ -553,7 +553,95 @@ def run_seed():
     cart1.items.all().delete()
     CartItem.objects.create(cart=cart1, product=created_products[1], quantity=1)
 
-    print("✓ Sample multi-vendor split orders and active cart initialized")
+    # 9. Create Promotional Coupons
+    Coupon.objects.get_or_create(
+        code='MODERN20',
+        defaults={
+            'discount_type': 'PERCENTAGE',
+            'value': Decimal('20.00'),
+            'min_purchase_amount': Decimal('50.00'),
+            'max_discount_amount': Decimal('50.00'),
+            'is_active': True,
+        }
+    )
+    Coupon.objects.get_or_create(
+        code='SAVE15',
+        defaults={
+            'discount_type': 'FIXED',
+            'value': Decimal('15.00'),
+            'min_purchase_amount': Decimal('40.00'),
+            'is_active': True,
+        }
+    )
+
+    # 10. Create Customer Saved Addresses
+    UserAddress.objects.get_or_create(
+        user=customer1,
+        title='Home',
+        defaults={
+            'recipient_name': 'Sarah Jenkins',
+            'phone': '+1 (555) 234-5678',
+            'street_address': '742 Evergreen Terrace',
+            'city': 'Springfield',
+            'state': 'OR',
+            'postal_code': '97477',
+            'country': 'United States',
+            'is_default': True
+        }
+    )
+    UserAddress.objects.get_or_create(
+        user=customer1,
+        title='Studio Office',
+        defaults={
+            'recipient_name': 'Sarah Jenkins (Work)',
+            'phone': '+1 (555) 888-9999',
+            'street_address': '450 Mission Street, Suite 300',
+            'city': 'San Francisco',
+            'state': 'CA',
+            'postal_code': '94105',
+            'country': 'United States',
+            'is_default': False
+        }
+    )
+
+    # 11. Create Sample Product Variants
+    if created_products:
+        p0 = created_products[0]
+        ProductVariant.objects.get_or_create(
+            product=p0,
+            title='Midnight Black / 256GB',
+            defaults={
+                'sku': f"{p0.sku}-BLK-256",
+                'price': p0.price,
+                'compare_at_price': Decimal('399.00'),
+                'inventory_count': 15,
+                'attributes': {'Color': 'Midnight Black', 'Storage': '256GB'}
+            }
+        )
+        ProductVariant.objects.get_or_create(
+            product=p0,
+            title='Silver Titanium / 512GB',
+            defaults={
+                'sku': f"{p0.sku}-SLV-512",
+                'price': Decimal('379.00'),
+                'compare_at_price': Decimal('429.00'),
+                'inventory_count': 8,
+                'attributes': {'Color': 'Silver Titanium', 'Storage': '512GB'}
+            }
+        )
+
+    # 12. Create Active Announcement Banner
+    PlatformBanner.objects.get_or_create(
+        title='Mid-Season Flash Sale',
+        defaults={
+            'message': 'Use code MODERN20 at checkout for 20% off all orders over $50! Free worldwide shipping over $100.',
+            'link_url': '/products',
+            'banner_type': 'PROMO',
+            'is_active': True
+        }
+    )
+
+    print("✓ Sample multi-vendor split orders, coupons, addresses, and variants initialized")
     print("✨ Database seed completed successfully!")
 
 if __name__ == '__main__':

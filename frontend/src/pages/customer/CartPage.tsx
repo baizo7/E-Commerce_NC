@@ -1,13 +1,53 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingBag, Trash2, ArrowRight, Store, ShieldCheck, ChevronRight, Lock, RotateCcw } from 'lucide-react';
+import { ShoppingBag, Trash2, ArrowRight, Store, ShieldCheck, ChevronRight, Lock, RotateCcw, Tag, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
+import { orderService } from '../../services/api';
 
 export const CartPage: React.FC = () => {
   const { cart, loading, updateQuantity, removeItem, clearCart, cartSubtotal, cartCount } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  const [couponCode, setCouponCode] = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponSuccess, setCouponSuccess] = useState<string | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [discountAmount, setDiscountAmount] = useState<number>(0);
+  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
+
+  const handleApplyCoupon = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!couponCode.trim()) return;
+    setCouponLoading(true);
+    setCouponError(null);
+    setCouponSuccess(null);
+    try {
+      const res = await orderService.applyCoupon(couponCode.trim(), cartSubtotal);
+      if (res.valid) {
+        setDiscountAmount(res.discount_amount);
+        setAppliedCoupon(res.code);
+        setCouponSuccess(`Coupon ${res.code} applied! Saved $${res.discount_amount.toFixed(2)}`);
+        sessionStorage.setItem('modernshop_coupon', res.code);
+      }
+    } catch (err: any) {
+      setDiscountAmount(0);
+      setAppliedCoupon(null);
+      setCouponError(err.response?.data?.error || 'Invalid or expired coupon code.');
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setDiscountAmount(0);
+    setAppliedCoupon(null);
+    setCouponCode('');
+    setCouponSuccess(null);
+    setCouponError(null);
+    sessionStorage.removeItem('modernshop_coupon');
+  };
 
   if (!user) {
     return (
@@ -61,9 +101,10 @@ export const CartPage: React.FC = () => {
     itemsByVendor[vId].items.push(item);
   });
 
-  const shippingEstimate = cartSubtotal >= 100 ? 0 : 10.0;
-  const taxEstimate = +(cartSubtotal * 0.05).toFixed(2);
-  const grandTotal = +(cartSubtotal + shippingEstimate + taxEstimate).toFixed(2);
+  const discountedSubtotal = Math.max(0, cartSubtotal - discountAmount);
+  const shippingEstimate = discountedSubtotal >= 100 || cartSubtotal >= 100 ? 0 : 10.0;
+  const taxEstimate = +(discountedSubtotal * 0.05).toFixed(2);
+  const grandTotal = +(discountedSubtotal + shippingEstimate + taxEstimate).toFixed(2);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-10">
@@ -141,8 +182,14 @@ export const CartPage: React.FC = () => {
                       >
                         {item.product.title}
                       </Link>
+                      {item.variant && (
+                        <div className="inline-flex items-center gap-1.5 mt-1 px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-200/80 text-[11px] font-bold">
+                          <span>Variant: {item.variant.title}</span>
+                          {item.variant.sku && <span className="text-slate-400">({item.variant.sku})</span>}
+                        </div>
+                      )}
                       <div className="text-xs font-medium text-slate-500 mt-1">
-                        ${Number(item.product.price).toFixed(2)} each
+                        ${Number(item.variant?.price || item.product.price).toFixed(2)} each
                       </div>
                       {item.product.inventory_count <= (item.product.low_stock_threshold || 5) && (
                         <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 mt-1 block">
@@ -203,6 +250,13 @@ export const CartPage: React.FC = () => {
               <span className="font-bold text-[#0a0500]">${cartSubtotal.toFixed(2)}</span>
             </div>
 
+            {discountAmount > 0 && (
+              <div className="flex justify-between text-emerald-600 font-bold">
+                <span>Promo Discount ({appliedCoupon})</span>
+                <span>-${discountAmount.toFixed(2)}</span>
+              </div>
+            )}
+
             <div className="flex justify-between">
               <span>Combined Shipping</span>
               <span>{shippingEstimate === 0 ? <strong className="text-emerald-700 font-bold uppercase">FREE</strong> : `$${shippingEstimate.toFixed(2)}`}</span>
@@ -217,6 +271,62 @@ export const CartPage: React.FC = () => {
               <span className="font-black uppercase tracking-wider text-sm text-[#0a0500]">Grand Total</span>
               <span className="text-2xl font-black text-[#0a0500]">${grandTotal.toFixed(2)}</span>
             </div>
+          </div>
+
+          {/* Coupon Code Section */}
+          <div className="pt-2 border-t border-neutral-100">
+            <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-700 block mb-1.5">
+              Have a Promo Code?
+            </label>
+            {appliedCoupon ? (
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800">
+                <div className="flex items-center gap-1.5 font-bold">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>{appliedCoupon} (-${discountAmount.toFixed(2)})</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRemoveCoupon}
+                  className="text-xs text-slate-400 hover:text-rose-600 font-bold ml-2"
+                >
+                  Remove
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleApplyCoupon} className="space-y-1.5">
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Tag className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="e.g. MODERN20"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      className="w-full pl-9 pr-3 py-2 text-xs uppercase bg-neutral-50 border border-neutral-200 rounded-xl focus:bg-white focus:border-amber-400 outline-none"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={couponLoading || !couponCode.trim()}
+                    className="px-4 py-2 bg-slate-950 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition disabled:opacity-50"
+                  >
+                    Apply
+                  </button>
+                </div>
+                {couponError && (
+                  <p className="text-[11px] text-rose-600 flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                    {couponError}
+                  </p>
+                )}
+                {couponSuccess && (
+                  <p className="text-[11px] text-emerald-600 flex items-center gap-1 mt-1">
+                    <CheckCircle2 className="w-3 h-3 flex-shrink-0" />
+                    {couponSuccess}
+                  </p>
+                )}
+              </form>
+            )}
           </div>
 
           {shippingEstimate > 0 ? (

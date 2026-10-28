@@ -6,16 +6,23 @@ from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from django.conf import settings
 from django.db.models import Q
+from django.http import HttpResponse
 import os
 import uuid
-from apps.products.models import Category, Product, ProductImage, Review
+import csv
+import io
+from apps.products.models import Category, Product, ProductImage, Review, ProductVariant, WishlistItem, PlatformBanner
 from apps.products.serializers import (
     CategorySerializer,
     ProductListSerializer,
     ProductDetailSerializer,
     ProductCreateUpdateSerializer,
-    ReviewSerializer
+    ReviewSerializer,
+    ProductVariantSerializer,
+    WishlistItemSerializer,
+    PlatformBannerSerializer
 )
+from apps.accounts.services import AuditService
 from apps.accounts.permissions import IsVendorUser, IsAdminUserRole, IsVendorOwnerOrReadOnly
 
 class CategoryListView(generics.ListAPIView):
@@ -334,3 +341,211 @@ class CategoryImageUploadView(APIView):
             'message': 'Category image uploaded successfully.',
             'image_url': relative_url
         }, status=status.HTTP_200_OK)
+
+
+# Product Variants
+class ProductVariantListCreateView(generics.ListCreateAPIView):
+    serializer_class = ProductVariantSerializer
+    permission_classes = [IsVendorUser]
+
+    def get_queryset(self):
+        product_id = self.kwargs.get('product_id')
+        vendor = self.request.user.vendor_profile
+        return ProductVariant.objects.filter(product_id=product_id, product__vendor=vendor)
+
+    def perform_create(self, serializer):
+        product_id = self.kwargs.get('product_id')
+        vendor = self.request.user.vendor_profile
+        product = generics.get_object_or_404(Product, id=product_id, vendor=vendor)
+        serializer.save(product=product)
+
+
+class ProductVariantDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = ProductVariantSerializer
+    permission_classes = [IsVendorUser]
+
+    def get_queryset(self):
+        vendor = self.request.user.vendor_profile
+        return ProductVariant.objects.filter(product__vendor=vendor)
+
+
+# Wishlist
+class WishlistListView(generics.ListAPIView):
+    serializer_class = WishlistItemSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None
+
+    def get_queryset(self):
+        return WishlistItem.objects.filter(customer=self.request.user).select_related('product', 'product__vendor', 'product__category')
+
+
+class WishlistToggleView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        product_id = request.data.get('product_id')
+        if not product_id:
+            return Response({'error': 'product_id is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        product = generics.get_object_or_404(Product, id=product_id, is_active=True, is_approved=True)
+        existing = WishlistItem.objects.filter(customer=request.user, product=product).first()
+        if existing:
+            existing.delete()
+            return Response({
+                'wishlisted': False,
+                'message': f"Removed '{product.title}' from your wishlist.",
+                'product_id': product.id
+            }, status=status.HTTP_200_OK)
+        else:
+            WishlistItem.objects.create(customer=request.user, product=product)
+            return Response({
+                'wishlisted': True,
+                'message': f"Added '{product.title}' to your wishlist.",
+                'product_id': product.id
+            }, status=status.HTTP_201_CREATED)
+
+
+# Platform Banners
+class PublicActiveBannerListView(generics.ListAPIView):
+    serializer_class = PlatformBannerSerializer
+    permission_classes = [permissions.AllowAny]
+    pagination_class = None
+
+    def get_queryset(self):
+        return PlatformBanner.objects.filter(is_active=True).order_by('-created_at')
+
+
+class AdminBannerListCreateView(generics.ListCreateAPIView):
+    serializer_class = PlatformBannerSerializer
+    permission_classes = [IsAdminUserRole]
+    queryset = PlatformBanner.objects.all().order_by('-created_at')
+
+
+class AdminBannerDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = PlatformBannerSerializer
+    permission_classes = [IsAdminUserRole]
+    queryset = PlatformBanner.objects.all()
+    lookup_field = 'id'
+
+
+# Vendor CSV Bulk Import & Export
+class VendorProductCsvExportView(APIView):
+    permission_classes = [IsVendorUser]
+
+    def get(self, request):
+        vendor = request.user.vendor_profile
+        products = Product.objects.filter(vendor=vendor).select_related('category')
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="products_{vendor.slug}.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow(['id', 'title', 'category', 'price', 'compare_at_price', 'sku', 'inventory_count', 'low_stock_threshold', 'is_active', 'description', 'short_description'])
+
+        for p in products:
+            writer.writerow([
+                p.id,
+                p.title,
+                p.category.name if p.category else '',
+                p.price,
+                p.compare_at_price or '',
+                p.sku or '',
+                p.inventory_count,
+                p.low_stock_threshold,
+                'TRUE' if p.is_active else 'FALSE',
+                p.description,
+                p.short_description or ''
+            ])
+
+        return response
+
+
+class VendorProductCsvImportView(APIView):
+    permission_classes = [IsVendorUser]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        vendor = request.user.vendor_profile
+        file_obj = request.FILES.get('file')
+        if not file_obj:
+            return Response({'error': 'No CSV file provided.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            content = file_obj.read().decode('utf-8-sig')
+            reader = csv.DictReader(io.StringIO(content))
+        except Exception as e:
+            return Response({'error': f"Failed to parse CSV file: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+
+        created_count = 0
+        updated_count = 0
+        errors = []
+
+        from decimal import Decimal
+
+        for row_idx, row in enumerate(reader, start=2):
+            title = row.get('title', '').strip()
+            if not title:
+                continue
+
+            price_str = row.get('price', '').strip()
+            try:
+                price = Decimal(price_str)
+            except Exception:
+                errors.append(f"Row {row_idx}: Invalid price '{price_str}' for '{title}'")
+                continue
+
+            compare_at_str = row.get('compare_at_price', '').strip()
+            compare_at = Decimal(compare_at_str) if compare_at_str else None
+
+            inv_str = row.get('inventory_count', '10').strip()
+            inv = int(inv_str) if inv_str.isdigit() else 10
+
+            category_name = row.get('category', '').strip()
+            category = None
+            if category_name:
+                category, _ = Category.objects.get_or_create(
+                    name=category_name,
+                    defaults={'slug': category_name.lower().replace(' ', '-')}
+                )
+
+            prod_id = row.get('id', '').strip()
+            if prod_id and prod_id.isdigit():
+                existing = Product.objects.filter(id=int(prod_id), vendor=vendor).first()
+                if existing:
+                    existing.title = title
+                    existing.price = price
+                    existing.compare_at_price = compare_at
+                    existing.inventory_count = inv
+                    existing.category = category
+                    if row.get('sku'):
+                        existing.sku = row.get('sku').strip()
+                    if row.get('description'):
+                        existing.description = row.get('description').strip()
+                    if row.get('short_description'):
+                        existing.short_description = row.get('short_description').strip()
+                    existing.save()
+                    updated_count += 1
+                    continue
+
+            Product.objects.create(
+                vendor=vendor,
+                title=title,
+                category=category,
+                price=price,
+                compare_at_price=compare_at,
+                inventory_count=inv,
+                sku=row.get('sku', '').strip(),
+                description=row.get('description', title).strip(),
+                short_description=row.get('short_description', '').strip(),
+                is_active=True,
+                is_approved=True
+            )
+            created_count += 1
+
+        return Response({
+            'message': f"CSV processed: {created_count} products created, {updated_count} updated.",
+            'created_count': created_count,
+            'updated_count': updated_count,
+            'errors': errors
+        }, status=status.HTTP_200_OK)
+

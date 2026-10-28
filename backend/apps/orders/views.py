@@ -8,8 +8,8 @@ from decimal import Decimal
 import uuid
 import json
 
-from apps.orders.models import Cart, CartItem, Order, VendorOrder, OrderItem, Payment, EmailLog
-from apps.products.models import Product
+from apps.orders.models import Cart, CartItem, Order, VendorOrder, OrderItem, Payment, EmailLog, Coupon, PayoutRequest, Dispute
+from apps.products.models import Product, ProductVariant
 from apps.accounts.models import VendorProfile
 from apps.orders.serializers import (
     CartSerializer,
@@ -24,10 +24,14 @@ from apps.orders.serializers import (
     RazorpayRefundSerializer,
     EmailLogSerializer,
     SendTestEmailSerializer,
-    ContactInquirySerializer
+    ContactInquirySerializer,
+    CouponSerializer,
+    PayoutRequestSerializer,
+    DisputeSerializer
 )
 from apps.orders.services import RazorpayService, StripeService, EmailService
 from apps.accounts.permissions import IsVendorUser, IsAdminUserRole
+from apps.accounts.services import AuditService
 
 class CartView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -47,6 +51,7 @@ class CartView(APIView):
         """
         cart = self.get_or_create_cart(request.user)
         product_id = request.data.get('product_id')
+        variant_id = request.data.get('variant_id')
         quantity = int(request.data.get('quantity', 1))
 
         if not product_id:
@@ -57,17 +62,26 @@ class CartView(APIView):
         except Product.DoesNotExist:
             return Response({'error': 'Product does not exist or is not available'}, status=status.HTTP_404_NOT_FOUND)
 
-        if product.inventory_count < quantity:
+        variant = None
+        if variant_id:
+            try:
+                variant = ProductVariant.objects.get(id=variant_id, product=product, is_active=True)
+            except ProductVariant.DoesNotExist:
+                return Response({'error': 'Selected variant does not exist'}, status=status.HTTP_404_NOT_FOUND)
+
+        avail_stock = variant.inventory_count if variant else product.inventory_count
+        if avail_stock < quantity:
+            item_name = f"{product.title} ({variant.title})" if variant else product.title
             return Response({
-                'error': f'Only {product.inventory_count} items in stock for "{product.title}".'
+                'error': f'Only {avail_stock} items in stock for "{item_name}".'
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
+        cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product, variant=variant)
         if not created:
             new_qty = cart_item.quantity + quantity
-            if new_qty > product.inventory_count:
+            if new_qty > avail_stock:
                 return Response({
-                    'error': f'Cannot add {quantity} more. Current in cart: {cart_item.quantity}. In stock: {product.inventory_count}.'
+                    'error': f'Cannot add {quantity} more. Current in cart: {cart_item.quantity}. In stock: {avail_stock}.'
                 }, status=status.HTTP_400_BAD_REQUEST)
             cart_item.quantity = new_qty
         else:
@@ -139,7 +153,7 @@ class CheckoutView(APIView):
         except Cart.DoesNotExist:
             return Response({'error': 'Cart is empty'}, status=status.HTTP_400_BAD_REQUEST)
 
-        cart_items = list(cart.items.all())
+        cart_items = list(cart.items.select_related('product', 'variant').all())
         if not cart_items:
             return Response({'error': 'Cart is empty'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -161,16 +175,31 @@ class CheckoutView(APIView):
                         'error': f'Product "{item.product.title}" is no longer available.'
                     }, status=status.HTTP_400_BAD_REQUEST)
 
-                if product.inventory_count < item.quantity:
+                avail_stock = item.variant.inventory_count if item.variant else product.inventory_count
+                if avail_stock < item.quantity:
+                    item_label = f"{product.title} ({item.variant.title})" if item.variant else product.title
                     return Response({
-                        'error': f'Insufficient stock for "{product.title}". Requested: {item.quantity}, Available: {product.inventory_count}.'
+                        'error': f'Insufficient stock for "{item_label}". Requested: {item.quantity}, Available: {avail_stock}.'
                     }, status=status.HTTP_400_BAD_REQUEST)
 
-            # 2. Calculate totals
-            total_items_amount = sum(item.product.price * item.quantity for item in cart_items)
+            # 2. Calculate totals with optional coupon discount
+            total_items_amount = sum((item.variant.price if item.variant else item.product.price) * item.quantity for item in cart_items)
             shipping_amount = Decimal('0.00') if total_items_amount >= Decimal('100.00') else Decimal('10.00')
             tax_amount = round(total_items_amount * Decimal('0.05'), 2) # 5% tax
-            grand_total = total_items_amount + shipping_amount + tax_amount
+
+            # Process Coupon
+            coupon_code = data.get('coupon_code', '').strip().upper()
+            applied_coupon = None
+            discount_amount = Decimal('0.00')
+            if coupon_code:
+                coupon = Coupon.objects.filter(code=coupon_code, is_active=True).first()
+                if coupon:
+                    discount_amount = coupon.calculate_discount(total_items_amount)
+                    applied_coupon = coupon
+                    coupon.usage_count += 1
+                    coupon.save(update_fields=['usage_count'])
+
+            grand_total = max(Decimal('0.00'), total_items_amount + shipping_amount + tax_amount - discount_amount)
 
             initial_status = 'PAID' if is_instant_simulated else 'PENDING_PAYMENT'
             initial_payment_status = 'PAID' if is_instant_simulated else 'PENDING'
@@ -181,7 +210,9 @@ class CheckoutView(APIView):
                 total_items_amount=total_items_amount,
                 shipping_amount=shipping_amount,
                 tax_amount=tax_amount,
+                discount_amount=discount_amount,
                 grand_total=grand_total,
+                coupon=applied_coupon,
                 status=initial_status,
                 payment_status=initial_payment_status,
                 payment_method=payment_method,
@@ -207,7 +238,7 @@ class CheckoutView(APIView):
             # 5. Create VendorOrder & OrderItem for each vendor
             for vendor_id, items in vendor_items_map.items():
                 vendor = VendorProfile.objects.select_for_update().get(id=vendor_id)
-                vendor_subtotal = sum(i.product.price * i.quantity for i in items)
+                vendor_subtotal = sum((i.variant.price if i.variant else i.product.price) * i.quantity for i in items)
                 commission_rate = vendor.commission_rate
                 commission_amount = round(vendor_subtotal * (commission_rate / Decimal('100.00')), 2)
                 net_vendor_amount = vendor_subtotal - commission_amount
@@ -234,19 +265,33 @@ class CheckoutView(APIView):
                     prod.inventory_count -= item.quantity
                     prod.save(update_fields=['inventory_count'])
 
+                    if item.variant:
+                        item.variant.inventory_count = max(0, item.variant.inventory_count - item.quantity)
+                        item.variant.save(update_fields=['inventory_count'])
+
+                    # Check for low-stock automated alert
+                    if prod.inventory_count <= prod.low_stock_threshold:
+                        try:
+                            EmailService.send_low_stock_alert(prod)
+                        except Exception:
+                            pass
+
+                    item_unit_price = item.variant.price if item.variant else prod.price
                     # OrderItem snapshot with price, tax, and commission rates
                     OrderItem.objects.create(
                         order=order,
                         vendor_order=vendor_order,
                         product=prod,
+                        variant=item.variant,
+                        variant_title=item.variant.title if item.variant else '',
                         vendor=vendor,
                         product_title=prod.title,
-                        product_sku=prod.sku,
-                        price=prod.price,
+                        product_sku=item.variant.sku if item.variant and item.variant.sku else prod.sku,
+                        price=item_unit_price,
                         tax_rate=Decimal('5.00'),
                         commission_rate=commission_rate,
                         quantity=item.quantity,
-                        subtotal=prod.price * item.quantity,
+                        subtotal=item_unit_price * item.quantity,
                         image_url=prod.primary_image
                     )
 
@@ -689,5 +734,305 @@ class AdminDisburseVendorOrderView(APIView):
             'disbursed_at': vo.disbursed_at,
             'disbursement_reference': vo.disbursement_reference,
         }, status=status.HTTP_200_OK)
+
+
+# Coupon Validation View
+class CouponApplyView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        code = request.data.get('code', '').strip().upper()
+        try:
+            subtotal = Decimal(str(request.data.get('subtotal', 0)))
+        except Exception:
+            subtotal = Decimal('0.00')
+
+        if not code:
+            return Response({'error': 'Coupon code is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        coupon = Coupon.objects.filter(code=code, is_active=True).first()
+        if not coupon:
+            return Response({'error': f"Coupon '{code}' is invalid or expired."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if coupon.min_purchase_amount and subtotal < coupon.min_purchase_amount:
+            return Response({'error': f"Minimum cart subtotal of ${coupon.min_purchase_amount} required to use coupon '{code}'."}, status=status.HTTP_400_BAD_REQUEST)
+
+        discount = coupon.calculate_discount(subtotal)
+        if discount <= Decimal('0.00'):
+            return Response({'error': f"Coupon '{code}' could not be applied to this cart subtotal."}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({
+            'valid': True,
+            'code': coupon.code,
+            'discount_type': coupon.discount_type,
+            'discount_amount': float(discount),
+            'new_subtotal': float(max(Decimal('0.00'), subtotal - discount))
+        }, status=status.HTTP_200_OK)
+
+
+# Customer Order Cancellation
+class OrderCancelView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, order_number):
+        order = Order.objects.filter(order_number=order_number).first()
+        if not order:
+            return Response({'error': 'Order not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if order.customer != request.user and not request.user.is_admin_role:
+            return Response({'error': 'Unauthorized to cancel this order.'}, status=status.HTTP_403_FORBIDDEN)
+
+        if not order.can_transition_to('CANCELLED'):
+            return Response({'error': f"Order #{order_number} cannot be cancelled in status '{order.status}'."}, status=status.HTTP_400_BAD_REQUEST)
+
+        reason = request.data.get('reason', 'Customer requested cancellation')
+
+        with transaction.atomic():
+            # Restock inventory
+            for item in order.items.select_related('product', 'variant'):
+                if item.product:
+                    item.product.inventory_count += item.quantity
+                    item.product.save(update_fields=['inventory_count'])
+                if item.variant:
+                    item.variant.inventory_count += item.quantity
+                    item.variant.save(update_fields=['inventory_count'])
+
+            order.status = 'CANCELLED'
+            order.cancellation_reason = reason
+            order.cancelled_at = timezone.now()
+            order.save(update_fields=['status', 'cancellation_reason', 'cancelled_at', 'updated_at'])
+
+            for vo in order.vendor_orders.all():
+                if vo.can_transition_to('CANCELLED'):
+                    vo.status = 'CANCELLED'
+                    vo.save(update_fields=['status', 'updated_at'])
+
+        AuditService.log(request, "ORDER_CANCELLED", "Order", order.order_number, {'reason': reason})
+
+        return Response({
+            'message': f"Order #{order_number} has been cancelled and items restored to inventory.",
+            'order': OrderSerializer(order).data
+        }, status=status.HTTP_200_OK)
+
+
+# Customer Dispute Creation
+class OrderDisputeCreateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, order_number):
+        order = Order.objects.filter(order_number=order_number, customer=request.user).first()
+        if not order:
+            return Response({'error': 'Order not found or unauthorized.'}, status=status.HTTP_404_NOT_FOUND)
+
+        vendor_order_id = request.data.get('vendor_order_id')
+        vendor_order = None
+        if vendor_order_id:
+            vendor_order = order.vendor_orders.filter(id=vendor_order_id).first()
+            if not vendor_order:
+                return Response({'error': 'Invalid vendor package reference.'}, status=status.HTTP_400_BAD_REQUEST)
+            vendor = vendor_order.vendor
+        else:
+            first_vo = order.vendor_orders.first()
+            vendor = first_vo.vendor if first_vo else None
+
+        if not vendor:
+            return Response({'error': 'Unable to identify vendor for dispute.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        reason = request.data.get('reason', 'NOT_AS_DESCRIBED')
+        customer_notes = request.data.get('customer_notes', '').strip()
+        if not customer_notes:
+            return Response({'error': 'Customer explanation/notes are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        amount = Decimal(str(request.data.get('amount', vendor_order.subtotal if vendor_order else order.grand_total)))
+
+        dispute = Dispute.objects.create(
+            order=order,
+            vendor_order=vendor_order,
+            customer=request.user,
+            vendor=vendor,
+            reason=reason,
+            amount=amount,
+            customer_notes=customer_notes,
+            status='OPEN'
+        )
+
+        AuditService.log(request, "DISPUTE_FILED", "Dispute", dispute.id, {'order_number': order.order_number, 'amount': str(amount)})
+
+        return Response({
+            'message': 'Dispute filed successfully. Our mediation team will review your case.',
+            'dispute': DisputeSerializer(dispute).data
+        }, status=status.HTTP_201_CREATED)
+
+
+# Vendor Dispute Views
+class VendorDisputeListView(generics.ListAPIView):
+    serializer_class = DisputeSerializer
+    permission_classes = [IsVendorUser]
+
+    def get_queryset(self):
+        return Dispute.objects.filter(vendor=self.request.user.vendor_profile).order_by('-created_at')
+
+
+class VendorDisputeReplyView(APIView):
+    permission_classes = [IsVendorUser]
+
+    def post(self, request, pk):
+        dispute = Dispute.objects.filter(id=pk, vendor=request.user.vendor_profile).first()
+        if not dispute:
+            return Response({'error': 'Dispute not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        reply = request.data.get('vendor_reply', '').strip()
+        if not reply:
+            return Response({'error': 'Reply text is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        dispute.vendor_reply = reply
+        if dispute.status == 'OPEN':
+            dispute.status = 'UNDER_REVIEW'
+        dispute.save(update_fields=['vendor_reply', 'status'])
+
+        return Response({'message': 'Reply submitted.', 'dispute': DisputeSerializer(dispute).data})
+
+
+# Admin Dispute Views
+class AdminDisputeListView(generics.ListAPIView):
+    serializer_class = DisputeSerializer
+    permission_classes = [IsAdminUserRole]
+
+    def get_queryset(self):
+        qs = Dispute.objects.all().select_related('order', 'customer', 'vendor').order_by('-created_at')
+        status_param = self.request.query_params.get('status')
+        if status_param:
+            qs = qs.filter(status=status_param.upper())
+        return qs
+
+
+class AdminDisputeResolveView(APIView):
+    permission_classes = [IsAdminUserRole]
+
+    def post(self, request, pk):
+        dispute = Dispute.objects.filter(id=pk).first()
+        if not dispute:
+            return Response({'error': 'Dispute not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        action = request.data.get('action', '').upper() # 'REFUND' or 'REJECT'
+        decision_notes = request.data.get('decision_notes', '').strip()
+
+        refund_details = None
+        if action == 'REFUND':
+            dispute.status = 'RESOLVED_REFUNDED'
+            dispute.resolved_at = timezone.now()
+            dispute.admin_decision = decision_notes or 'Claim approved. Full/partial refund initiated via gateway.'
+            dispute.save()
+
+            # Attempt automated gateway refund
+            try:
+                refund_details = RazorpayService.initiate_refund(
+                    order=dispute.order,
+                    amount=dispute.amount,
+                    reason=f"Dispute #{dispute.id} resolution"
+                )
+            except Exception as e:
+                refund_details = {'warning': f"Gateway refund could not be auto-processed: {str(e)}"}
+
+        elif action == 'REJECT':
+            dispute.status = 'REJECTED'
+            dispute.resolved_at = timezone.now()
+            dispute.admin_decision = decision_notes or 'Claim denied following merchant proof review.'
+            dispute.save()
+        else:
+            return Response({'error': "Action must be 'REFUND' or 'REJECT'."}, status=status.HTTP_400_BAD_REQUEST)
+
+        AuditService.log(request, f"DISPUTE_{dispute.status}", "Dispute", dispute.id, {'action': action, 'decision': decision_notes})
+
+        return Response({
+            'message': f"Dispute #{dispute.id} resolved with status {dispute.status}.",
+            'dispute': DisputeSerializer(dispute).data,
+            'refund_details': refund_details
+        }, status=status.HTTP_200_OK)
+
+
+# Vendor Payout Requests
+class VendorPayoutRequestListCreateView(APIView):
+    permission_classes = [IsVendorUser]
+
+    def get(self, request):
+        vendor = request.user.vendor_profile
+        requests = PayoutRequest.objects.filter(vendor=vendor).order_by('-created_at')
+        return Response(PayoutRequestSerializer(requests, many=True).data)
+
+    def post(self, request):
+        vendor = request.user.vendor_profile
+        try:
+            amount = Decimal(str(request.data.get('amount', 0)))
+        except Exception:
+            return Response({'error': 'Invalid payout amount.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if amount <= Decimal('0.00'):
+            return Response({'error': 'Payout amount must be greater than zero.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check total net earnings vs already disbursed / pending
+        bank_name = request.data.get('bank_name', vendor.bank_name)
+        bank_account = request.data.get('bank_account_number', vendor.bank_account_number)
+
+        payout = PayoutRequest.objects.create(
+            vendor=vendor,
+            amount=amount,
+            bank_name=bank_name,
+            bank_account_number=bank_account,
+            status='PENDING'
+        )
+
+        AuditService.log(request, "PAYOUT_REQUESTED", "PayoutRequest", payout.id, {'amount': str(amount)})
+
+        return Response({
+            'message': 'Payout request submitted to platform administration.',
+            'payout': PayoutRequestSerializer(payout).data
+        }, status=status.HTTP_201_CREATED)
+
+
+# Admin Payout Requests
+class AdminPayoutRequestListView(generics.ListAPIView):
+    serializer_class = PayoutRequestSerializer
+    permission_classes = [IsAdminUserRole]
+
+    def get_queryset(self):
+        qs = PayoutRequest.objects.all().select_related('vendor').order_by('-created_at')
+        status_param = self.request.query_params.get('status')
+        if status_param:
+            qs = qs.filter(status=status_param.upper())
+        return qs
+
+
+class AdminPayoutRequestActionView(APIView):
+    permission_classes = [IsAdminUserRole]
+
+    def patch(self, request, pk):
+        payout = PayoutRequest.objects.filter(id=pk).first()
+        if not payout:
+            return Response({'error': 'Payout request not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        new_status = request.data.get('status', '').upper()
+        if new_status not in ['APPROVED', 'REJECTED', 'PROCESSED']:
+            return Response({'error': 'Invalid status.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        reference = request.data.get('reference', '').strip()
+        admin_notes = request.data.get('admin_notes', '').strip()
+
+        payout.status = new_status
+        if reference:
+            payout.reference = reference
+        if admin_notes:
+            payout.admin_notes = admin_notes
+        if new_status == 'PROCESSED':
+            payout.processed_at = timezone.now()
+        payout.save()
+
+        AuditService.log(request, f"PAYOUT_{new_status}", "PayoutRequest", payout.id, {'status': new_status, 'reference': reference})
+
+        return Response({
+            'message': f"Payout request #{payout.id} updated to {new_status}.",
+            'payout': PayoutRequestSerializer(payout).data
+        }, status=status.HTTP_200_OK)
+
 
 

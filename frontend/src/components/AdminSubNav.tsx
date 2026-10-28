@@ -8,7 +8,9 @@ import {
   FileText,
   Users,
   ExternalLink,
-  ShieldCheck
+  ShieldCheck,
+  AlertTriangle,
+  History
 } from 'lucide-react';
 
 export const AdminSubNav: React.FC = () => {
@@ -18,7 +20,9 @@ export const AdminSubNav: React.FC = () => {
     { label: 'Catalog Quality', path: '/admin/products', icon: Package },
     { label: 'Taxonomy', path: '/admin/categories', icon: FolderTree },
     { label: 'Orders & Settlements', path: '/admin/orders', icon: FileText },
+    { label: 'Disputes & Claims', path: '/admin/disputes', icon: AlertTriangle },
     { label: 'User Directory', path: '/admin/users', icon: Users },
+    { label: 'Audit Trail', path: '/admin/audit-logs', icon: History },
   ];
 
   return (
