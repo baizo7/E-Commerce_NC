@@ -130,22 +130,6 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
             </div>
           )}
         </div>
-
-        {/* Follow up suggestions */}
-        {message.follow_up_suggestions && message.follow_up_suggestions.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 pt-1">
-            {message.follow_up_suggestions.map((suggestion, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => onSelectPrompt && onSelectPrompt(suggestion)}
-                className="text-[11px] bg-white hover:bg-amber-50 hover:border-amber-300 border border-slate-200 text-slate-700 px-2.5 py-1 rounded-full transition-colors shadow-2xs font-medium text-left"
-              >
-                {suggestion}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );

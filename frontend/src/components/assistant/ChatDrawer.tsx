@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Send, Trash2, Bot, Sparkles, RefreshCw, AlertCircle } from 'lucide-react';
+import { X, Send, Trash2, Bot, RefreshCw, AlertCircle } from 'lucide-react';
 import { assistantService, AssistantProductCard, PriceAnalysis } from '../../services/assistantService';
 import { ChatMessageItem, ChatMessageData } from './ChatMessageItem';
-import { SuggestedPrompts } from './SuggestedPrompts';
 
 interface ChatDrawerProps {
   isOpen: boolean;
@@ -143,19 +142,9 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose }) => {
     <div className="fixed inset-0 sm:inset-auto sm:bottom-6 sm:right-6 sm:w-[460px] sm:h-[640px] z-50 flex flex-col bg-slate-50 sm:rounded-2xl shadow-2xl border border-slate-300/80 overflow-hidden font-sans">
       {/* Header */}
       <div className="bg-[#0a0500] text-white px-4 py-3 flex items-center justify-between border-b border-amber-400/20 shadow-xs">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-500 to-[#ffcd05] flex items-center justify-center text-[#0a0500] font-black shadow-xs">
-            <Bot className="w-5 h-5 text-[#0a0500]" />
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <h3 className="font-bold text-sm tracking-tight text-white">Modern Shop Assistant</h3>
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            </div>
-            <p className="text-[10px] text-amber-200/80 font-medium">
-              Live RAG Engine • Honest Prices & Discounts
-            </p>
-          </div>
+        <div className="flex items-center gap-2">
+          <Bot className="w-5 h-5 text-[#ffcd05]" />
+          <h3 className="font-bold text-sm tracking-tight text-white">AI Assistant</h3>
         </div>
 
         <div className="flex items-center gap-1">
@@ -163,7 +152,7 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose }) => {
             <button
               type="button"
               onClick={handleClearHistory}
-              title="Clear chat history"
+              title="Clear chat"
               className="p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
             >
               <Trash2 className="w-4 h-4" />
@@ -172,7 +161,7 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose }) => {
           <button
             type="button"
             onClick={onClose}
-            title="Close Assistant"
+            title="Close"
             className="p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
           >
             <X className="w-5 h-5" />
@@ -182,45 +171,24 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose }) => {
 
       {/* Messages Scroll Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gradient-to-b from-slate-50 to-slate-100/60">
-        {messages.length === 0 ? (
-          <div className="h-full flex flex-col justify-center items-center text-center p-4">
-            <div className="w-14 h-14 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-900 mb-3 shadow-xs">
-              <Sparkles className="w-7 h-7 text-[#0a0500]" />
-            </div>
-            <h4 className="font-bold text-slate-900 text-sm mb-1">
-              Welcome to Modern Shop AI Assistant!
-            </h4>
-            <p className="text-xs text-slate-500 max-w-xs mb-4">
-              I can help you discover genuine discounts, compare 30-day historical prices, evaluate verified ratings, and find budget-friendly products.
-            </p>
+        {messages.map((msg) => (
+          <ChatMessageItem
+            key={msg.id}
+            message={msg}
+            onProductClick={onClose}
+          />
+        ))}
 
-            <div className="w-full">
-              <SuggestedPrompts onSelectPrompt={handleSendMessage} disabled={loading} />
+        {loading && (
+          <div className="flex items-start gap-2.5 my-3">
+            <div className="w-7 h-7 rounded-full bg-[#0a0500] text-[#ffcd05] flex items-center justify-center shrink-0">
+              <Bot className="w-4 h-4" />
+            </div>
+            <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-xs p-3 shadow-xs flex items-center gap-2 text-xs text-slate-600">
+              <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-600" />
+              <span>Thinking...</span>
             </div>
           </div>
-        ) : (
-          <>
-            {messages.map((msg) => (
-              <ChatMessageItem
-                key={msg.id}
-                message={msg}
-                onSelectPrompt={handleSendMessage}
-                onProductClick={onClose}
-              />
-            ))}
-
-            {loading && (
-              <div className="flex items-start gap-2.5 my-3">
-                <div className="w-7 h-7 rounded-full bg-[#0a0500] text-[#ffcd05] flex items-center justify-center shrink-0">
-                  <Bot className="w-4 h-4" />
-                </div>
-                <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-xs p-3 shadow-xs flex items-center gap-2 text-xs text-slate-600">
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-600" />
-                  <span>Searching live catalog & price trends...</span>
-                </div>
-              </div>
-            )}
-          </>
         )}
 
         {error && (
@@ -235,7 +203,7 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose }) => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Form Footer */}
+      {/* Type Bar Only */}
       <div className="p-3 bg-white border-t border-slate-200 shadow-lg">
         <form
           onSubmit={(e) => {
@@ -250,24 +218,19 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose }) => {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask about discounts, price history, laptops..."
+            placeholder="Type your message..."
             disabled={loading}
-            className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0a0500] focus:border-transparent transition-all"
+            className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0a0500] focus:border-transparent transition-all"
           />
           <button
             type="submit"
             disabled={!inputValue.trim() || loading}
             className="w-9 h-9 rounded-xl bg-[#0a0500] hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed text-[#ffcd05] flex items-center justify-center transition-colors shrink-0 shadow-xs"
-            title="Send message"
+            title="Send"
           >
             <Send className="w-4 h-4" />
           </button>
         </form>
-
-        <div className="mt-1.5 flex items-center justify-between text-[10px] text-slate-400 px-1 font-medium">
-          <span>Zero hallucinated prices • Direct DRF RAG</span>
-          <span>Press Enter to send</span>
-        </div>
       </div>
     </div>
   );
