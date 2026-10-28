@@ -17,6 +17,7 @@ api_v1_patterns = [
     path('', include('apps.products.urls')),
     path('', include('apps.orders.urls')),
     path('', include('apps.analytics.urls')),
+    path('', include('apps.shopping_assistant.urls')),
 ]
 
 urlpatterns = [

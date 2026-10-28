@@ -7,6 +7,7 @@ import { CartProvider } from './context/CartContext';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { ToastNotification } from './components/ToastNotification';
+import { ChatWidget } from './components/assistant';
 
 // Customer Pages
 import { HomePage } from './pages/customer/HomePage';
@@ -120,6 +121,7 @@ export const AppContent: React.FC = () => {
       </main>
       <Footer />
       <ToastNotification />
+      <ChatWidget />
     </div>
   );
 };
