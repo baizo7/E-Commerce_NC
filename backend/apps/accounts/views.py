@@ -132,14 +132,17 @@ class AvatarUploadView(APIView):
             ext = '.jpg'
         filename = f"avatars/user_{request.user.id}_{uuid.uuid4().hex[:8]}{ext}"
 
-        # Save to media storage
+        # Save to media storage (Local FileSystemStorage or Cloud S3)
         saved_path = default_storage.save(filename, ContentFile(file_obj.read()))
-        media_url = getattr(settings, 'MEDIA_URL', '/media/')
-        avatar_relative_url = f"{media_url.rstrip('/')}/{saved_path.lstrip('/')}"
+        try:
+            avatar_url = default_storage.url(saved_path)
+        except Exception:
+            media_url = getattr(settings, 'MEDIA_URL', '/media/')
+            avatar_url = f"{media_url.rstrip('/')}/{saved_path.lstrip('/')}"
 
         # Update user record
         user = request.user
-        user.avatar_url = avatar_relative_url
+        user.avatar_url = avatar_url
         user.save(update_fields=['avatar_url'])
 
         return Response({
@@ -263,19 +266,22 @@ class VendorBrandingUploadView(APIView):
         filename = f"stores/store_{vendor.id}_{asset_type}_{uuid.uuid4().hex[:8]}{ext}"
 
         saved_path = default_storage.save(filename, ContentFile(file_obj.read()))
-        media_url = getattr(settings, 'MEDIA_URL', '/media/')
-        relative_url = f"{media_url.rstrip('/')}/{saved_path.lstrip('/')}"
+        try:
+            asset_url = default_storage.url(saved_path)
+        except Exception:
+            media_url = getattr(settings, 'MEDIA_URL', '/media/')
+            asset_url = f"{media_url.rstrip('/')}/{saved_path.lstrip('/')}"
 
         if asset_type == 'logo':
-            vendor.logo_url = relative_url
+            vendor.logo_url = asset_url
             vendor.save(update_fields=['logo_url', 'updated_at'])
         else:
-            vendor.banner_url = relative_url
+            vendor.banner_url = asset_url
             vendor.save(update_fields=['banner_url', 'updated_at'])
 
         return Response({
             'message': f'Store {asset_type} uploaded successfully.',
-            'url': relative_url,
+            'url': asset_url,
             'vendor': VendorProfileSerializer(vendor).data
         }, status=status.HTTP_200_OK)
 

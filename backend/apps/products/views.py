@@ -297,12 +297,15 @@ class ProductImageUploadView(APIView):
         filename = f"products/prod_{vendor.id}_{uuid.uuid4().hex[:8]}{ext}"
 
         saved_path = default_storage.save(filename, ContentFile(file_obj.read()))
-        media_url = getattr(settings, 'MEDIA_URL', '/media/')
-        relative_url = f"{media_url.rstrip('/')}/{saved_path.lstrip('/')}"
+        try:
+            file_url = default_storage.url(saved_path)
+        except Exception:
+            media_url = getattr(settings, 'MEDIA_URL', '/media/')
+            file_url = f"{media_url.rstrip('/')}/{saved_path.lstrip('/')}"
 
         return Response({
             'message': 'Product image uploaded successfully.',
-            'image_url': relative_url
+            'image_url': file_url
         }, status=status.HTTP_200_OK)
 
 
@@ -340,12 +343,15 @@ class CategoryImageUploadView(APIView):
         filename = f"categories/cat_{uuid.uuid4().hex[:8]}{ext}"
 
         saved_path = default_storage.save(filename, ContentFile(file_obj.read()))
-        media_url = getattr(settings, 'MEDIA_URL', '/media/')
-        relative_url = f"{media_url.rstrip('/')}/{saved_path.lstrip('/')}"
+        try:
+            file_url = default_storage.url(saved_path)
+        except Exception:
+            media_url = getattr(settings, 'MEDIA_URL', '/media/')
+            file_url = f"{media_url.rstrip('/')}/{saved_path.lstrip('/')}"
 
         return Response({
             'message': 'Category image uploaded successfully.',
-            'image_url': relative_url
+            'image_url': file_url
         }, status=status.HTTP_200_OK)
 
 
