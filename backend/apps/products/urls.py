@@ -33,8 +33,16 @@ urlpatterns = [
 
     # Products (Public)
     path('products/', ProductListView.as_view(), name='product_list'),
-    # NOTE: upload-image MUST come before <slug:slug> so Django doesn't capture it as a product slug
+    # Specific / nested product routes MUST precede <slug:slug>
     path('products/upload-image/', ProductImageUploadView.as_view(), name='product_image_upload'),
+    path('products/wishlist/', WishlistListView.as_view(), name='products_wishlist_list'),
+    path('products/wishlist/toggle/', WishlistToggleView.as_view(), name='products_wishlist_toggle'),
+    path('products/banners/active/', PublicActiveBannerListView.as_view(), name='products_banners_active'),
+    path('products/admin/banners/', AdminBannerListCreateView.as_view(), name='products_admin_banners'),
+    path('products/admin/banners/<int:id>/', AdminBannerDetailView.as_view(), name='products_admin_banner_detail'),
+    path('products/vendor/products/export-csv/', VendorProductCsvExportView.as_view(), name='products_vendor_products_export_csv'),
+    path('products/vendor/products/import-csv/', VendorProductCsvImportView.as_view(), name='products_vendor_products_import_csv'),
+
     path('products/<slug:slug>/', ProductDetailView.as_view(), name='product_detail'),
     path('products/<slug:slug>/reviews/', ProductReviewCreateView.as_view(), name='product_review_create'),
 
