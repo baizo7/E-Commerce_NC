@@ -159,9 +159,9 @@ CORS_ALLOW_CREDENTIALS = True
 
 # Payment Gateway Configuration (Production-Ready)
 # Razorpay (Cards, UPI, Netbanking, Wallets)
-RAZORPAY_KEY_ID = os.environ.get('RAZORPAY_KEY_ID', 'rzp_test_NexaMarket2026')
-RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET', 'secret_test_NexaMarket2026')
-RAZORPAY_WEBHOOK_SECRET = os.environ.get('RAZORPAY_WEBHOOK_SECRET', 'webhook_secret_NexaMarket2026')
+RAZORPAY_KEY_ID = os.environ.get('RAZORPAY_KEY_ID', 'rzp_test_ModernShop2026')
+RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET', 'secret_test_ModernShop2026')
+RAZORPAY_WEBHOOK_SECRET = os.environ.get('RAZORPAY_WEBHOOK_SECRET', 'webhook_secret_ModernShop2026')
 RAZORPAY_CURRENCY = os.environ.get('RAZORPAY_CURRENCY', 'INR')
 
 # Stripe (Global Credit Cards, Apple Pay, Google Pay)

@@ -131,7 +131,8 @@ export const CheckoutPage: React.FC = () => {
       rzpData.is_sandbox ||
       rzpData.razorpay_order_id.startsWith('order_test_') ||
       rzpData.key_id.includes('placeholder') ||
-      rzpData.key_id.includes('test_');
+      rzpData.key_id === 'rzp_test_ModernShop2026' ||
+      rzpData.key_id === 'rzp_test_NexaMarket2026';
 
     if (isSandboxEnv) {
       setIsSandboxModalOpen(true);
