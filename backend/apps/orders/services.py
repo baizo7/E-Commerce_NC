@@ -164,10 +164,10 @@ class RazorpayService:
                 vendor = vendor_order.vendor
                 vendor.total_sales += vendor_order.subtotal
                 vendor.save(update_fields=['total_sales'])
-                EmailService.send_vendor_order_notification(vendor_order)
+                EmailService.send_vendor_order_notification_async(vendor_order)
 
-            # Send customer order confirmation email
-            EmailService.send_order_confirmation(order)
+            # Send customer order confirmation email asynchronously
+            EmailService.send_order_confirmation_async(order)
 
         return payment
 
@@ -265,6 +265,36 @@ class StripeService:
 
 
 class EmailService:
+    @classmethod
+    def send_order_confirmation_async(cls, order: Order):
+        """Dispatches order confirmation via Celery async queue with synchronous fallback."""
+        try:
+            from apps.orders.tasks import send_order_confirmation_async as task
+            task.delay(order.order_number)
+        except Exception as e:
+            logger.info("Celery broker unavailable or task eager; sending order confirmation synchronously: %s", e)
+            cls.send_order_confirmation(order)
+
+    @classmethod
+    def send_vendor_order_notification_async(cls, vendor_order: VendorOrder):
+        """Dispatches vendor order notification via Celery async queue with synchronous fallback."""
+        try:
+            from apps.orders.tasks import send_vendor_order_notification_async as task
+            task.delay(vendor_order.id)
+        except Exception as e:
+            logger.info("Celery broker unavailable or task eager; sending vendor notification synchronously: %s", e)
+            cls.send_vendor_order_notification(vendor_order)
+
+    @classmethod
+    def send_low_stock_alert_async(cls, product):
+        """Dispatches low stock alert via Celery async queue with synchronous fallback."""
+        try:
+            from apps.orders.tasks import send_low_stock_alert_async as task
+            task.delay(product.id)
+        except Exception as e:
+            logger.info("Celery broker unavailable or task eager; sending low stock alert synchronously: %s", e)
+            cls.send_low_stock_alert(product)
+
     @classmethod
     def _dispatch(cls, recipient: str, subject: str, body_text: str, body_html: str, email_type: str = 'GENERAL', order: Order = None) -> bool:
         """

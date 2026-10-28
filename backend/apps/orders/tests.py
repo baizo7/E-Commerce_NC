@@ -224,3 +224,92 @@ class OrderCheckoutTests(TestCase):
 
         order.refresh_from_db()
         self.assertEqual(order.status, 'PAYMENT_FAILED')
+
+    def test_celery_release_expired_orders_task(self):
+        from apps.orders.tasks import release_expired_orders_async
+
+        self.p1.inventory_count = 10
+        self.p1.save()
+
+        order = Order.objects.create(
+            customer=self.customer,
+            total_items_amount=Decimal('100.00'),
+            grand_total=Decimal('100.00'),
+            status='PENDING_PAYMENT',
+            shipping_name='Celery Expired Order',
+            shipping_email='celery@test.com',
+            shipping_phone='1234567890',
+            shipping_address='123 St',
+            shipping_city='City',
+            shipping_postal_code='12345'
+        )
+        vo = VendorOrder.objects.create(
+            order=order,
+            vendor=self.v1,
+            subtotal=Decimal('100.00'),
+            commission_rate=Decimal('10.00'),
+            commission_amount=Decimal('10.00'),
+            net_vendor_amount=Decimal('90.00'),
+            status='PENDING'
+        )
+        OrderItem.objects.create(
+            order=order,
+            vendor_order=vo,
+            product=self.p1,
+            vendor=self.v1,
+            product_title=self.p1.title,
+            price=self.p1.price,
+            quantity=3,
+            subtotal=Decimal('300.00')
+        )
+
+        # Backdate order
+        Order.objects.filter(id=order.id).update(created_at=timezone.now() - timedelta(minutes=60))
+
+        # Invoke Celery task directly
+        result = release_expired_orders_async(timeout_minutes=30)
+        self.assertGreaterEqual(result['cancelled_orders'], 1)
+        self.assertGreaterEqual(result['restored_items'], 3)
+
+        self.p1.refresh_from_db()
+        self.assertEqual(self.p1.inventory_count, 13)
+
+    def test_celery_order_confirmation_task(self):
+        from apps.orders.tasks import send_order_confirmation_async
+        from apps.orders.models import EmailLog
+
+        order = Order.objects.create(
+            customer=self.customer,
+            total_items_amount=Decimal('100.00'),
+            grand_total=Decimal('100.00'),
+            status='PAID',
+            shipping_name='Async Test Customer',
+            shipping_email='async@customer.com',
+            shipping_phone='1234567890',
+            shipping_address='123 St',
+            shipping_city='City',
+            shipping_postal_code='12345'
+        )
+        vo = VendorOrder.objects.create(
+            order=order,
+            vendor=self.v1,
+            subtotal=Decimal('100.00'),
+            commission_rate=Decimal('10.00'),
+            commission_amount=Decimal('10.00'),
+            net_vendor_amount=Decimal('90.00'),
+            status='PROCESSING'
+        )
+        OrderItem.objects.create(
+            order=order,
+            vendor_order=vo,
+            product=self.p1,
+            vendor=self.v1,
+            product_title=self.p1.title,
+            price=self.p1.price,
+            quantity=1,
+            subtotal=Decimal('100.00')
+        )
+
+        sent = send_order_confirmation_async(order.order_number)
+        self.assertTrue(sent)
+        self.assertTrue(EmailLog.objects.filter(order=order, email_type='ORDER_CONFIRMATION').exists())

@@ -69,3 +69,22 @@ class ProductTests(TestCase):
             'title': 'Hacked Title'
         })
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_celery_csv_import_task(self):
+        from apps.products.tasks import process_csv_import_async
+
+        csv_content = (
+            "title,price,compare_at_price,inventory_count,category,sku,description\n"
+            "Async Monitor 27,299.99,349.99,15,Tech & Gadgets,SKU-MON-27,High refresh rate monitor\n"
+            "Async Ergonomic Arm,69.50,,25,Tech & Gadgets,SKU-ARM-01,Heavy duty gas spring desk arm\n"
+        )
+        res = process_csv_import_async(self.vendor.id, csv_content)
+        self.assertEqual(res['status'], 'success')
+        self.assertEqual(res['created_count'], 2)
+        self.assertTrue(Product.objects.filter(title='Async Monitor 27').exists())
+        self.assertTrue(Product.objects.filter(title='Async Ergonomic Arm').exists())
+
+    def test_category_cached_endpoint(self):
+        response = self.client.get('/api/categories/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(len(response.data) >= 1)

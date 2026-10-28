@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     'drf_spectacular',
+    'storages',
 
     # Internal apps
     'apps.accounts.apps.AccountsConfig',
@@ -82,6 +83,7 @@ if DB_ENGINE == 'postgresql' or os.environ.get('POSTGRES_DB'):
             'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'postgres'),
             'HOST': os.environ.get('POSTGRES_HOST', 'localhost'),
             'PORT': os.environ.get('POSTGRES_PORT', '5432'),
+            'CONN_MAX_AGE': int(os.environ.get('DB_CONN_MAX_AGE', 600)),
         }
     }
 else:
@@ -181,3 +183,76 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'sanjaisam63@gmail.com')
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Modern Shop <sanjaisam63@gmail.com>')
 EMAIL_TIMEOUT = 10
+
+# Celery Asynchronous Task Queue
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://127.0.0.1:6379/0')
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://127.0.0.1:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+
+# When CELERY_TASK_ALWAYS_EAGER is True, tasks execute synchronously without blocking when Redis is unavailable.
+# Defaults to True in development (DEBUG=True) for seamless local workflow.
+CELERY_TASK_ALWAYS_EAGER = os.environ.get('CELERY_TASK_ALWAYS_EAGER', str(DEBUG)).lower() in ('true', '1', 't')
+CELERY_TASK_EAGER_PROPAGATES = True
+
+# Redis High-Volume Caching Layer with Graceful Fallback
+USE_REDIS_CACHE = os.environ.get('USE_REDIS_CACHE', 'False').lower() in ('true', '1', 't')
+REDIS_CACHE_URL = os.environ.get('REDIS_CACHE_URL', os.environ.get('CELERY_BROKER_URL', 'redis://127.0.0.1:6379/1'))
+
+if USE_REDIS_CACHE:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': REDIS_CACHE_URL,
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                'IGNORE_EXCEPTIONS': True, # Graceful degradation: cache misses fall through on Redis downtime
+                'CONNECTION_POOL_KWARGS': {'max_connections': 100},
+            },
+            'KEY_PREFIX': 'modernshop',
+            'TIMEOUT': 300, # 5 minutes default TTL
+        }
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'modernshop-local-memory-cache',
+            'TIMEOUT': 300,
+        }
+    }
+
+# Cloud Object Storage (AWS S3 / S3-compatible) with Local Media Fallback
+USE_S3 = os.environ.get('USE_S3', 'False').lower() in ('true', '1', 't')
+
+if USE_S3:
+    AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+    AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME')
+    AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'us-east-1')
+    AWS_S3_CUSTOM_DOMAIN = os.environ.get('AWS_S3_CUSTOM_DOMAIN', f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com' if AWS_STORAGE_BUCKET_NAME else None)
+    AWS_DEFAULT_ACL = None
+    AWS_S3_FILE_OVERWRITE = False
+    
+    STORAGES = {
+        'default': {
+            'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage',
+        },
+        'staticfiles': {
+            'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+        },
+    }
+    if AWS_S3_CUSTOM_DOMAIN:
+        MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
+else:
+    STORAGES = {
+        'default': {
+            'BACKEND': 'django.core.files.storage.FileSystemStorage',
+        },
+        'staticfiles': {
+            'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+        },
+    }
+

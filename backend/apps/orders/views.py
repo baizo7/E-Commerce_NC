@@ -272,7 +272,7 @@ class CheckoutView(APIView):
                     # Check for low-stock automated alert
                     if prod.inventory_count <= prod.low_stock_threshold:
                         try:
-                            EmailService.send_low_stock_alert(prod)
+                            EmailService.send_low_stock_alert_async(prod)
                         except Exception:
                             pass
 

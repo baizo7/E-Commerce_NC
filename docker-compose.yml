@@ -1,0 +1,155 @@
+services:
+  # Database Service (PostgreSQL 16)
+  db:
+    image: postgres:16-alpine
+    container_name: modernshop_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-marketplace_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-marketplace_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis In-Memory Cache & Message Broker
+  redis:
+    image: redis:7-alpine
+    container_name: modernshop_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Django Backend Application (Gunicorn)
+  web:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: modernshop_backend
+    restart: unless-stopped
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput &&
+             gunicorn marketplace_core.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 60"
+    volumes:
+      - media_data:/app/media
+      - static_data:/app/staticfiles
+    ports:
+      - "8000:8000"
+    environment:
+      DEBUG: ${DEBUG:-False}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-django-insecure-modern-shop-scaling-key-2026}
+      DB_ENGINE: postgresql
+      POSTGRES_DB: ${POSTGRES_DB:-marketplace_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      DB_CONN_MAX_AGE: 600
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      CELERY_TASK_ALWAYS_EAGER: "False"
+      USE_REDIS_CACHE: "True"
+      REDIS_CACHE_URL: redis://redis:6379/1
+      USE_S3: ${USE_S3:-False}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_STORAGE_BUCKET_NAME: ${AWS_STORAGE_BUCKET_NAME:-}
+      AWS_S3_REGION_NAME: ${AWS_S3_REGION_NAME:-us-east-1}
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-rzp_test_ModernShop2026}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-secret_test_ModernShop2026}
+      STRIPE_PUBLIC_KEY: ${STRIPE_PUBLIC_KEY:-pk_test_NexaMarket2026}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_NexaMarket2026}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # Celery Asynchronous Background Worker
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: modernshop_celery_worker
+    restart: unless-stopped
+    command: celery -A marketplace_core worker -l INFO --concurrency 2
+    volumes:
+      - media_data:/app/media
+    environment:
+      DEBUG: ${DEBUG:-False}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-django-insecure-modern-shop-scaling-key-2026}
+      DB_ENGINE: postgresql
+      POSTGRES_DB: ${POSTGRES_DB:-marketplace_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      CELERY_TASK_ALWAYS_EAGER: "False"
+      USE_REDIS_CACHE: "True"
+      REDIS_CACHE_URL: redis://redis:6379/1
+    depends_on:
+      web:
+        condition: service_started
+      redis:
+        condition: service_healthy
+
+  # Celery Beat Scheduled Task Runner (Periodic stock reclamation, etc.)
+  celery_beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: modernshop_celery_beat
+    restart: unless-stopped
+    command: celery -A marketplace_core beat -l INFO
+    environment:
+      DEBUG: ${DEBUG:-False}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-django-insecure-modern-shop-scaling-key-2026}
+      DB_ENGINE: postgresql
+      POSTGRES_DB: ${POSTGRES_DB:-marketplace_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      CELERY_TASK_ALWAYS_EAGER: "False"
+    depends_on:
+      celery_worker:
+        condition: service_started
+      redis:
+        condition: service_healthy
+
+  # Modern Shop Frontend SPA (Nginx)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: modernshop_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      web:
+        condition: service_started
+
+volumes:
+  postgres_data:
+  redis_data:
+  media_data:
+  static_data:

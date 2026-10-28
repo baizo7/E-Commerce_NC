@@ -7,6 +7,8 @@ from django.core.files.base import ContentFile
 from django.conf import settings
 from django.db.models import Q
 from django.http import HttpResponse
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 import os
 import uuid
 import csv
@@ -30,6 +32,10 @@ class CategoryListView(generics.ListAPIView):
     serializer_class = CategorySerializer
     permission_classes = [permissions.AllowAny]
     pagination_class = None
+
+    @method_decorator(cache_page(60 * 5))
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class CategoryDetailView(generics.RetrieveAPIView):
@@ -411,6 +417,10 @@ class PublicActiveBannerListView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
     pagination_class = None
 
+    @method_decorator(cache_page(60 * 5))
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
     def get_queryset(self):
         return PlatformBanner.objects.filter(is_active=True).order_by('-created_at')
 
@@ -472,6 +482,19 @@ class VendorProductCsvImportView(APIView):
 
         try:
             content = file_obj.read().decode('utf-8-sig')
+            # Check for asynchronous background processing parameter
+            if request.query_params.get('async') == 'true' or request.data.get('async') == 'true':
+                try:
+                    from apps.products.tasks import process_csv_import_async
+                    task = process_csv_import_async.delay(vendor.id, content)
+                    return Response({
+                        'status': 'queued',
+                        'task_id': task.id,
+                        'message': 'Bulk catalog CSV import queued for background processing.'
+                    }, status=status.HTTP_202_ACCEPTED)
+                except Exception as celery_err:
+                    logger.warning("Celery queue unavailable for CSV import: %s. Falling back to synchronous.", celery_err)
+
             reader = csv.DictReader(io.StringIO(content))
         except Exception as e:
             return Response({'error': f"Failed to parse CSV file: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)

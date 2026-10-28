@@ -84,7 +84,7 @@ class Coupon(models.Model):
         return f"{self.code} ({self.value} {self.discount_type})"
 
 
-class Order(models.Model):
+class Order(models.Model):
     """
     Parent customer order adhering to the v1.1 state machine:
     PENDING_PAYMENT -> PAID -> PROCESSING -> SHIPPED -> DELIVERED
@@ -154,6 +154,12 @@ class Order(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['status', '-created_at'], name='ord_status_created_idx'),
+            models.Index(fields=['customer', '-created_at'], name='ord_cust_created_idx'),
+            models.Index(fields=['order_number'], name='ord_num_idx'),
+            models.Index(fields=['payment_status'], name='ord_pay_status_idx'),
+        ]
 
     def can_transition_to(self, new_status):
         if self.status == new_status:
@@ -226,6 +232,10 @@ class VendorOrder(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['vendor', 'status', '-created_at'], name='vo_vndr_stat_idx'),
+            models.Index(fields=['status'], name='vo_stat_idx'),
+        ]
 
     def can_transition_to(self, new_status):
         if self.status == new_status:
