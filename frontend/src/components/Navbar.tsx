@@ -201,7 +201,7 @@ export const Navbar: React.FC = () => {
                 )}
               </div>
               <span className="text-xs font-black text-slate-900 hidden sm:inline">
-                ${cartSubtotal.toFixed(2)}
+                ₹{cartSubtotal.toFixed(2)}
               </span>
             </Link>
 

@@ -482,7 +482,7 @@ export const AdminProductsPage: React.FC = () => {
                       {/* Price & Stock */}
                       <td className="py-3.5 px-4">
                         <div className="font-black text-neutral-900 text-sm">
-                          ${Number(p.price).toFixed(2)}
+                          ₹{Number(p.price).toFixed(2)}
                         </div>
                         <div className="text-[11px] mt-0.5">
                           {p.inventory_count > 5 ? (
@@ -677,11 +677,11 @@ export const AdminProductsPage: React.FC = () => {
                     <span className="text-[10px] font-black uppercase text-neutral-400 block tracking-wider">List Price</span>
                     <div className="flex items-baseline gap-2 mt-0.5">
                       <span className="text-2xl font-black text-neutral-900">
-                        ${Number(inspectProduct.price).toFixed(2)}
+                        ₹{Number(inspectProduct.price).toFixed(2)}
                       </span>
                       {inspectProduct.compare_at_price && (
                         <span className="text-xs text-neutral-400 line-through">
-                          ${Number(inspectProduct.compare_at_price).toFixed(2)}
+                          ₹{Number(inspectProduct.compare_at_price).toFixed(2)}
                         </span>
                       )}
                     </div>

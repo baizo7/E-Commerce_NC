@@ -175,11 +175,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
             <div className="flex items-baseline gap-2">
               <span className="text-base font-extrabold text-slate-950">
-                ${Number(product.price).toFixed(2)}
+                ₹{Number(product.price).toFixed(2)}
               </span>
               {product.compare_at_price && (
                 <span className="text-xs text-slate-400 line-through">
-                  ${Number(product.compare_at_price).toFixed(2)}
+                  ₹{Number(product.compare_at_price).toFixed(2)}
                 </span>
               )}
             </div>

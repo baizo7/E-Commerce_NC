@@ -114,7 +114,7 @@ export const CustomerOrdersPage: React.FC = () => {
             </div>
             <div>
               <span className="text-[11px] text-slate-400 block font-medium">Lifetime Spent</span>
-              <span className="text-base font-extrabold text-emerald-600">${totalSpent.toFixed(2)}</span>
+              <span className="text-base font-extrabold text-emerald-600">₹{totalSpent.toFixed(2)}</span>
             </div>
           </div>
         </div>
@@ -216,7 +216,7 @@ export const CustomerOrdersPage: React.FC = () => {
                 <div>
                   <span className="text-[11px] text-slate-400 font-medium">Total Billed</span>
                   <div className="font-extrabold text-indigo-600 text-sm">
-                    ${Number(ord.grand_total).toFixed(2)}
+                    ₹{Number(ord.grand_total).toFixed(2)}
                   </div>
                 </div>
 

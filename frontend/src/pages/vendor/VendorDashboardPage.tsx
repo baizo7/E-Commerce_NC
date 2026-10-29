@@ -203,7 +203,7 @@ export const VendorDashboardPage: React.FC = () => {
           <div>
             <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 block">Gross Sales</span>
             <span className="text-2xl font-black text-[#0a0500] mt-0.5 block">
-              ${(analytics?.gross_sales || 0).toFixed(2)}
+              ₹{(analytics?.gross_sales || 0).toFixed(2)}
             </span>
           </div>
         </div>
@@ -216,10 +216,10 @@ export const VendorDashboardPage: React.FC = () => {
           <div>
             <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 block">Net Payouts</span>
             <span className="text-2xl font-black text-emerald-700 mt-0.5 block">
-              ${(analytics?.net_earnings || 0).toFixed(2)}
+              ₹{(analytics?.net_earnings || 0).toFixed(2)}
             </span>
             <span className="text-[10px] text-slate-400 font-medium">
-              Commission: ${(analytics?.commission_paid || 0).toFixed(2)}
+              Commission: ₹{(analytics?.commission_paid || 0).toFixed(2)}
             </span>
           </div>
         </div>
@@ -284,7 +284,7 @@ export const VendorDashboardPage: React.FC = () => {
           <div className="flex items-center gap-3 flex-wrap">
             <div className="px-3.5 py-1.5 rounded-xl bg-neutral-50 border border-neutral-200/80 text-xs">
               <span className="text-[10px] text-slate-400 font-black uppercase block">7D Net Revenue:</span>
-              <span className="font-black text-emerald-700">${sevenDayTotals.revenue.toFixed(2)}</span>
+              <span className="font-black text-emerald-700">₹{sevenDayTotals.revenue.toFixed(2)}</span>
             </div>
             <div className="px-3.5 py-1.5 rounded-xl bg-neutral-50 border border-neutral-200/80 text-xs">
               <span className="text-[10px] text-slate-400 font-black uppercase block">7D Packages:</span>
@@ -323,7 +323,7 @@ export const VendorDashboardPage: React.FC = () => {
                             {day.date}
                           </div>
                           <div>
-                            Net Payout: <strong className="text-emerald-400">${day.revenue.toFixed(2)}</strong> (
+                            Net Payout: <strong className="text-emerald-400">₹{day.revenue.toFixed(2)}</strong> (
                             {day.order_count} packages)
                           </div>
                         </div>
@@ -452,7 +452,7 @@ export const VendorDashboardPage: React.FC = () => {
                       </div>
                     </div>
                     <span className="text-xs font-black text-emerald-700 whitespace-nowrap bg-white px-2.5 py-1 rounded-lg border border-neutral-200 shadow-2xs">
-                      ${item.revenue.toFixed(2)}
+                      ₹{item.revenue.toFixed(2)}
                     </span>
                   </div>
                 ))
@@ -592,8 +592,8 @@ export const VendorDashboardPage: React.FC = () => {
                       #{ord.order_number}
                     </td>
                     <td className="py-3.5 px-4 text-[#504e4a] font-medium">{ord.customer_email}</td>
-                    <td className="py-3.5 px-4 font-black text-[#0a0500]">${ord.subtotal.toFixed(2)}</td>
-                    <td className="py-3.5 px-4 font-black text-emerald-700">${ord.net_amount.toFixed(2)}</td>
+                    <td className="py-3.5 px-4 font-black text-[#0a0500]">₹{ord.subtotal.toFixed(2)}</td>
+                    <td className="py-3.5 px-4 font-black text-emerald-700">₹{ord.net_amount.toFixed(2)}</td>
                     <td className="py-3.5 px-4">
                       <OrderStatusBadge status={ord.status} />
                     </td>

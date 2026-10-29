@@ -755,7 +755,7 @@ class CouponApplyView(APIView):
             return Response({'error': f"Coupon '{code}' is invalid or expired."}, status=status.HTTP_400_BAD_REQUEST)
 
         if coupon.min_purchase_amount and subtotal < coupon.min_purchase_amount:
-            return Response({'error': f"Minimum cart subtotal of ${coupon.min_purchase_amount} required to use coupon '{code}'."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': f"Minimum cart subtotal of ₹{coupon.min_purchase_amount} required to use coupon '{code}'."}, status=status.HTTP_400_BAD_REQUEST)
 
         discount = coupon.calculate_discount(subtotal)
         if discount <= Decimal('0.00'):

@@ -239,10 +239,10 @@ export const VendorProductsPage: React.FC = () => {
                     <td className="py-4 px-5 font-mono text-slate-500 font-bold">{p.sku || '—'}</td>
 
                     <td className="py-4 px-5">
-                      <span className="font-black text-sm text-[#0a0500]">${Number(p.price).toFixed(2)}</span>
+                      <span className="font-black text-sm text-[#0a0500]">₹{Number(p.price).toFixed(2)}</span>
                       {p.compare_at_price && (
                         <span className="text-[10px] text-slate-400 line-through block">
-                          ${Number(p.compare_at_price).toFixed(2)}
+                          ₹{Number(p.compare_at_price).toFixed(2)}
                         </span>
                       )}
                     </td>

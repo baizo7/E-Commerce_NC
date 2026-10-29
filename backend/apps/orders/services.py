@@ -231,7 +231,7 @@ class StripeService:
         import stripe
         stripe.api_key = settings.STRIPE_SECRET_KEY
         amount_cents = int(round(float(order.grand_total) * 100))
-        currency = getattr(settings, 'STRIPE_CURRENCY', 'usd')
+        currency = getattr(settings, 'STRIPE_CURRENCY', 'inr')
 
         try:
             intent = stripe.PaymentIntent.create(
@@ -383,7 +383,7 @@ Modern Shop Merchant Operations
         subject = f"Order Confirmed: #{order.order_number} - Modern Shop"
         
         items_text = "\n".join([
-            f"- {item.product_title} x {item.quantity} = ${item.subtotal} (Sold by {item.vendor.store_name if hasattr(item, 'vendor') and hasattr(item.vendor, 'store_name') else 'Merchant'})"
+            f"- {item.product_title} x {item.quantity} = ₹{item.subtotal} (Sold by {item.vendor.store_name if hasattr(item, 'vendor') and hasattr(item.vendor, 'store_name') else 'Merchant'})"
             for item in order.items.all()
         ])
         
@@ -395,7 +395,7 @@ Modern Shop Merchant Operations
                     <span style="font-size: 12px; color: #64748b;">Sold by: {item.vendor.store_name if hasattr(item, 'vendor') and hasattr(item.vendor, 'store_name') else 'Merchant'}</span>
                 </td>
                 <td style="padding: 12px 8px; font-size: 14px; color: #1e293b; text-align: center;">{item.quantity}</td>
-                <td style="padding: 12px 8px; font-size: 14px; color: #1e293b; text-align: right; font-weight: 600;">${item.subtotal}</td>
+                <td style="padding: 12px 8px; font-size: 14px; color: #1e293b; text-align: right; font-weight: 600;">₹{item.subtotal}</td>
             </tr>
             """
             for item in order.items.all()
@@ -407,7 +407,7 @@ Thank you for your order at Modern Shop! Your payment has been confirmed.
 
 Order Reference: #{order.order_number}
 Order Date: {order.created_at.strftime('%Y-%m-%d %H:%M:%S UTC')}
-Total Paid: ${order.grand_total}
+Total Paid: ₹{order.grand_total}
 Status: {order.status}
 
 Purchased Line Items:
@@ -441,7 +441,7 @@ The Modern Shop Team
                 <div style="padding: 24px 32px;">
                     <h2 style="font-size: 18px; color: #0f172a; margin-top: 0;">Thank you for your order, {order.shipping_name}!</h2>
                     <p style="font-size: 14px; color: #475569; line-height: 1.6;">
-                        Your payment of <strong>${order.grand_total}</strong> has been received. Your order reference is <span style="font-family: monospace; background-color: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-weight: bold; color: #4f46e5;">#{order.order_number}</span>.
+                        Your payment of <strong>₹{order.grand_total}</strong> has been received. Your order reference is <span style="font-family: monospace; background-color: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-weight: bold; color: #4f46e5;">#{order.order_number}</span>.
                     </p>
 
                     <!-- Order Summary Table -->
@@ -459,19 +459,19 @@ The Modern Shop Team
                         <tfoot>
                             <tr>
                                 <td colspan="2" style="padding: 12px 8px 4px; font-size: 13px; color: #64748b; text-align: right;">Subtotal:</td>
-                                <td style="padding: 12px 8px 4px; font-size: 13px; color: #1e293b; text-align: right;">${order.total_items_amount}</td>
+                                <td style="padding: 12px 8px 4px; font-size: 13px; color: #1e293b; text-align: right;">₹{order.total_items_amount}</td>
                             </tr>
                             <tr>
                                 <td colspan="2" style="padding: 4px 8px; font-size: 13px; color: #64748b; text-align: right;">Combined Shipping:</td>
-                                <td style="padding: 4px 8px; font-size: 13px; color: #1e293b; text-align: right;">${order.shipping_amount}</td>
+                                <td style="padding: 4px 8px; font-size: 13px; color: #1e293b; text-align: right;">₹{order.shipping_amount}</td>
                             </tr>
                             <tr>
                                 <td colspan="2" style="padding: 4px 8px; font-size: 13px; color: #64748b; text-align: right;">Tax (5%):</td>
-                                <td style="padding: 4px 8px; font-size: 13px; color: #1e293b; text-align: right;">${order.tax_amount}</td>
+                                <td style="padding: 4px 8px; font-size: 13px; color: #1e293b; text-align: right;">₹{order.tax_amount}</td>
                             </tr>
                             <tr style="border-top: 2px solid #cbd5e1;">
                                 <td colspan="2" style="padding: 12px 8px; font-size: 16px; font-weight: 800; color: #0f172a; text-align: right;">Total Paid:</td>
-                                <td style="padding: 12px 8px; font-size: 18px; font-weight: 800; color: #4f46e5; text-align: right;">${order.grand_total}</td>
+                                <td style="padding: 12px 8px; font-size: 18px; font-weight: 800; color: #4f46e5; text-align: right;">₹{order.grand_total}</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -524,7 +524,7 @@ The Modern Shop Team
         subject = f"New Order Received: #{vendor_order.order.order_number} for {store_name}"
 
         items_text = "\n".join([
-            f"- {item.product_title} x {item.quantity} = ${item.subtotal}"
+            f"- {item.product_title} x {item.quantity} = ₹{item.subtotal}"
             for item in vendor_order.items.all()
         ])
 
@@ -534,9 +534,9 @@ Great news! A new customer order has been placed for your store.
 
 Master Order: #{vendor_order.order.order_number}
 Sub-Order ID: #{vendor_order.id}
-Subtotal: ${vendor_order.subtotal}
-Commission ({vendor_order.commission_rate}%): ${vendor_order.commission_amount}
-Net Payout to You: ${vendor_order.net_vendor_amount}
+Subtotal: ₹{vendor_order.subtotal}
+Commission ({vendor_order.commission_rate}%): ₹{vendor_order.commission_amount}
+Net Payout to You: ₹{vendor_order.net_vendor_amount}
 
 Items to Fulfill:
 {items_text}
@@ -561,7 +561,7 @@ Modern Shop Merchant Team
                 
                 <div style="background: #f1f5f9; padding: 14px; border-radius: 8px; margin: 16px 0; font-size: 13px;">
                     <div><strong>Order Reference:</strong> #{vendor_order.order.order_number}</div>
-                    <div><strong>Net Earnings:</strong> <span style="color: #10b981; font-weight: bold;">${vendor_order.net_vendor_amount}</span></div>
+                    <div><strong>Net Earnings:</strong> <span style="color: #10b981; font-weight: bold;">₹{vendor_order.net_vendor_amount}</span></div>
                     <div><strong>Ship To:</strong> {vendor_order.order.shipping_name}, {vendor_order.order.shipping_city}</div>
                 </div>
 

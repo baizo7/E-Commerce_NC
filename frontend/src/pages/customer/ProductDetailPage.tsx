@@ -319,15 +319,15 @@ export const ProductDetailPage: React.FC = () => {
           {/* Modern Shop Price Block */}
           <div className="flex items-baseline gap-3 py-2">
             <span className="text-3xl sm:text-4xl font-black text-[#0a0500] tracking-tight">
-              ${priceNum.toFixed(2)}
+              ₹{priceNum.toFixed(2)}
             </span>
             {isOnSale && compareNum && (
               <>
                 <span className="text-xl text-neutral-400 line-through font-semibold">
-                  ${compareNum.toFixed(2)}
+                  ₹{compareNum.toFixed(2)}
                 </span>
                 <span className="px-2.5 py-1 rounded bg-amber-100 text-[#0a0500] font-black text-xs uppercase tracking-wide">
-                  Save ${(compareNum - priceNum).toFixed(2)}
+                  Save ₹{(compareNum - priceNum).toFixed(2)}
                 </span>
               </>
             )}
@@ -373,7 +373,7 @@ export const ProductDetailPage: React.FC = () => {
                       }`}
                     >
                       <span>{v.title}</span>
-                      <span className="text-[11px] opacity-80">${Number(v.price).toFixed(2)}</span>
+                      <span className="text-[11px] opacity-80">₹{Number(v.price).toFixed(2)}</span>
                     </button>
                   );
                 })}
@@ -470,7 +470,7 @@ export const ProductDetailPage: React.FC = () => {
               </div>
               <div>
                 <span className="font-bold text-[#0a0500] block">Free Shipping Available</span>
-                <span className="text-slate-500">Free standard delivery on orders over $100</span>
+                <span className="text-slate-500">Free standard delivery on orders over ₹1,000</span>
               </div>
             </div>
 

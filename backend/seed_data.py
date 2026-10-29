@@ -634,7 +634,7 @@ def run_seed():
     PlatformBanner.objects.get_or_create(
         title='Mid-Season Flash Sale',
         defaults={
-            'message': 'Use code MODERN20 at checkout for 20% off all orders over $50! Free worldwide shipping over $100.',
+            'message': 'Use code MODERN20 at checkout for 20% off all orders over ₹500! Free worldwide shipping over ₹1,000.',
             'link_url': '/products',
             'banner_type': 'PROMO',
             'is_active': True

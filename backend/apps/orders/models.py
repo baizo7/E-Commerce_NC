@@ -244,7 +244,7 @@ class VendorOrder(models.Model):
         return new_status in allowed
 
     def __str__(self):
-        return f"{self.vendor.store_name} Sub-Order for {self.order.order_number} (${self.subtotal})"
+        return f"{self.vendor.store_name} Sub-Order for {self.order.order_number} (₹{self.subtotal})"
 
 
 class OrderItem(models.Model):
@@ -268,7 +268,7 @@ class OrderItem(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.quantity}x {self.product_title} @ ${self.price}"
+        return f"{self.quantity}x {self.product_title} @ ₹{self.price}"
 
 
 class Payment(models.Model):
@@ -352,7 +352,7 @@ class PayoutRequest(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"Payout #{self.id} - {self.vendor.store_name} (${self.amount})"
+        return f"Payout #{self.id} - {self.vendor.store_name} (₹{self.amount})"
 
 
 class Dispute(models.Model):

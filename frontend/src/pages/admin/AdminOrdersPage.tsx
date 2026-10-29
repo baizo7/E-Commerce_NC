@@ -265,7 +265,7 @@ export const AdminOrdersPage: React.FC = () => {
           <span className="text-[10px] font-black uppercase text-neutral-400 tracking-wider block">
             Platform Gross GMV
           </span>
-          <div className="text-2xl font-black text-neutral-900 mt-1">${stats.gmv.toFixed(2)}</div>
+          <div className="text-2xl font-black text-neutral-900 mt-1">₹{stats.gmv.toFixed(2)}</div>
           <span className="text-[11px] text-emerald-600 font-bold mt-0.5 block">Customer checkout payments</span>
         </div>
 
@@ -273,7 +273,7 @@ export const AdminOrdersPage: React.FC = () => {
           <span className="text-[10px] font-black uppercase text-neutral-400 tracking-wider block">
             Commission Retained
           </span>
-          <div className="text-2xl font-black text-amber-600 mt-1">${stats.commission.toFixed(2)}</div>
+          <div className="text-2xl font-black text-amber-600 mt-1">₹{stats.commission.toFixed(2)}</div>
           <span className="text-[11px] text-neutral-500 font-medium mt-0.5 block">Platform marketplace fees</span>
         </div>
 
@@ -358,7 +358,7 @@ export const AdminOrdersPage: React.FC = () => {
                         {pr.store_name || pr.vendor_store_name || `Vendor #${pr.vendor}`}
                       </td>
                       <td className="py-4 px-4 font-black text-neutral-900 text-sm">
-                        ${Number(pr.amount).toFixed(2)}
+                        ₹{Number(pr.amount).toFixed(2)}
                       </td>
                       <td className="py-4 px-4">
                         <span
@@ -553,7 +553,7 @@ export const AdminOrdersPage: React.FC = () => {
                             >
                               <Store className="w-2.5 h-2.5 text-neutral-500" />
                               <span className="font-black truncate max-w-[100px]">{vo.vendor_name}</span>
-                              <span className="text-neutral-500 font-semibold">${Number(vo.subtotal).toFixed(2)}</span>
+                              <span className="text-neutral-500 font-semibold">₹{Number(vo.subtotal).toFixed(2)}</span>
                               {vo.is_disbursed ? (
                                 <CheckCircle2 className="w-3 h-3 text-emerald-600 flex-shrink-0" />
                               ) : (
@@ -566,7 +566,7 @@ export const AdminOrdersPage: React.FC = () => {
 
                       {/* Grand Total */}
                       <td className="py-3.5 px-4 font-black text-neutral-900 text-sm">
-                        ${Number(ord.grand_total).toFixed(2)}
+                        ₹{Number(ord.grand_total).toFixed(2)}
                       </td>
 
                       {/* Payment */}
@@ -715,7 +715,7 @@ export const AdminOrdersPage: React.FC = () => {
                             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#0a0500] hover:bg-neutral-800 text-[#ffcd05] font-black text-[11px] uppercase tracking-wider transition shadow-sm"
                           >
                             <DollarSign className="w-3.5 h-3.5" />
-                            <span>Disburse ${Number(vo.net_vendor_amount).toFixed(2)}</span>
+                            <span>Disburse ₹{Number(vo.net_vendor_amount).toFixed(2)}</span>
                           </button>
                         )}
                       </div>
@@ -728,7 +728,7 @@ export const AdminOrdersPage: React.FC = () => {
                           Gross Subtotal
                         </span>
                         <span className="font-black text-neutral-900 text-sm mt-0.5 block">
-                          ${Number(vo.subtotal).toFixed(2)}
+                          ₹{Number(vo.subtotal).toFixed(2)}
                         </span>
                       </div>
                       <div>
@@ -736,7 +736,7 @@ export const AdminOrdersPage: React.FC = () => {
                           Platform Fee ({Number(vo.commission_rate)}%)
                         </span>
                         <span className="font-black text-amber-600 text-sm mt-0.5 block">
-                          -${Number(vo.commission_amount).toFixed(2)}
+                          -₹{Number(vo.commission_amount).toFixed(2)}
                         </span>
                       </div>
                       <div>
@@ -744,7 +744,7 @@ export const AdminOrdersPage: React.FC = () => {
                           Net Merchant Payout
                         </span>
                         <span className="font-black text-emerald-700 text-sm mt-0.5 block">
-                          ${Number(vo.net_vendor_amount).toFixed(2)}
+                          ₹{Number(vo.net_vendor_amount).toFixed(2)}
                         </span>
                       </div>
                     </div>
@@ -762,7 +762,7 @@ export const AdminOrdersPage: React.FC = () => {
                                 <span className="font-bold text-neutral-900">{it.product_title}</span>
                                 <span className="text-neutral-400">× {it.quantity}</span>
                               </div>
-                              <span className="font-black text-neutral-900">${Number(it.subtotal).toFixed(2)}</span>
+                              <span className="font-black text-neutral-900">₹{Number(it.subtotal).toFixed(2)}</span>
                             </div>
                           ))}
                         </div>
@@ -778,7 +778,7 @@ export const AdminOrdersPage: React.FC = () => {
               <div className="text-xs">
                 <span className="text-neutral-400 font-semibold">Grand Total: </span>
                 <span className="font-black text-neutral-900 text-base">
-                  ${Number(inspectOrder.grand_total).toFixed(2)}
+                  ₹{Number(inspectOrder.grand_total).toFixed(2)}
                 </span>
               </div>
 
@@ -822,19 +822,19 @@ export const AdminOrdersPage: React.FC = () => {
               <div className="flex justify-between">
                 <span className="text-neutral-500">Gross Subtotal:</span>
                 <span className="font-bold text-neutral-800">
-                  ${Number(disburseModal.vendorOrder.subtotal).toFixed(2)}
+                  ₹{Number(disburseModal.vendorOrder.subtotal).toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-neutral-500">Platform Fee Retained:</span>
                 <span className="font-bold text-rose-600">
-                  -${Number(disburseModal.vendorOrder.commission_amount).toFixed(2)}
+                  -₹{Number(disburseModal.vendorOrder.commission_amount).toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between pt-2 border-t border-neutral-200 text-sm font-black">
                 <span className="text-neutral-900">Net Disbursement:</span>
                 <span className="text-emerald-700">
-                  ${Number(disburseModal.vendorOrder.net_vendor_amount).toFixed(2)}
+                  ₹{Number(disburseModal.vendorOrder.net_vendor_amount).toFixed(2)}
                 </span>
               </div>
             </div>
@@ -900,7 +900,7 @@ export const AdminOrdersPage: React.FC = () => {
               <div className="p-3 bg-neutral-50 rounded-xl border border-neutral-200 space-y-1">
                 <span className="font-bold text-neutral-500 uppercase text-[10px]">Merchant Request:</span>
                 <p className="font-black text-neutral-900 text-base">
-                  ${Number(payoutActionModal.payout.amount).toFixed(2)} — {payoutActionModal.payout.store_name || payoutActionModal.payout.vendor_store_name || 'Vendor'}
+                  ₹{Number(payoutActionModal.payout.amount).toFixed(2)} — {payoutActionModal.payout.store_name || payoutActionModal.payout.vendor_store_name || 'Vendor'}
                 </p>
                 {(payoutActionModal.payout.admin_notes || payoutActionModal.payout.notes) && (
                   <p className="text-[11px] text-neutral-600">"{payoutActionModal.payout.admin_notes || payoutActionModal.payout.notes}"</p>

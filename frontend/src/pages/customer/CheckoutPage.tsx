@@ -90,7 +90,7 @@ export const CheckoutPage: React.FC = () => {
           if (res.valid) {
             setDiscountAmount(res.discount_amount);
             setAppliedCoupon(res.code);
-            setCouponSuccess(`Coupon ${res.code} active (-$${res.discount_amount.toFixed(2)})`);
+            setCouponSuccess(`Coupon ${res.code} active (-₹${res.discount_amount.toFixed(2)})`);
           }
         })
         .catch(() => {
@@ -124,7 +124,7 @@ export const CheckoutPage: React.FC = () => {
       if (res.valid) {
         setDiscountAmount(res.discount_amount);
         setAppliedCoupon(res.code);
-        setCouponSuccess(`Coupon ${res.code} applied! Saved $${res.discount_amount.toFixed(2)}`);
+        setCouponSuccess(`Coupon ${res.code} applied! Saved ₹${res.discount_amount.toFixed(2)}`);
         sessionStorage.setItem('modernshop_coupon', res.code);
       }
     } catch (err: any) {
@@ -657,7 +657,7 @@ export const CheckoutPage: React.FC = () => {
                       <Store className="w-3.5 h-3.5 text-[#fcb424]" />
                       <span className="font-bold text-[#0a0500]">{v.store_name}</span>
                     </div>
-                    <span className="font-black text-[#0a0500]">${v.subtotal.toFixed(2)}</span>
+                    <span className="font-black text-[#0a0500]">₹{v.subtotal.toFixed(2)}</span>
                   </div>
                 ))}
               </div>
@@ -666,27 +666,27 @@ export const CheckoutPage: React.FC = () => {
             <div className="pt-4 border-t border-neutral-100 space-y-3 text-xs text-[#504e4a]">
               <div className="flex justify-between">
                 <span>Items Subtotal</span>
-                <span className="font-bold text-[#0a0500]">${cartSubtotal.toFixed(2)}</span>
+                <span className="font-bold text-[#0a0500]">₹{cartSubtotal.toFixed(2)}</span>
               </div>
 
               {discountAmount > 0 && (
                 <div className="flex justify-between text-emerald-600 font-bold">
                   <span>Promo Discount ({appliedCoupon})</span>
-                  <span>-${discountAmount.toFixed(2)}</span>
+                  <span>-₹{discountAmount.toFixed(2)}</span>
                 </div>
               )}
 
               <div className="flex justify-between">
                 <span>Shipping</span>
-                <span>{shippingEstimate === 0 ? <strong className="text-emerald-700 font-bold uppercase">FREE</strong> : `$${shippingEstimate.toFixed(2)}`}</span>
+                <span>{shippingEstimate === 0 ? <strong className="text-emerald-700 font-bold uppercase">FREE</strong> : `₹${shippingEstimate.toFixed(2)}`}</span>
               </div>
               <div className="flex justify-between">
                 <span>Tax (5%)</span>
-                <span className="font-bold text-[#0a0500]">${taxEstimate.toFixed(2)}</span>
+                <span className="font-bold text-[#0a0500]">₹{taxEstimate.toFixed(2)}</span>
               </div>
               <div className="pt-4 border-t border-neutral-200 flex justify-between items-baseline">
                 <span className="font-black uppercase tracking-wider text-sm text-[#0a0500]">Total Due</span>
-                <span className="text-2xl font-black text-[#0a0500]">${grandTotal.toFixed(2)}</span>
+                <span className="text-2xl font-black text-[#0a0500]">₹{grandTotal.toFixed(2)}</span>
               </div>
             </div>
 
@@ -699,7 +699,7 @@ export const CheckoutPage: React.FC = () => {
                 <div className="flex items-center justify-between p-2 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800">
                   <div className="flex items-center gap-1.5 font-bold">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>{appliedCoupon} (-${discountAmount.toFixed(2)})</span>
+                    <span>{appliedCoupon} (-₹{discountAmount.toFixed(2)})</span>
                   </div>
                   <button
                     type="button"
@@ -758,8 +758,8 @@ export const CheckoutPage: React.FC = () => {
                 : verifying
                 ? 'Verifying Security Signature...'
                 : formData.payment_method === 'RAZORPAY'
-                ? `Proceed to Payment ($${grandTotal.toFixed(2)})`
-                : `Place Order ($${grandTotal.toFixed(2)})`}
+                ? `Proceed to Payment (₹${grandTotal.toFixed(2)})`
+                : `Place Order (₹${grandTotal.toFixed(2)})`}
             </button>
 
             <div className="flex items-center justify-center gap-2 text-[11px] text-slate-400 pt-1">

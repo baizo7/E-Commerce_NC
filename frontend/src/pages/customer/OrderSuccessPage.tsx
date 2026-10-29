@@ -105,7 +105,7 @@ export const OrderSuccessPage: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-3">
                   <OrderStatusBadge status={vo.status} />
-                  <span className="font-bold text-sm text-slate-900">${Number(vo.subtotal).toFixed(2)}</span>
+                  <span className="font-bold text-sm text-slate-900">₹{Number(vo.subtotal).toFixed(2)}</span>
                 </div>
               </div>
 
@@ -130,10 +130,10 @@ export const OrderSuccessPage: React.FC = () => {
                         />
                         <div>
                           <span className="font-semibold text-slate-800 block truncate max-w-xs">{item.product_title}</span>
-                          <span className="text-slate-400">Qty: {item.quantity} &times; ${Number(item.price).toFixed(2)}</span>
+                          <span className="text-slate-400">Qty: {item.quantity} &times; ₹{Number(item.price).toFixed(2)}</span>
                         </div>
                       </div>
-                      <span className="font-bold text-slate-900">${Number(item.subtotal).toFixed(2)}</span>
+                      <span className="font-bold text-slate-900">₹{Number(item.subtotal).toFixed(2)}</span>
                     </div>
                   ))}
                 </div>

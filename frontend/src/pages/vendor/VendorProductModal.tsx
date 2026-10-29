@@ -396,14 +396,14 @@ export const VendorProductModal: React.FC<VendorProductModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                Selling Price ($) *
+                Selling Price (₹) *
               </label>
               <input
                 type="number"
                 step="0.01"
                 min="0.01"
                 required
-                placeholder="99.99"
+                placeholder="999.00"
                 value={formData.price}
                 onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                 className="w-full px-4 py-2.5 text-xs bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:border-[#0a0500] focus:bg-white transition"
@@ -412,12 +412,12 @@ export const VendorProductModal: React.FC<VendorProductModalProps> = ({
 
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                Compare-at / Strike-through Price ($)
+                Compare-at / Strike-through Price (₹)
               </label>
               <input
                 type="number"
                 step="0.01"
-                placeholder="129.99"
+                placeholder="1499.00"
                 value={formData.compare_at_price}
                 onChange={(e) => setFormData({ ...formData, compare_at_price: e.target.value })}
                 className="w-full px-4 py-2.5 text-xs bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:border-[#0a0500] focus:bg-white transition"
@@ -526,7 +526,7 @@ export const VendorProductModal: React.FC<VendorProductModalProps> = ({
                       <span className="font-bold text-slate-900">{v.title}</span>
                       {v.sku && <span className="text-slate-400 font-mono ml-2 text-[11px]">({v.sku})</span>}
                       <span className="text-slate-500 ml-3">
-                        ${Number(v.price).toFixed(2)} • {v.inventory_count} in stock
+                        ₹{Number(v.price).toFixed(2)} • {v.inventory_count} in stock
                       </span>
                     </div>
                     <button
@@ -563,7 +563,7 @@ export const VendorProductModal: React.FC<VendorProductModalProps> = ({
                       <input
                         type="number"
                         step="0.01"
-                        placeholder="Price ($)"
+                        placeholder="Price (₹)"
                         value={newVariantPrice}
                         onChange={(e) => setNewVariantPrice(e.target.value)}
                         className="px-2.5 py-1.5 text-xs bg-neutral-50 border border-neutral-200 rounded-lg outline-none"

@@ -53,7 +53,7 @@ export const VendorEarningsPage: React.FC = () => {
         amount: amountNum,
         notes: payoutNotes,
       });
-      setPayoutSuccess(`Payout request for $${amountNum.toFixed(2)} submitted successfully.`);
+      setPayoutSuccess(`Payout request for ₹${amountNum.toFixed(2)} submitted successfully.`);
       setIsPayoutModalOpen(false);
       setPayoutAmount('');
       setPayoutNotes('');
@@ -156,7 +156,7 @@ export const VendorEarningsPage: React.FC = () => {
             Gross Sales Realized
           </span>
           <span className="text-3xl font-black text-[#0a0500] block">
-            ${(analytics?.gross_sales || 0).toFixed(2)}
+            ₹{(analytics?.gross_sales || 0).toFixed(2)}
           </span>
           <span className="text-xs text-slate-500 block">Gross revenue before platform commission</span>
         </div>
@@ -166,7 +166,7 @@ export const VendorEarningsPage: React.FC = () => {
             Platform Commission Fee (10%)
           </span>
           <span className="text-3xl font-black text-rose-600 block">
-            -${(analytics?.commission_paid || 0).toFixed(2)}
+            -₹{(analytics?.commission_paid || 0).toFixed(2)}
           </span>
           <span className="text-xs text-slate-500 block">Payment gateway hosting & escrow fees</span>
         </div>
@@ -176,7 +176,7 @@ export const VendorEarningsPage: React.FC = () => {
             Net Vendor Earnings
           </span>
           <span className="text-3xl font-black text-emerald-700 block">
-            ${(analytics?.net_earnings || 0).toFixed(2)}
+            ₹{(analytics?.net_earnings || 0).toFixed(2)}
           </span>
           <span className="text-xs text-slate-500 block">Available for bank ACH / Wire transfer</span>
         </div>
@@ -222,11 +222,11 @@ export const VendorEarningsPage: React.FC = () => {
                       #{ord.order_number}
                     </td>
                     <td className="py-4 px-5 text-[#504e4a] truncate max-w-xs">{ord.customer_email}</td>
-                    <td className="py-4 px-5 font-black text-[#0a0500]">${Number(ord.subtotal).toFixed(2)}</td>
+                    <td className="py-4 px-5 font-black text-[#0a0500]">₹{Number(ord.subtotal).toFixed(2)}</td>
                     <td className="py-4 px-5 text-slate-600 font-bold">{Number(ord.commission_rate)}%</td>
-                    <td className="py-4 px-5 text-rose-600 font-bold">-${Number(ord.commission_amount).toFixed(2)}</td>
+                    <td className="py-4 px-5 text-rose-600 font-bold">-₹{Number(ord.commission_amount).toFixed(2)}</td>
                     <td className="py-4 px-5 font-black text-emerald-700 text-sm">
-                      ${Number(ord.net_vendor_amount).toFixed(2)}
+                      ₹{Number(ord.net_vendor_amount).toFixed(2)}
                     </td>
                     <td className="py-4 px-5">
                       <OrderStatusBadge status={ord.status} />
@@ -273,7 +273,7 @@ export const VendorEarningsPage: React.FC = () => {
                       {new Date(pr.created_at).toLocaleDateString()}
                     </td>
                     <td className="py-4 px-5 font-black text-slate-950 text-sm">
-                      ${Number(pr.amount).toFixed(2)}
+                      ₹{Number(pr.amount).toFixed(2)}
                     </td>
                     <td className="py-4 px-5">
                       <span
@@ -331,12 +331,12 @@ export const VendorEarningsPage: React.FC = () => {
               <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
                 <span className="text-[11px] font-bold text-slate-500 block uppercase">Available Net Earnings:</span>
                 <span className="text-2xl font-black text-emerald-700 block">
-                  ${(analytics?.net_earnings || 0).toFixed(2)}
+                  ₹{(analytics?.net_earnings || 0).toFixed(2)}
                 </span>
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Withdrawal Amount ($):</label>
+                <label className="block font-bold text-slate-700 mb-1">Withdrawal Amount (₹):</label>
                 <input
                   type="number"
                   step="0.01"

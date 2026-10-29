@@ -168,11 +168,11 @@ export const WishlistPage: React.FC = () => {
                   <div>
                     <div className="flex items-baseline gap-2 mb-3">
                       <span className="text-base font-black text-slate-950">
-                        ${priceNum.toFixed(2)}
+                        ₹{priceNum.toFixed(2)}
                       </span>
                       {hasDiscount && compareNum && (
                         <span className="text-xs text-slate-400 line-through">
-                          ${compareNum.toFixed(2)}
+                          ₹{compareNum.toFixed(2)}
                         </span>
                       )}
                     </div>

@@ -278,7 +278,7 @@ export const AdminUsersPage: React.FC = () => {
 
                       {/* Lifetime Spend */}
                       <td className="py-3.5 px-4 font-black text-neutral-900">
-                        ${Number(u.total_spent || 0).toFixed(2)}
+                        ₹{Number(u.total_spent || 0).toFixed(2)}
                       </td>
 
                       {/* Date Joined */}
@@ -502,7 +502,7 @@ export const AdminUsersPage: React.FC = () => {
                 </div>
                 <div className="p-3 bg-neutral-50 rounded-xl border border-neutral-200/80">
                   <span className="text-[10px] font-black uppercase text-neutral-400 block tracking-wider">Total Spent</span>
-                  <span className="font-black text-emerald-700 text-sm block mt-0.5">${Number(inspectUser.total_spent || 0).toFixed(2)}</span>
+                  <span className="font-black text-emerald-700 text-sm block mt-0.5">₹{Number(inspectUser.total_spent || 0).toFixed(2)}</span>
                 </div>
               </div>
 

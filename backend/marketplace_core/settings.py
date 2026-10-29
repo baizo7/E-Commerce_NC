@@ -171,7 +171,7 @@ RAZORPAY_CURRENCY = os.environ.get('RAZORPAY_CURRENCY', 'INR')
 STRIPE_PUBLIC_KEY = os.environ.get('STRIPE_PUBLIC_KEY', 'pk_test_NexaMarket2026')
 STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', 'sk_test_NexaMarket2026')
 STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
-STRIPE_CURRENCY = os.environ.get('STRIPE_CURRENCY', 'usd')
+STRIPE_CURRENCY = os.environ.get('STRIPE_CURRENCY', 'inr')
 
 # Email Configuration (Production SMTP & Development Fallback)
 EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')

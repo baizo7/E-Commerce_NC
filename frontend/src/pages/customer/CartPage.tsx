@@ -189,7 +189,7 @@ export const CartPage: React.FC = () => {
                         </div>
                       )}
                       <div className="text-xs font-medium text-slate-500 mt-1">
-                        ${Number(item.variant?.price || item.product.price).toFixed(2)} each
+                        ₹{Number(item.variant?.price || item.product.price).toFixed(2)} each
                       </div>
                       {item.product.inventory_count <= (item.product.low_stock_threshold || 5) && (
                         <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 mt-1 block">
@@ -219,7 +219,7 @@ export const CartPage: React.FC = () => {
                       </div>
 
                       <span className="font-black text-sm text-[#0a0500] min-w-[70px] text-right">
-                        ${Number(item.subtotal).toFixed(2)}
+                        ₹{Number(item.subtotal).toFixed(2)}
                       </span>
 
                       <button
@@ -247,29 +247,29 @@ export const CartPage: React.FC = () => {
           <div className="space-y-3 text-xs text-[#504e4a]">
             <div className="flex justify-between">
               <span>Items Subtotal</span>
-              <span className="font-bold text-[#0a0500]">${cartSubtotal.toFixed(2)}</span>
+              <span className="font-bold text-[#0a0500]">₹{cartSubtotal.toFixed(2)}</span>
             </div>
 
             {discountAmount > 0 && (
               <div className="flex justify-between text-emerald-600 font-bold">
                 <span>Promo Discount ({appliedCoupon})</span>
-                <span>-${discountAmount.toFixed(2)}</span>
+                <span>-₹{discountAmount.toFixed(2)}</span>
               </div>
             )}
 
             <div className="flex justify-between">
               <span>Combined Shipping</span>
-              <span>{shippingEstimate === 0 ? <strong className="text-emerald-700 font-bold uppercase">FREE</strong> : `$${shippingEstimate.toFixed(2)}`}</span>
+              <span>{shippingEstimate === 0 ? <strong className="text-emerald-700 font-bold uppercase">FREE</strong> : `₹${shippingEstimate.toFixed(2)}`}</span>
             </div>
 
             <div className="flex justify-between">
               <span>Estimated Sales Tax (5%)</span>
-              <span className="font-bold text-[#0a0500]">${taxEstimate.toFixed(2)}</span>
+              <span className="font-bold text-[#0a0500]">₹{taxEstimate.toFixed(2)}</span>
             </div>
 
             <div className="pt-4 border-t border-neutral-200 flex justify-between items-baseline">
               <span className="font-black uppercase tracking-wider text-sm text-[#0a0500]">Grand Total</span>
-              <span className="text-2xl font-black text-[#0a0500]">${grandTotal.toFixed(2)}</span>
+              <span className="text-2xl font-black text-[#0a0500]">₹{grandTotal.toFixed(2)}</span>
             </div>
           </div>
 
@@ -282,7 +282,7 @@ export const CartPage: React.FC = () => {
               <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800">
                 <div className="flex items-center gap-1.5 font-bold">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>{appliedCoupon} (-${discountAmount.toFixed(2)})</span>
+                  <span>{appliedCoupon} (-₹{discountAmount.toFixed(2)})</span>
                 </div>
                 <button
                   type="button"
@@ -331,7 +331,7 @@ export const CartPage: React.FC = () => {
 
           {shippingEstimate > 0 ? (
             <div className="p-3.5 bg-amber-50 rounded-xl text-xs text-amber-900 border border-amber-200/60 leading-relaxed">
-              Add <strong>${(100 - cartSubtotal).toFixed(2)}</strong> more to your bag to enjoy <strong>Free Shipping</strong>!
+              Add <strong>₹{(100 - cartSubtotal).toFixed(2)}</strong> more to your bag to enjoy <strong>Free Shipping</strong>!
             </div>
           ) : (
             <div className="p-3.5 bg-emerald-50 rounded-xl text-xs text-emerald-900 border border-emerald-200/60 font-semibold flex items-center gap-2">

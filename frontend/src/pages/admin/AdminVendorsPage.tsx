@@ -215,7 +215,7 @@ export const AdminVendorsPage: React.FC = () => {
                     </td>
 
                     <td className="py-3 px-4 font-black text-[#0a0500] text-sm">
-                      ${Number(v.total_sales).toFixed(2)}
+                      ₹{Number(v.total_sales).toFixed(2)}
                     </td>
 
                     <td className="py-3 px-4">

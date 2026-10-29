@@ -197,7 +197,7 @@ export const AdminDisputesPage: React.FC = () => {
                       </span>
                     </td>
                     <td className="py-4 px-5 font-black text-slate-900 text-sm">
-                      ${Number(d.amount || 0).toFixed(2)}
+                      ₹{Number(d.amount || 0).toFixed(2)}
                     </td>
                     <td className="py-4 px-5">
                       <span
@@ -264,7 +264,7 @@ export const AdminDisputesPage: React.FC = () => {
               <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
                 <div className="flex justify-between">
                   <span className="font-bold text-slate-500 uppercase">Customer Claim:</span>
-                  <span className="font-black text-slate-900">${Number(selectedDispute.amount || 0).toFixed(2)}</span>
+                  <span className="font-black text-slate-900">₹{Number(selectedDispute.amount || 0).toFixed(2)}</span>
                 </div>
                 <p className="text-slate-800 font-medium leading-relaxed">
                   "{selectedDispute.customer_notes}"
@@ -296,7 +296,7 @@ export const AdminDisputesPage: React.FC = () => {
                 </select>
                 {resolutionStatus === 'RESOLVED_REFUNDED' && (
                   <p className="text-[11px] text-emerald-600 font-semibold mt-1">
-                    ✓ Programmatic refund of ${Number(selectedDispute.amount || 0).toFixed(2)} will be dispatched to original payment method via Razorpay API.
+                    ✓ Programmatic refund of ₹{Number(selectedDispute.amount || 0).toFixed(2)} will be dispatched to original payment method via Razorpay API.
                   </p>
                 )}
               </div>

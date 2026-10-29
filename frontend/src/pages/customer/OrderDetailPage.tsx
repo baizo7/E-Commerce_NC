@@ -161,7 +161,7 @@ export const OrderDetailPage: React.FC = () => {
           <div className="flex items-center gap-3">
             <OrderStatusBadge status={order.status} />
             <span className="text-2xl font-black text-[#0a0500]">
-              ${Number(order.grand_total).toFixed(2)}
+              ₹{Number(order.grand_total).toFixed(2)}
             </span>
           </div>
         </div>
@@ -205,7 +205,7 @@ export const OrderDetailPage: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-3">
                     <OrderStatusBadge status={vo.status} />
-                    <span className="font-bold text-sm text-slate-900">${Number(vo.subtotal).toFixed(2)}</span>
+                    <span className="font-bold text-sm text-slate-900">₹{Number(vo.subtotal).toFixed(2)}</span>
                   </div>
                 </div>
 
@@ -245,10 +245,10 @@ export const OrderDetailPage: React.FC = () => {
                                 Variant: {item.variant_title}
                               </span>
                             )}
-                            <span className="text-slate-400 block mt-0.5">Qty: {item.quantity} &times; ${Number(item.price).toFixed(2)}</span>
+                            <span className="text-slate-400 block mt-0.5">Qty: {item.quantity} &times; ₹{Number(item.price).toFixed(2)}</span>
                           </div>
                         </div>
-                        <span className="font-bold text-slate-900">${Number(item.subtotal).toFixed(2)}</span>
+                        <span className="font-bold text-slate-900">₹{Number(item.subtotal).toFixed(2)}</span>
                       </div>
                     ))}
                   </div>
@@ -273,25 +273,25 @@ export const OrderDetailPage: React.FC = () => {
             <span className="font-bold text-slate-800 block mb-2">Financial Breakdown</span>
             <div className="flex justify-between">
               <span>Items Subtotal:</span>
-              <span className="font-semibold text-slate-900">${Number(order.total_items_amount).toFixed(2)}</span>
+              <span className="font-semibold text-slate-900">₹{Number(order.total_items_amount).toFixed(2)}</span>
             </div>
             {order.discount_amount && Number(order.discount_amount) > 0 && (
               <div className="flex justify-between text-emerald-600 font-bold">
                 <span>Coupon Discount ({order.coupon_code}):</span>
-                <span>-${Number(order.discount_amount).toFixed(2)}</span>
+                <span>-₹{Number(order.discount_amount).toFixed(2)}</span>
               </div>
             )}
             <div className="flex justify-between">
               <span>Combined Shipping:</span>
-              <span className="font-semibold text-slate-900">${Number(order.shipping_amount).toFixed(2)}</span>
+              <span className="font-semibold text-slate-900">₹{Number(order.shipping_amount).toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
               <span>Sales Tax (5%):</span>
-              <span className="font-semibold text-slate-900">${Number(order.tax_amount).toFixed(2)}</span>
+              <span className="font-semibold text-slate-900">₹{Number(order.tax_amount).toFixed(2)}</span>
             </div>
             <div className="pt-2 border-t border-slate-200 flex justify-between font-bold text-sm text-slate-900">
               <span>Total Paid:</span>
-              <span className="text-[#0a0500] font-black">${Number(order.grand_total).toFixed(2)}</span>
+              <span className="text-[#0a0500] font-black">₹{Number(order.grand_total).toFixed(2)}</span>
             </div>
           </div>
         </div>
@@ -390,7 +390,7 @@ export const OrderDetailPage: React.FC = () => {
                     <option value="">Entire Order</option>
                     {order.vendor_orders.map((vo) => (
                       <option key={vo.id} value={vo.id}>
-                        {vo.vendor_name} (${Number(vo.subtotal).toFixed(2)})
+                        {vo.vendor_name} (₹{Number(vo.subtotal).toFixed(2)})
                       </option>
                     ))}
                   </select>

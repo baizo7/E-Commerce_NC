@@ -181,11 +181,11 @@ export const VendorOrdersPage: React.FC = () => {
                               {item.product_title}
                             </span>
                             <span className="text-slate-500 font-medium">
-                              Qty: {item.quantity} &times; ${Number(item.price).toFixed(2)}
+                              Qty: {item.quantity} &times; ₹{Number(item.price).toFixed(2)}
                             </span>
                           </div>
                         </div>
-                        <span className="font-black text-sm text-[#0a0500]">${Number(item.subtotal).toFixed(2)}</span>
+                        <span className="font-black text-sm text-[#0a0500]">₹{Number(item.subtotal).toFixed(2)}</span>
                       </div>
                     ))}
                   </div>
@@ -230,16 +230,16 @@ export const VendorOrdersPage: React.FC = () => {
                     </span>
                     <div className="flex justify-between">
                       <span>Gross Package Value:</span>
-                      <strong className="text-[#0a0500]">${Number(ord.subtotal).toFixed(2)}</strong>
+                      <strong className="text-[#0a0500]">₹{Number(ord.subtotal).toFixed(2)}</strong>
                     </div>
                     <div className="flex justify-between text-rose-600">
                       <span>Platform Commission ({Number(ord.commission_rate).toFixed(0)}%):</span>
-                      <strong>-${Number(ord.commission_amount).toFixed(2)}</strong>
+                      <strong>-₹{Number(ord.commission_amount).toFixed(2)}</strong>
                     </div>
                     <div className="pt-2 border-t border-neutral-200 flex justify-between items-baseline">
                       <span className="font-black uppercase tracking-wider text-[#0a0500]">Your Net Payout:</span>
                       <span className="text-base font-black text-emerald-700">
-                        ${Number(ord.net_vendor_amount).toFixed(2)}
+                        ₹{Number(ord.net_vendor_amount).toFixed(2)}
                       </span>
                     </div>
                   </div>
@@ -423,8 +423,8 @@ export const VendorOrdersPage: React.FC = () => {
                       <tr key={item.id}>
                         <td className="py-3 px-4 font-bold text-slate-900">{item.product_title}</td>
                         <td className="py-3 px-4 text-center font-bold">{item.quantity}</td>
-                        <td className="py-3 px-4 text-right">${Number(item.price).toFixed(2)}</td>
-                        <td className="py-3 px-4 text-right font-black">${Number(item.subtotal).toFixed(2)}</td>
+                        <td className="py-3 px-4 text-right">₹{Number(item.price).toFixed(2)}</td>
+                        <td className="py-3 px-4 text-right font-black">₹{Number(item.subtotal).toFixed(2)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -438,7 +438,7 @@ export const VendorOrdersPage: React.FC = () => {
                 </div>
                 <div className="text-right">
                   <span className="font-bold text-slate-600 block">Package Subtotal:</span>
-                  <span className="text-xl font-black text-[#0a0500]">${Number(packingSlipOrder.subtotal).toFixed(2)}</span>
+                  <span className="text-xl font-black text-[#0a0500]">₹{Number(packingSlipOrder.subtotal).toFixed(2)}</span>
                 </div>
               </div>
             </div>

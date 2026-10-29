@@ -168,7 +168,7 @@ export const AdminDashboardPage: React.FC = () => {
           <div>
             <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 block">Gross Platform GMV</span>
             <span className="text-2xl font-black text-[#0a0500] mt-0.5 block">
-              ${(analytics?.total_gmv || 0).toFixed(2)}
+              ₹{(analytics?.total_gmv || 0).toFixed(2)}
             </span>
             <span className="text-[10px] text-slate-400 font-medium">Customer checkout volume</span>
           </div>
@@ -182,7 +182,7 @@ export const AdminDashboardPage: React.FC = () => {
           <div>
             <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 block">Platform Commission</span>
             <span className="text-2xl font-black text-emerald-700 mt-0.5 block">
-              ${(analytics?.total_commission || 0).toFixed(2)}
+              ₹{(analytics?.total_commission || 0).toFixed(2)}
             </span>
             <span className="text-[10px] text-slate-400 font-medium">Net platform revenue</span>
           </div>
@@ -248,11 +248,11 @@ export const AdminDashboardPage: React.FC = () => {
           <div className="flex items-center gap-3 flex-wrap">
             <div className="px-3.5 py-1.5 rounded-xl bg-neutral-50 border border-neutral-200/80 text-xs">
               <span className="text-[10px] text-slate-400 font-black uppercase block">7D Volume:</span>
-              <span className="font-black text-[#0a0500]">${sevenDayTotals.gmv.toFixed(2)}</span>
+              <span className="font-black text-[#0a0500]">₹{sevenDayTotals.gmv.toFixed(2)}</span>
             </div>
             <div className="px-3.5 py-1.5 rounded-xl bg-neutral-50 border border-neutral-200/80 text-xs">
               <span className="text-[10px] text-slate-400 font-black uppercase block">7D Commission:</span>
-              <span className="font-black text-emerald-700">${sevenDayTotals.commission.toFixed(2)}</span>
+              <span className="font-black text-emerald-700">₹{sevenDayTotals.commission.toFixed(2)}</span>
             </div>
             <div className="px-3.5 py-1.5 rounded-xl bg-neutral-50 border border-neutral-200/80 text-xs">
               <span className="text-[10px] text-slate-400 font-black uppercase block">7D Orders:</span>
@@ -291,8 +291,8 @@ export const AdminDashboardPage: React.FC = () => {
                             {day.date}
                           </div>
                           <div>
-                            GMV: <strong className="text-white">${day.gmv.toFixed(2)}</strong> | Fee:{' '}
-                            <strong className="text-[#ffcd05]">${day.commission.toFixed(2)}</strong> (
+                            GMV: <strong className="text-white">₹{day.gmv.toFixed(2)}</strong> | Fee:{' '}
+                            <strong className="text-[#ffcd05]">₹{day.commission.toFixed(2)}</strong> (
                             {day.orders_count} ord)
                           </div>
                         </div>
@@ -413,7 +413,7 @@ export const AdminDashboardPage: React.FC = () => {
                       </div>
                     </div>
                     <span className="text-xs font-black text-[#0a0500] whitespace-nowrap bg-white px-2.5 py-1 rounded-lg border border-neutral-200 shadow-2xs">
-                      ${v.total_sales.toFixed(2)}
+                      ₹{v.total_sales.toFixed(2)}
                     </span>
                   </div>
                 ))
@@ -544,7 +544,7 @@ export const AdminDashboardPage: React.FC = () => {
                       {ord.customer_email}
                     </td>
                     <td className="py-3.5 px-4 font-black text-[#0a0500] text-sm">
-                      ${ord.grand_total.toFixed(2)}
+                      ₹{ord.grand_total.toFixed(2)}
                     </td>
                     <td className="py-3.5 px-4">
                       <OrderStatusBadge status={ord.payment_status} />

@@ -26,7 +26,7 @@ export const Footer: React.FC = () => {
             </div>
             <div>
               <h4 className="text-white font-extrabold text-sm uppercase tracking-wider">Free Shipping</h4>
-              <p className="text-xs text-slate-400 mt-0.5">On all platform orders over $100</p>
+              <p className="text-xs text-slate-400 mt-0.5">On all platform orders over ₹1,000</p>
             </div>
           </div>
 
