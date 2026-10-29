@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bot, User, Sparkles } from 'lucide-react';
+import { MessageCircle, User, Sparkles } from 'lucide-react';
 import { AssistantProductCard, PriceAnalysis } from '../../services/assistantService';
 import { ProductRecommendationCard } from './ProductRecommendationCard';
 import { PriceTrendBadge } from './PriceTrendBadge';
@@ -72,7 +72,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
   if (isUser) {
     return (
       <div className="flex justify-end items-end gap-2 my-3">
-        <div className="max-w-[85%] bg-[#0a0500] text-white px-4 py-2.5 rounded-2xl rounded-br-xs shadow-xs text-xs font-medium">
+        <div className="max-w-[85%] bg-slate-900 text-white px-4 py-2.5 rounded-2xl rounded-br-xs shadow-xs text-xs font-medium">
           <p className="whitespace-pre-wrap">{message.content}</p>
         </div>
         <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center shrink-0">
@@ -85,8 +85,8 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
   // Assistant Message
   return (
     <div className="flex items-start gap-2.5 my-3">
-      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#0a0500] to-slate-800 text-[#ffcd05] flex items-center justify-center shrink-0 shadow-xs border border-amber-300/40">
-        <Bot className="w-4 h-4" />
+      <div className="w-7 h-7 rounded-full bg-amber-50 text-amber-700 border border-amber-200/80 flex items-center justify-center shrink-0 shadow-xs">
+        <MessageCircle className="w-3.5 h-3.5 fill-amber-500/20 text-amber-700" />
       </div>
 
       <div className="flex-1 max-w-[90%] space-y-2">

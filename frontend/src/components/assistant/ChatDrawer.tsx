@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Send, Trash2, Bot, RefreshCw, AlertCircle } from 'lucide-react';
-import { assistantService, AssistantProductCard, PriceAnalysis } from '../../services/assistantService';
+import { X, Send, Trash2, MessageCircle, RefreshCw, AlertCircle } from 'lucide-react';
+import { assistantService } from '../../services/assistantService';
 import { ChatMessageItem, ChatMessageData } from './ChatMessageItem';
 
 interface ChatDrawerProps {
@@ -140,11 +140,22 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 sm:inset-auto sm:bottom-6 sm:right-6 sm:w-[460px] sm:h-[640px] z-50 flex flex-col bg-slate-50 sm:rounded-2xl shadow-2xl border border-slate-300/80 overflow-hidden font-sans">
-      {/* Header */}
-      <div className="bg-[#0a0500] text-white px-4 py-3 flex items-center justify-between border-b border-amber-400/20 shadow-xs">
-        <div className="flex items-center gap-2">
-          <Bot className="w-5 h-5 text-[#ffcd05]" />
-          <h3 className="font-bold text-sm tracking-tight text-white">AI Assistant</h3>
+      {/* Humanized Concierge Header */}
+      <div className="bg-white text-slate-800 px-4 py-3 flex items-center justify-between border-b border-slate-200/90 shadow-xs">
+        <div className="flex items-center gap-2.5">
+          <div className="relative">
+            <div className="w-8 h-8 rounded-full bg-amber-50 border border-amber-200/70 flex items-center justify-center text-amber-700">
+              <MessageCircle className="w-4 h-4 fill-amber-500/20 text-amber-700" />
+            </div>
+            <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-emerald-500 rounded-full border-2 border-white" />
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <h3 className="font-bold text-sm text-slate-900 leading-none">Shopping Assistant</h3>
+              <span className="px-1.5 py-0.5 text-[9.5px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full">Online</span>
+            </div>
+            <p className="text-[11px] text-slate-500 font-medium mt-0.5">Here to help you find & compare items</p>
+          </div>
         </div>
 
         <div className="flex items-center gap-1">
@@ -152,8 +163,8 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose }) => {
             <button
               type="button"
               onClick={handleClearHistory}
-              title="Clear chat"
-              className="p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+              title="Clear conversation"
+              className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -162,7 +173,7 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose }) => {
             type="button"
             onClick={onClose}
             title="Close"
-            className="p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -181,12 +192,12 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose }) => {
 
         {loading && (
           <div className="flex items-start gap-2.5 my-3">
-            <div className="w-7 h-7 rounded-full bg-[#0a0500] text-[#ffcd05] flex items-center justify-center shrink-0">
-              <Bot className="w-4 h-4" />
+            <div className="w-7 h-7 rounded-full bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center shrink-0">
+              <MessageCircle className="w-3.5 h-3.5" />
             </div>
             <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-xs p-3 shadow-xs flex items-center gap-2 text-xs text-slate-600">
               <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-600" />
-              <span>Thinking...</span>
+              <span>Looking up products for you...</span>
             </div>
           </div>
         )}
@@ -220,12 +231,12 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose }) => {
             onKeyDown={handleKeyDown}
             placeholder="Type your message..."
             disabled={loading}
-            className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0a0500] focus:border-transparent transition-all"
+            className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all"
           />
           <button
             type="submit"
             disabled={!inputValue.trim() || loading}
-            className="w-9 h-9 rounded-xl bg-[#0a0500] hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed text-[#ffcd05] flex items-center justify-center transition-colors shrink-0 shadow-xs"
+            className="w-9 h-9 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed text-white flex items-center justify-center transition-colors shrink-0 shadow-xs"
             title="Send"
           >
             <Send className="w-4 h-4" />
