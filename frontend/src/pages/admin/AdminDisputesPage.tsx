@@ -5,7 +5,7 @@ import {
   CheckCircle2,
   XCircle,
   HelpCircle,
-  DollarSign,
+  IndianRupee,
   User,
   Store,
   Clock,

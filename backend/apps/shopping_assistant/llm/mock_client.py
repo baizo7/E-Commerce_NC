@@ -26,7 +26,7 @@ class MockLLMClient(BaseLLMClient):
             # Convert spaces to hyphens for slug lookup fallback
             slug = slug_or_query.lower().replace(' ', '-')
             return {
-                'text': f"I'm checking the verified 30-day price history for {slug_or_query}...",
+                'text': f"Checking 30-day price trends and verification history for {slug_or_query}...",
                 'tool_calls': [
                     {
                         'name': 'compare_price_history',
@@ -60,7 +60,7 @@ class MockLLMClient(BaseLLMClient):
                 cat_slug = 'fitness-outdoors'
 
             return {
-                'text': "Here are products currently on sale with verified discounts:",
+                'text': "I found these verified active discounts across our partner studios:",
                 'tool_calls': [
                     {
                         'name': 'find_discounted_products',
@@ -89,7 +89,7 @@ class MockLLMClient(BaseLLMClient):
                     pass
 
             return {
-                'text': "Here are some top-rated products with the best customer reviews:",
+                'text': "Here are our highest-rated customer favorites with authentic verified reviews:",
                 'tool_calls': [
                     {
                         'name': 'find_top_rated_products',
@@ -116,7 +116,7 @@ class MockLLMClient(BaseLLMClient):
         search_query = " ".join(clean_words) if clean_words else ""
 
         return {
-            'text': "Here are some great options within your budget:",
+            'text': "Here are our top-value recommendations that fit comfortably within your budget:",
             'tool_calls': [
                 {
                     'name': 'recommend_affordable_products',

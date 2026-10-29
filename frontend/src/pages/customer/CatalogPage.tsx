@@ -251,19 +251,21 @@ export const CatalogPage: React.FC = () => {
               ))}
             </div>
           ) : products.length === 0 ? (
-            <div className="bg-white border border-slate-200 rounded-3xl p-16 text-center space-y-3">
-              <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto text-slate-400">
-                <Search className="w-6 h-6" />
+            <div className="bg-white border border-slate-200/90 rounded-3xl p-12 sm:p-16 text-center space-y-4 shadow-xs">
+              <div className="w-16 h-16 bg-amber-50 text-amber-700 rounded-2xl flex items-center justify-center mx-auto border border-amber-200/60 shadow-xs">
+                <Search className="w-7 h-7" />
               </div>
-              <h3 className="font-black text-slate-950 text-lg uppercase">No Products Found</h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                No items match your active filters. Try resetting keyword or store filters.
-              </p>
+              <div className="space-y-1.5">
+                <h3 className="font-bold text-slate-950 text-xl tracking-tight">We couldn't find any matches</h3>
+                <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+                  We checked across all our verified partner studios, but couldn't find products matching your active filters. Try searching with different keywords or clearing your filters to explore our full collection.
+                </p>
+              </div>
               <button
                 onClick={clearAllFilters}
-                className="px-6 py-2.5 bg-amber-400 hover:bg-amber-500 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider transition"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-slate-950 hover:bg-slate-800 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition shadow-sm"
               >
-                Reset Filters
+                Clear Filters & Browse All
               </button>
             </div>
           ) : (

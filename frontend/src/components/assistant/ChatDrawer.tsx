@@ -152,7 +152,7 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose }) => {
           <div>
             <div className="flex items-center gap-1.5">
               <h3 className="font-bold text-sm text-slate-900 leading-none">Shopping Assistant</h3>
-              <span className="px-1.5 py-0.5 text-[9.5px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full">Online</span>
+
             </div>
             <p className="text-[11px] text-slate-500 font-medium mt-0.5">Here to help you find & compare items</p>
           </div>

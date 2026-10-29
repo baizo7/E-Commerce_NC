@@ -78,7 +78,7 @@ class AssistantOrchestrator:
                     suggested_products.extend(res.get('products', []))
                     if not assistant_text or assistant_text.strip().endswith('...'):
                         count = len(res.get('products', []))
-                        assistant_text = f"Here are {count} items currently on sale:"
+                        assistant_text = f"I found {count} active deals with verified savings from our partner studios:"
 
                 elif name == 'compare_price_history':
                     intent = 'PRICE_HISTORY'
@@ -93,29 +93,29 @@ class AssistantOrchestrator:
                         if trend == 'CHEAPER':
                             assistant_text = f"Good news! **{p_title}** is currently ₹{cur_p:,.2f}, which is lower than its 30-day average of ₹{avg_p:,.2f}. {disc}"
                         elif trend == 'MORE_EXPENSIVE':
-                            assistant_text = f"**{p_title}** is currently ₹{cur_p:,.2f}, slightly above its 30-day average of ₹{avg_p:,.2f}. {disc}"
+                            assistant_text = f"**{p_title}** is currently priced at ₹{cur_p:,.2f}, slightly above its 30-day average of ₹{avg_p:,.2f}. {disc}"
                         else:
                             assistant_text = f"**{p_title}** is currently ₹{cur_p:,.2f}, holding steady near its recent average of ₹{avg_p:,.2f}. {disc}"
                     else:
-                        assistant_text = price_analysis.get('error', "Could not find price history for that product.")
+                        assistant_text = price_analysis.get('error', "I wasn't able to find historical price data for that product right now.")
 
                 elif name == 'find_top_rated_products':
                     intent = 'TOP_RATED'
                     suggested_products.extend(res.get('products', []))
                     if not assistant_text or assistant_text.strip().endswith('...'):
                         count = len(res.get('products', []))
-                        assistant_text = f"Here are {count} top-rated products with great customer reviews:"
+                        assistant_text = f"Here are our highest-rated customer favorites backed by authentic reviews:"
 
                 elif name == 'recommend_affordable_products':
                     intent = 'AFFORDABLE_RECOMMENDATION'
                     suggested_products.extend(res.get('products', []))
                     if not assistant_text or assistant_text.strip().endswith('...'):
                         count = len(res.get('products', []))
-                        assistant_text = f"Here are {count} top picks within your budget:"
+                        assistant_text = f"I've selected {count} great value-for-money options comfortably within your budget:"
 
         # Default fallback text if nothing matched
         if not assistant_text:
-            assistant_text = "Hi! What are you looking to shop for today? I can help find discounts, compare prices, or recommend products."
+            assistant_text = "Hello! Looking for something special today? I can help you discover active studio discounts, compare 30-day price trends, or recommend top-rated gear."
 
         # 6. Persist Assistant Response Turn
         ChatMessage.objects.create(

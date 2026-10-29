@@ -6,7 +6,7 @@ import {
   Eye,
   X,
   Download,
-  DollarSign,
+  IndianRupee,
   TrendingUp,
   Clock,
   CheckCircle2,
@@ -714,7 +714,7 @@ export const AdminOrdersPage: React.FC = () => {
                             }
                             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#0a0500] hover:bg-neutral-800 text-[#ffcd05] font-black text-[11px] uppercase tracking-wider transition shadow-sm"
                           >
-                            <DollarSign className="w-3.5 h-3.5" />
+                            <IndianRupee className="w-3.5 h-3.5" />
                             <span>Disburse ₹{Number(vo.net_vendor_amount).toFixed(2)}</span>
                           </button>
                         )}

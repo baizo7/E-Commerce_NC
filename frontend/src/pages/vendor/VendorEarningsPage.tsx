@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Download, ShieldCheck, ArrowRight, TrendingUp, CreditCard, Plus, X, CheckCircle2, Clock } from 'lucide-react';
+import { IndianRupee, Download, ShieldCheck, ArrowRight, TrendingUp, CreditCard, Plus, X, CheckCircle2, Clock } from 'lucide-react';
 import { vendorService } from '../../services/api';
 import { VendorAnalytics, VendorOrder, PayoutRequest, unwrapResults } from '../../types';
 import { OrderStatusBadge } from '../../components/OrderStatusBadge';

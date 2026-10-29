@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, Link } from 'react-router-dom';
-import { LayoutDashboard, Package, Truck, DollarSign, Settings, ExternalLink, Star } from 'lucide-react';
+import { LayoutDashboard, Package, Truck, IndianRupee, Settings, ExternalLink, Star } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const VendorSubNav: React.FC = () => {
@@ -11,7 +11,7 @@ export const VendorSubNav: React.FC = () => {
     { label: 'Overview', path: '/vendor/dashboard', icon: LayoutDashboard },
     { label: 'Products', path: '/vendor/products', icon: Package },
     { label: 'Fulfillment & Orders', path: '/vendor/orders', icon: Truck },
-    { label: 'Financials & Payouts', path: '/vendor/earnings', icon: DollarSign },
+    { label: 'Financials & Payouts', path: '/vendor/earnings', icon: IndianRupee },
     { label: 'Store Settings', path: '/vendor/settings', icon: Settings },
   ];
 

@@ -32,6 +32,13 @@ The platform provides unified cart checkouts, autonomous merchant management, an
 - **User Directory & RBAC:** Comprehensive platform user directory with lifetime customer spend metrics, order history, and one-click role elevation (`CUSTOMER` &harr; `VENDOR` &harr; `ADMIN`).
 - **Notification Audit Log:** Real-time log of all platform transactional emails dispatched via live SMTP.
 
+### 4. AI Shopping Concierge & Price Intelligence
+- **Humanized Customer Concierge:** Natural, conversational shopping assistant providing personalized recommendations, bargain discovery, and price tracking.
+- **RAG Architecture with Tool Calling:** Strict grounding against PostgreSQL database using structured DRF services — zero hallucinated prices or phantom discounts.
+- **30-Day Historical Price Analysis:** Longitudinal price tracking comparing current selling prices against 30-day averages and previous month milestones.
+- **Bayesian Review Confidence:** Weighted product rating system that balances high star averages against verified review volume.
+- **Provider-Neutral LLM Engine:** Seamlessly switches between Google Gemini API and high-performance local deterministic intent routing.
+
 ---
 
 ## Tech Stack
@@ -112,19 +119,20 @@ The application will be live at:
 │   │   ├── accounts/          # User authentication, RBAC, merchant profiles
 │   │   ├── analytics/         # Platform GMV velocity and vendor metrics
 │   │   ├── orders/            # Unified cart, checkout splits, payments, emails
-│   │   └── products/          # Catalog governance, taxonomy, local uploads
+│   │   ├── products/          # Catalog governance, taxonomy, price history
+│   │   └── shopping_assistant/# RAG conversational shopping concierge & tool registry
 │   ├── marketplace_core/      # Django settings, WSGI/ASGI, root router
 │   ├── media/                 # Local device uploads (avatars, stores, products)
 │   ├── manage.py
 │   └── seed_data.py
 ├── frontend/
 │   ├── src/
-│   │   ├── components/        # Reusable UI components (Modern Shop palette)
+│   │   ├── components/        # Reusable UI components & Shopping Assistant widget
 │   │   ├── context/           # Auth and Cart reactive providers
 │   │   ├── pages/
 │   │   │   ├── admin/         # 6-page Admin portal suite
 │   │   │   ├── vendor/        # Merchant operational views
-│   │   │   ├── customer/      # Marketplace buyer pages
+│   │   │   ├── customer/      # Marketplace buyer storefront & product details
 │   │   │   └── auth/          # Authentication flows
 │   │   ├── services/          # Typed API client with auto token refresh
 │   │   └── types/             # Shared TypeScript interfaces

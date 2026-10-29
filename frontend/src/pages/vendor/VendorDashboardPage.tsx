@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  DollarSign,
+  IndianRupee,
   Package,
   Clock,
   AlertTriangle,
@@ -198,7 +198,7 @@ export const VendorDashboardPage: React.FC = () => {
         {/* Gross Sales */}
         <div className="bg-white border border-neutral-200/90 rounded-2xl p-6 shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-neutral-100 text-[#0a0500] flex items-center justify-center flex-shrink-0">
-            <DollarSign className="w-6 h-6" />
+            <IndianRupee className="w-6 h-6" />
           </div>
           <div>
             <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 block">Gross Sales</span>

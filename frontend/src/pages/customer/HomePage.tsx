@@ -89,9 +89,9 @@ export const HomePage: React.FC = () => {
   const filteredFeatured = activeCategoryFilter === 'all'
     ? featuredProducts
     : allProducts.filter((p) => {
-        const catSlug = typeof p.category === 'object' ? p.category?.slug : '';
-        return catSlug === activeCategoryFilter;
-      }).slice(0, 4);
+      const catSlug = typeof p.category === 'object' ? p.category?.slug : '';
+      return catSlug === activeCategoryFilter;
+    }).slice(0, 4);
 
   const handleNewsletterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -287,9 +287,10 @@ export const HomePage: React.FC = () => {
             <h2 className="text-3xl sm:text-4xl font-black text-slate-950 tracking-tight">
               Curated Departments
             </h2>
-            <p className="text-sm text-slate-500 mt-1 max-w-xl">
-              Each piece is meticulously curated for enduring utility, aesthetic refinement, and verified origin.
+            <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-xl">
+              Each piece is thoughtfully crafted and curated for enduring quality, utility, and verified maker origin.
             </p>
+
           </div>
 
           <Link
@@ -429,11 +430,10 @@ export const HomePage: React.FC = () => {
           <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
             <button
               onClick={() => setActiveCategoryFilter('all')}
-              className={`px-4 py-2 rounded-xl text-xs font-extrabold uppercase tracking-wider transition whitespace-nowrap ${
-                activeCategoryFilter === 'all'
+              className={`px-4 py-2 rounded-xl text-xs font-extrabold uppercase tracking-wider transition whitespace-nowrap ${activeCategoryFilter === 'all'
                   ? 'bg-slate-950 text-white shadow-sm'
                   : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-              }`}
+                }`}
             >
               All Items
             </button>
@@ -441,11 +441,10 @@ export const HomePage: React.FC = () => {
               <button
                 key={c.id}
                 onClick={() => setActiveCategoryFilter(c.slug)}
-                className={`px-4 py-2 rounded-xl text-xs font-extrabold uppercase tracking-wider transition whitespace-nowrap ${
-                  activeCategoryFilter === c.slug
+                className={`px-4 py-2 rounded-xl text-xs font-extrabold uppercase tracking-wider transition whitespace-nowrap ${activeCategoryFilter === c.slug
                     ? 'bg-slate-950 text-white shadow-sm'
                     : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                }`}
+                  }`}
               >
                 {c.name}
               </button>

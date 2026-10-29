@@ -28,7 +28,7 @@ export const CartPage: React.FC = () => {
       if (res.valid) {
         setDiscountAmount(res.discount_amount);
         setAppliedCoupon(res.code);
-        setCouponSuccess(`Coupon ${res.code} applied! Saved $${res.discount_amount.toFixed(2)}`);
+        setCouponSuccess(`Voucher ${res.code} applied! You saved ₹${res.discount_amount.toFixed(2)}.`);
         sessionStorage.setItem('modernshop_coupon', res.code);
       }
     } catch (err: any) {
@@ -75,15 +75,15 @@ export const CartPage: React.FC = () => {
         <div className="w-16 h-16 bg-neutral-100 text-neutral-400 rounded-full flex items-center justify-center mx-auto mb-4">
           <ShoppingBag className="w-8 h-8" />
         </div>
-        <h2 className="text-2xl font-black text-[#0a0500] uppercase tracking-wide">Your Shopping Bag is Empty</h2>
+        <h2 className="text-2xl font-black text-[#0a0500] uppercase tracking-wide">Your shopping bag is empty</h2>
         <p className="text-sm text-[#504e4a] mt-2 mb-8">
-          Explore our curated collections from independent designers and certified vendors.
+          Discover durable everyday carry, studio-grade electronics, and artisan home goods crafted by verified independent makers worldwide.
         </p>
         <Link
           to="/products"
           className="inline-block px-8 py-3.5 bg-[#ffcd05] hover:bg-[#fcb424] text-[#0a0500] font-black uppercase tracking-wider text-xs rounded-full shadow-md transition"
         >
-          Explore Shop
+          Explore Collections
         </Link>
       </div>
     );
