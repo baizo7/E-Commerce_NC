@@ -12,3 +12,5 @@ db.sqlite3
 .env
 .playwright-mcp/
 backend/media/
+backend/staticfiles/
+frontend/dist/

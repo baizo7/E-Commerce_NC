@@ -1,117 +1,150 @@
-# Modern Shop Deployment & 10-Day MVP Timeline Guide
+# Modern Shop — Production Cloud Deployment Guide
+
+This guide covers deploying the **Modern Shop Multi-Vendor Marketplace** (React 19 + TypeScript frontend, Django REST Framework backend, and PostgreSQL database) to **Render** using the turnkey Blueprint specification (`render.yaml`).
 
 ---
 
-## 1. 10-Working-Day MVP Development Timeline
+## Architecture Overview
 
-| Day | Milestone / Focus | Deliverables Completed |
-|---|---|---|
-| **Day 1** | Requirements Analysis & DB Architecture | ERD design, schema definitions, model relationships (User, Vendor, Category, Product, Cart, Order, VendorOrder). |
-| **Day 2** | Backend Foundation & Auth | Django setup, custom User model, JWT Authentication, CORS, and role-based permissions (`IsVendor`, `IsAdmin`). |
-| **Day 3** | Vendor Onboarding & Management | VendorProfile model, vendor registration endpoint, approval workflow, and vendor self-profile management APIs. |
-| **Day 4** | Product Catalog & Inventory | Category management, Product CRUD, image gallery relationships, search and multi-faceted filtering endpoints. |
-| **Day 5** | Multi-Vendor Cart & Atomic Checkout | Cart APIs, transactional checkout with `select_for_update()` row-level locking, automated order splitting into `VendorOrder` sub-orders. |
-| **Day 6** | Fulfillment & Commissions | Vendor tracking updates, carrier tagging, automated platform fee calculation (10% commission), customer shipment tracking. |
-| **Day 7** | Frontend Setup & Customer Storefront | React + Vite + TypeScript setup, Tailwind CSS styling, responsive Navbar, Homepage, Product Catalog, and Detail pages. |
-| **Day 8** | Customer Shopping & Checkout Flow | Cart state management with vendor package groupings, multi-step checkout form, payment method simulations, and order confirmation. |
-| **Day 9** | Vendor & Admin Portals | Vendor Dashboard (KPIs, product inventory table, fulfillment updates, earnings ledger) and Admin Portal (vendor approvals, catalog moderation, global order audit). |
-| **Day 10** | Integration Testing, Seeding & Polish | Automated DRF unit test suite (9 test cases passed), comprehensive demo seed data, OpenAPI 3 / Swagger docs, and production deployment scripts. |
-
----
-
-## 2. Docker Compose Deployment Specification
-
-Create a `docker-compose.yml` file in the project root:
-
-```yaml
-version: '3.9'
-
-services:
-  db:
-    image: postgres:16-alpine
-    container_name: nexamarket_db
-    restart: always
-    environment:
-      POSTGRES_DB: marketplace_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: secure_postgres_password
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: nexamarket_backend
-    restart: always
-    command: >
-      sh -c "python manage.py migrate &&
-             python seed_data.py &&
-             gunicorn marketplace_core.wsgi:application --bind 0.0.0.0:8000 --workers 4"
-    environment:
-      - DEBUG=False
-      - DJANGO_SECRET_KEY=production-secret-key-change-me
-      - DB_ENGINE=postgresql
-      - POSTGRES_DB=marketplace_db
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=secure_postgres_password
-      - POSTGRES_HOST=db
-      - POSTGRES_PORT=5432
-    depends_on:
-      - db
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./backend/media:/app/media
-      - ./backend/staticfiles:/app/staticfiles
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: nexamarket_frontend
-    restart: always
-    ports:
-      - "80:80"
-    depends_on:
-      - backend
-
-volumes:
-  postgres_data:
+```
+                      ┌──────────────────────────────────────┐
+                      │          RENDER CLOUD PLATFORM       │
+                      │                                      │
+  Users / Shoppers ──▶│  [Frontend Static Site]             │
+                      │  https://modernshop-frontend.onrender.com
+                      │         │ (rewrites /api/*)          │
+                      │         ▼                            │
+                      │  [Django REST Backend Web Service]   │
+                      │  https://modernshop-backend.onrender.com
+                      │         │                            │
+                      │         ▼                            │
+                      │  [Render Managed PostgreSQL]         │
+                      │  modernshop-db                       │
+                      └──────────────────────────────────────┘
 ```
 
 ---
 
-## 3. Environment Variables Reference
+## Method 1: Turnkey Blueprint Deployment via Render (Recommended)
 
-Create a `.env` file in `backend/`:
+The repository includes a ready-to-use [`render.yaml`](file:///D:/projects/Nexacraft/E-Commerce/render.yaml) that automatically provisions:
+1. **Managed PostgreSQL Database** (`modernshop-db`)
+2. **Django Gunicorn Web Service** (`modernshop-backend`) with automated migrations, WhiteNoise static files, and database seeding
+3. **React Single Page App** (`modernshop-frontend`) with built-in path rewrites to `/api/` and client-side routing
 
-```ini
-# Django Settings
-DJANGO_SECRET_KEY=production-secret-key-change-me
-DEBUG=True
+### Step-by-Step Instructions:
 
-# Database Configuration (PostgreSQL)
-DB_ENGINE=sqlite # Switch to 'postgresql' for production
-POSTGRES_DB=marketplace_db
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
-```
+1. **Push your code to GitHub:**
+   Ensure all changes are pushed to your remote repository (e.g., `https://github.com/baizo7/E-Commerce_NC`).
+
+2. **Log in to Render:**
+   Go to [https://dashboard.render.com](https://dashboard.render.com) and sign in with your GitHub account.
+
+3. **Deploy with Blueprint:**
+   * Click **New +** in the top right corner.
+   * Select **Blueprint**.
+   * Connect your GitHub repository (`E-Commerce_NC`).
+   * Render will automatically detect [`render.yaml`](file:///D:/projects/Nexacraft/E-Commerce/render.yaml) and display the 3 services:
+     - `modernshop-db` (PostgreSQL)
+     - `modernshop-backend` (Django API)
+     - `modernshop-frontend` (Static React Site)
+   * Click **Apply**.
+
+4. **Automated Provisioning:**
+   Render will now:
+   * Create the PostgreSQL database.
+   * Run [`build.sh`](file:///D:/projects/Nexacraft/E-Commerce/build.sh) on the backend (installs dependencies, collects static assets via WhiteNoise, runs migrations, and populates initial categories, vendors, and products via `seed_data.py`).
+   * Start Gunicorn on `0.0.0.0:$PORT`.
+   * Build the React frontend bundle (`npm run build`) and serve it through Render's global CDN.
 
 ---
 
-## 4. Production Checklist
+## Method 2: Manual Service Creation on Render
 
-1. **Security:**
-   - Set `DEBUG=False` in production.
-   - Restrict `ALLOWED_HOSTS` to your registered domain.
-   - Configure HTTPS with Let's Encrypt SSL certificates.
-2. **Database:**
-   - Run on managed PostgreSQL (AWS RDS, Google Cloud SQL, or Supabase).
-   - Enable automated backups and point-in-time recovery.
-3. **Static & Media Files:**
-   - Serve static assets via Amazon S3 or Google Cloud Storage using `django-storages`.
+If you prefer to configure each service manually in the Render dashboard:
+
+### 1. Database (PostgreSQL)
+* Click **New +** &rarr; **PostgreSQL**.
+* **Name:** `modernshop-db`
+* **Database:** `marketplace_db`
+* **User:** `postgres`
+* **Plan:** Free
+* Click **Create Database**. Copy the **Internal Database URL** once provisioned.
+
+### 2. Backend (Web Service)
+* Click **New +** &rarr; **Web Service**.
+* Connect your GitHub repository.
+* **Name:** `modernshop-backend`
+* **Runtime:** `Python 3`
+* **Build Command:** `./build.sh`
+* **Start Command:** `gunicorn --chdir backend marketplace_core.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 60`
+* **Environment Variables:**
+  * `PYTHON_VERSION`: `3.12.8`
+  * `DEBUG`: `False`
+  * `DJANGO_SECRET_KEY`: *(click generate)*
+  * `DATABASE_URL`: *(paste Internal Database URL from Step 1)*
+  * `CELERY_TASK_ALWAYS_EAGER`: `True`
+  * `USE_REDIS_CACHE`: `False`
+  * `ALLOWED_HOSTS`: `*`
+  * `CSRF_TRUSTED_ORIGINS`: `https://*.onrender.com`
+* Click **Create Web Service**.
+
+### 3. Frontend (Static Site)
+* Click **New +** &rarr; **Static Site**.
+* Connect your GitHub repository.
+* **Name:** `modernshop-frontend`
+* **Build Command:** `cd frontend && npm install && npm run build`
+* **Publish Directory:** `./frontend/dist`
+* **Redirects / Rewrites:**
+  * Route 1:
+    * **Type:** `Rewrite`
+    * **Source:** `/api/*`
+    * **Destination:** `https://your-backend-name.onrender.com/api/*`
+  * Route 2:
+    * **Type:** `Rewrite`
+    * **Source:** `/media/*`
+    * **Destination:** `https://your-backend-name.onrender.com/media/*`
+  * Route 3:
+    * **Type:** `Rewrite`
+    * **Source:** `/*`
+    * **Destination:** `/index.html`
+* Click **Create Static Site**.
+
+---
+
+## Post-Deployment Verification
+
+### Default Accounts Seeded Automatically:
+
+| Role | Email | Password | Access & Features |
+| :--- | :--- | :--- | :--- |
+| **Platform Administrator** | `sanjaisam63@gmail.com` | `Admin@123` | Full superuser access to `/admin/*`, payouts, and audit logs |
+| **Primary Merchant** | `sanjaidhonicsk@gmail.com` | `Vendor@123` | **Sanjai Modern Tech & Audio** storefront owner |
+| **Demo Merchant** | `vendor@example.com` | `Vendor@123` | **TechNova Electronics** storefront owner |
+| **Customer Shopper** | `customer@example.com` | `Customer@123` | Pre-configured buyer with shopping bag items |
+
+### Health Check URLs:
+* **Frontend App:** `https://your-frontend.onrender.com/`
+* **Interactive API Documentation:** `https://your-backend.onrender.com/api/docs/`
+* **OpenAPI Schema:** `https://your-backend.onrender.com/api/schema/`
+* **Django Admin:** `https://your-backend.onrender.com/admin/`
+
+---
+
+## Method 3: Local / VPS Docker Compose Deployment
+
+To deploy on a Virtual Private Server (AWS EC2, DigitalOcean Droplet, Hetzner, Linode) using Docker:
+
+```bash
+# 1. Clone repository on the server
+git clone https://github.com/baizo7/E-Commerce_NC.git
+cd E-Commerce_NC
+
+# 2. Start all containers in detached mode
+docker compose up -d --build
+
+# 3. Apply baseline seed data (optional)
+docker compose exec web python seed_data.py
+```
+
+The application will be live at `http://your-server-ip:5173` with Nginx and Gunicorn reverse proxies running automatically.
