@@ -36,7 +36,6 @@ services:
   - type: web
     name: modernshop-frontend
     env: static
-    plan: free
     buildCommand: "cd frontend && npm install && npm run build"
     staticPublishPath: "./frontend/dist"
     routes:
