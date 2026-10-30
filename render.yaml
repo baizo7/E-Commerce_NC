@@ -36,7 +36,6 @@ services:
   - type: web
     name: modernshop-frontend
     env: static
-    region: oregon
     plan: free
     buildCommand: "cd frontend && npm install && npm run build"
     staticPublishPath: "./frontend/dist"
@@ -62,4 +61,3 @@ databases:
     region: oregon
     plan: free
     databaseName: marketplace_db
-    user: postgres
