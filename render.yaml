@@ -36,7 +36,7 @@ services:
   - type: web
     name: modernshop-frontend
     env: static
-    buildCommand: "cd frontend && rm -f package-lock.json && npm install && npm run build"
+    buildCommand: "cd frontend && rm -f package-lock.json && npm install --include=optional && npm run build"
     staticPublishPath: "./frontend/dist"
     routes:
       - type: rewrite
